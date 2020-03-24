@@ -2,5 +2,5 @@
 GERUMO
 ~~~~~~
 
-Gamma Ray Event Reconstruction Uncertain Model
+Gamma Ray Event Reconstruction with Uncertain Models
 """
