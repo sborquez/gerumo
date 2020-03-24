@@ -1,3 +1,3 @@
-# GERUMO (Gamma-Ray Event Reconstruction Uncertaine Model)
+# GERUMO (Gamma-Ray Event Reconstruction with Uncertain Models)
 
 
