@@ -280,6 +280,7 @@ def get_target_shape(target_names, target_mode, target_mode_config):
     pass
 
 def get_normal_distribution(shape_array, sigmas):
+    """Return a matrix with shape 'shape_array' with the multivariate normal distribution with mean in the center."""
     shape = 2*shape_array + 1
     if len(shape_array) == 1:
         pos = np.linspace(-1, 1, shape[0])
@@ -297,6 +298,25 @@ def get_normal_distribution(shape_array, sigmas):
     else:
         raise NotImplementedError
 
+def get_distance(shape_array):
+    """Return a matrix with shape 'shape_array' with the distances from the center."""
+    shape = 2*shape_array + 1
+    if len(shape_array) == 1:
+        pos = np.arange(-(shape[0]//2),1+shape[0]//2)
+        return pos
+    elif len(shape_array) == 2:
+        x, y =   np.mgrid[-(shape[0]//2):1+shape[0]//2, -(shape[1]//2):1+shape[1]//2]
+        x -= shape[0]//2
+        pos = np.empty(x.shape + (2,))
+        pos[:, :, 0] = x; pos[:, :, 1] = y
+        return np.linalg.norm(pos, axis=-1)
+    elif len(shape_array) == 3:
+        x, y, z = np.mgrid[-(shape[0]//2):1+shape[0]//2, -(shape[1]//2):1+shape[1]//2, -(shape[2]//2):1+shape[2]//2]
+        pos = np.empty(x.shape + (3,))
+        pos[:, :, :, 0] = x; pos[:, :, :, 1] = y; pos[:, :, :, 2] = z
+        return np.linalg.norm(pos, axis=-1)
+    else:
+        raise NotImplementedError
 
 def probability_map(target_values, target_names, target_shape, target_range, target_resolutions, target_sigmas):
     """
@@ -360,6 +380,36 @@ def one_cell(target_values, target_names, target_shape, target_range, target_res
         y[np.arange(len(y)), indices[:,0], indices[:,1], indices[:,2]] = 1
     return y
 
+def one_cell_distance(target_values, target_names, target_shape, target_range, target_resolutions):
+    y = np.zeros((len(target_values), *target_shape), dtype=float)
+    target_range_arr = np.array(target_range)
+    target_resolutions_arr = np.array(target_resolutions)
+    indices = ((target_values - target_range_arr[:,0])/target_resolutions_arr).astype(int)
+    target_shape_arr = np.array(target_shape)
+
+    # pre calculated probability map
+    if not hasattr(one_cell_distance, "distances"):
+        one_cell_distance.distances = get_distance(shape_array=target_shape_arr)
+
+    centers = target_shape_arr
+    slices_start = centers - indices
+    slices_end = slices_start + target_shape_arr
+
+    if len(target_names) == 1:
+        for i, (slice_start, slice_end) in enumerate(zip(slices_start, slices_end)):
+            y[i] = one_cell_distance.distances[slice_start[0]:slice_end[0]]
+            y[i] /= y[i].sum()
+    elif len(target_names) == 2:
+        for i, (slice_start, slice_end) in enumerate(zip(slices_start, slices_end)):
+            y[i] = one_cell_distance.distances[slice_start[0]:slice_end[0], slice_start[1]:slice_end[1]]
+            y[i] /= y[i].sum()
+    elif len(target_names) == 3:
+        for i, (slice_start, slice_end) in enumerate(zip(slices_start, slices_end)):
+            y[i] = one_cell_distance.distances[slice_start[0]:slice_end[0], slice_start[1]:slice_end[1], slice_start[2]:slice_end[2]]
+            y[i] /= y[i].sum()
+    return y
+
+
 def two_outputs_probability_map(target_values, target_names, target_to_output, target_shape, target_range, target_resolutions):
     raise NotImplementedError
 
@@ -379,6 +429,8 @@ def targets_to_matrix(targets_values,
         return probability_map(targets_values, target_names, **target_mode_config)
     elif target_mode == "one_cell":
         return one_cell(targets_values, target_names, **target_mode_config)
+    elif target_mode == "distance":
+        return one_cell_distance(targets_values, target_names, **target_mode_config)
     elif target_mode == "two_outputs_probability_map":
         return two_outputs_probability_map(targets_values, target_names, **target_mode_config)
     elif target_mode == "two_outputs_one_cell":
