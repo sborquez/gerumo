@@ -23,7 +23,6 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
                  targets,
                  target_mode,
                  target_mode_config,
-                 target_shape,
                  preprocess_input_pipes=[],
                  preprocess_output_pipes=[],
                  shuffle=False):
@@ -45,7 +44,6 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         # How to generate target matrix
         self.target_mode = target_mode
         self.target_mode_config = target_mode_config
-        self.target_shape = target_shape
         # Add normalization and stardarization 
         self.preprocess_output_pipes = preprocess_output_pipes
 
@@ -58,7 +56,7 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.list_IDs) / self.batch_size))
+        return int(np.floor(len(self.dataset) / self.batch_size))
 
     def __getitem__(self, index):
         'Generate one batch of data'

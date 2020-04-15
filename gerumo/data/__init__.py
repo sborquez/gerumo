@@ -17,6 +17,10 @@ from .preprocessing import (
     camera_to_image, cameras_to_images,
     targets_to_matrix
 )
+from .utils import (
+    get_resolution,
+    get_shape
+)
 from .generator import (
     AssemblerUnitGenerator
 )

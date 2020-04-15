@@ -1,8 +1,9 @@
-"""Data and dataset input and output
+"""
+Data and dataset input and output
+=================================
 
 This module handle data files and generate the datasets used
 by the models.
-
 """
 
 import os
