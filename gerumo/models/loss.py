@@ -1,5 +1,13 @@
+"""
+Loss Functions
+==============
+
+Collections of different Loss function for probability distributions
+and distance matrix.
+"""
+
 import tensorflow as tf
-from tf import keras
+from tensorflow import keras
 import tensorflow.keras.backend as K
 import numpy as np
 from functools import reduce
