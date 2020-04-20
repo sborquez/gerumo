@@ -25,12 +25,22 @@ def test_gpu():
     if cuda:
         gpus = tf.config.list_physical_devices('GPU')
         if len(gpus) > 0:
+<<<<<<< HEAD
             #logging.info(f"Availables GPUs: {*gpus}" )
             pass
+=======
+            #logging.info(f"Availables GPUs: {len(gpus)}" )
+            print(f"Availables GPUs: {len(gpus)}" )
+            for i, gpu in enumerate(gpus):
+                #logging.info(f"Availables GPU {i}: {gpu}" )
+                print(f"Availables GPU {i}: {gpu}" )
+>>>>>>> 090dacac0531121faee813ed2e0ceee2dea4a964
         else:
-            logging.info("Not availables GPUs.")
+            #logging.info("Not availables GPUs.")
+            print("Not availables GPUs.")
     else:
-        logging.info("Tensorflow is not built with CUDA")
+        #logging.info("Tensorflow is not built with CUDA")
+        print("Tensorflow is not built with CUDA")
 
 def test_saving(model="umonna"):
     if model == "umonna":
@@ -97,4 +107,6 @@ if save:
     u=test_saving()
 
 if gpu:
+    print("Running GPU tests.")
     test_gpu()
+print("Done")
