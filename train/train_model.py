@@ -87,8 +87,8 @@ if __name__ == "__main__":
     checkpoint_filepath = path.join(output_folder, checkpoint_filepath)
 
     # Prepare datasets
-    train_dataset      = load_dataset(train_events_csv, train_telescope_csv)[:100]
-    validation_dataset = load_dataset(validation_events_csv, validation_telescope_csv)[:100]
+    train_dataset      = load_dataset(train_events_csv, train_telescope_csv)
+    validation_dataset = load_dataset(validation_events_csv, validation_telescope_csv)
 
     train_dataset = aggregate_dataset(train_dataset, az=True, log10_mc_energy=True)
     train_dataset = filter_dataset(train_dataset, telescopes, min_observations, target_domains)
