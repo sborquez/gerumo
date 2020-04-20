@@ -22,11 +22,17 @@ def test_gpu():
     if cuda:
         gpus = tf.config.list_physical_devices('GPU')
         if len(gpus) > 0:
-            logging.info(f"Availables GPUs: {*gpus}" )
+            #logging.info(f"Availables GPUs: {len(gpus)}" )
+            print(f"Availables GPUs: {len(gpus)}" )
+            for i, gpu in enumerate(gpus):
+                #logging.info(f"Availables GPU {i}: {gpu}" )
+                print(f"Availables GPU {i}: {gpu}" )
         else:
-            logging.info("Not availables GPUs.")
+            #logging.info("Not availables GPUs.")
+            print("Not availables GPUs.")
     else:
-        logging.info("Tensorflow is not built with CUDA")
+        #logging.info("Tensorflow is not built with CUDA")
+        print("Tensorflow is not built with CUDA")
 
 def bottle_neck(model_path):
     raise NotImplementedError
@@ -41,4 +47,6 @@ args = vars(ap.parse_args())
 gpu = args["gpu"]
 
 if gpu:
+    print("Running GPU tests.")
     test_gpu()
+print("Done")
