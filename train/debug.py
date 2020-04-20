@@ -25,16 +25,11 @@ def test_gpu():
     if cuda:
         gpus = tf.config.list_physical_devices('GPU')
         if len(gpus) > 0:
-<<<<<<< HEAD
-            #logging.info(f"Availables GPUs: {*gpus}" )
-            pass
-=======
             #logging.info(f"Availables GPUs: {len(gpus)}" )
             print(f"Availables GPUs: {len(gpus)}" )
             for i, gpu in enumerate(gpus):
                 #logging.info(f"Availables GPU {i}: {gpu}" )
                 print(f"Availables GPU {i}: {gpu}" )
->>>>>>> 090dacac0531121faee813ed2e0ceee2dea4a964
         else:
             #logging.info("Not availables GPUs.")
             print("Not availables GPUs.")
