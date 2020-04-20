@@ -29,8 +29,11 @@ def softmax(target, axis, name=None):
 
 
 class HexConvLayer(Layer):
-    def __init__(self, filters, kernel_size=(3,3), name=None, reshape=None):
-        super(HexConvLayer, self).__init__(name=name)
+    def __init__(self, filters, kernel_size=(3,3), name=None, reshape=None, **kargs):
+        super(HexConvLayer, self).__init__(name=name, **kargs)
+        self.__name = name
+        self.filters = filters
+        self.kernel_size = kernel_size
         self.conv2d = Conv2D(filters, kernel_size, kernel_initializer="he_uniform",
                              padding = "valid", activation="relu", strides=(2,1))
         self.left_split = Lambda(lambda x: x[:,0,:-1,:,:])
@@ -63,5 +66,12 @@ class HexConvLayer(Layer):
         return self.pooling(front)
 
     def get_config(self):
-        pass
+        config = super().get_config().copy()
+        config.update({
+            "filters": self.filters,
+            "kernel_size": self.kernel_size,
+            "name": self.__name,
+            "reshape": self.__reshape
+        })
+        return config
         

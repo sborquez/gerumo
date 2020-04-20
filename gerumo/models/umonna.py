@@ -86,7 +86,7 @@ def deconvolution_block(front, targets, deconv_blocks, first_deconv, latent_vari
 
 def upsampling_block(front, targets, deconv_blocks, first_deconv, latent_variables):
     for deconv_i in range(deconv_blocks - 1):
-        filters = 2**(deconv_blocks - deconv_i - 1)
+        filters = 4**(deconv_blocks - deconv_i - 1)
         if len(targets) == 1:
             if deconv_i == 0:
                 upsampling = UpSampling2D
