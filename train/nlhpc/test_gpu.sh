@@ -1,25 +1,30 @@
 #!/bin/bash
-#SBATCH --job-name=test
-#SBATCH --partition=gpus
+# ----------------SLURM Parameters----------------
+#SBATCH -J test
+#SBATCH -p gpus
 #SBATCH -n 1
-#SBATCH --output=test_gpu_%j.out
-#SBATCH --error=test_gpu_%j.err
+#SBATCH --gres=gpu:1
+#SBATCH --ntasks-per-node=1
+#SBATCH -c 1
+#SBATCH --mem=4000
 #SBATCH --mail-user=sebastian.borquez.g@gmail.com
 #SBATCH --mail-type=ALL
-#SBATCH --mem-per-cpu=4365
-#SBATCH --gres=gpu:1
+#SBATCH -o test_%j.out
+#SBATCH -e test_%j.err
 
-pwd
+#-----------------Toolchain---------------------------
+ml purge
+ml fosscuda/2019b
+# ----------------MÃ³dulos-----------------------------
+ml  CUDA/10.1.105 HDF5/1.10.4   Miniconda3/4.5.12   cuDNN/7.4.2.24  
+# ----------------Comandos--------------------------
 
-ml CUDA/10.1.105
-ml cuDNN/7.4.2.24
-ml Miniconda3
-
-source activate /home/sborquez/.envs/gerumo
+source activate /home/sborquez/envs/gerumo
 
 #conda list
 
 echo "Running test_gpu.sh"
 echo ""
 
-python ../debug.py --gpu
+cd /home/sborquez/gerumo/train
+python debug.py --gpu
