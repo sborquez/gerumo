@@ -7,9 +7,11 @@ Uncertain Multi Observer Neural Network Assembler
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (
-    Input, 
-    Conv2D, MaxPooling2D,
+    Input, Add,
+    Conv2D, MaxPooling2D, Conv3D,
     Conv2DTranspose, Conv3DTranspose,
+    UpSampling1D, UpSampling2D, UpSampling3D,
+    AveragePooling1D, AveragePooling2D, AveragePooling3D,
     Dense, Flatten, Concatenate, Reshape,
     Activation, BatchNormalization, Dropout
 )
@@ -36,6 +38,99 @@ def calculate_deconv_parameters(target_shapes=(81, 81, 81), max_deconv=8, max_ke
     target_shape_i = kernel_size_i * 3 ** (deconv_blocks - 2) 
     With kernel_size_i > 1 and it can be different for each target, and deconv_blocks >= 2.
     """)
+
+def deconvolution_block(front, targets, deconv_blocks, first_deconv, latent_variables):
+    for deconv_i in range(deconv_blocks - 1):
+        filters = 4**(deconv_blocks - deconv_i - 1)
+        if len(targets) == 1:
+            if deconv_i == 0:
+                conv_transpose = Conv2DTranspose
+                get_new_shape = lambda layer: (layer.get_shape()[2],)
+                axis = [1]
+                kernel_size = (1, first_deconv[0])
+                strides = 1
+            else:
+                kernel_size = (1, 3)
+                strides = (1, 3)
+        elif len(targets) == 2:
+            if deconv_i == 0:
+                conv_transpose = Conv2DTranspose
+                get_new_shape = lambda layer: (layer.get_shape()[1], layer.get_shape()[2])
+                axis = [1, 2]
+                kernel_size = first_deconv
+                strides = 1
+            else:
+                kernel_size = 3
+                strides = 3
+        elif len(targets) == 3:
+            if deconv_i == 0:
+                front = Reshape((1, 1, 1, latent_variables//2))(front)
+                conv_transpose = Conv3DTranspose
+                get_new_shape = lambda layer: (layer.get_shape()[1], layer.get_shape()[2], layer.get_shape()[3])
+                axis = [1, 2, 3]
+                kernel_size = first_deconv
+                strides = 1
+            else:
+                kernel_size = 3
+                strides = 3
+        front = conv_transpose(filters=filters, kernel_size=kernel_size,
+                        strides=strides, padding="valid", output_padding=0,
+                        kernel_initializer='he_uniform')(front)
+        front = Activation("relu")(front)
+        front = BatchNormalization()(front)
+    front = conv_transpose(filters=1, kernel_size=1, strides=1, output_padding=0)(front)
+    shape = get_new_shape(front)
+    front = Reshape(shape)(front)
+    output =  softmax(front, axis=axis)
+    return output
+
+def upsampling_block(front, targets, deconv_blocks, first_deconv, latent_variables):
+    for deconv_i in range(deconv_blocks - 1):
+        filters = 2**(deconv_blocks - deconv_i - 1)
+        if len(targets) == 1:
+            if deconv_i == 0:
+                upsampling = UpSampling2D
+                average = AveragePooling2D
+                conv = Conv2D
+                get_new_shape = lambda layer: (layer.get_shape()[2],)
+                axis = [1]
+                kernel_size = (1, first_deconv[0])
+            else:
+                kernel_size = (1, 3)
+        elif len(targets) == 2:
+            if deconv_i == 0:
+                upsampling = UpSampling2D
+                average = AveragePooling2D
+                conv = Conv2D
+                get_new_shape = lambda layer: (layer.get_shape()[1], layer.get_shape()[2])
+                axis = [1, 2]
+                kernel_size = first_deconv
+            else:
+                kernel_size = 3
+        elif len(targets) == 3:
+            if deconv_i == 0:
+                front = Reshape((1, 1, 1, latent_variables//2))(front)
+                upsampling = UpSampling3D
+                average = AveragePooling3D
+                conv = Conv3D
+                get_new_shape = lambda layer: (layer.get_shape()[1], layer.get_shape()[2], layer.get_shape()[3])
+                axis = [1, 2, 3]
+                kernel_size = first_deconv
+            else:
+                kernel_size = 3
+        front = upsampling(size=kernel_size)(front)
+        front = average(kernel_size, 1, "same")(front)
+        front = conv(filters, kernel_size, 1, "same")(front)
+        front = Activation("relu")(front)
+        front = BatchNormalization()(front)
+        front = conv(filters, kernel_size, 1, "same")(front)
+        front = Activation("relu")(front)
+        front = BatchNormalization()(front)
+    front = conv(filters=1, kernel_size=1, strides=1)(front)
+    shape = get_new_shape(front)
+    front = Reshape(shape)(front)
+    output =  softmax(front, axis=axis)
+    return output
 
 def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
@@ -112,12 +207,17 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
                    padding = "valid",
                    activation="relu")(front)
     front = Flatten(name="encoder_flatten_to_latent")(front)
+    
+    # Skip Connection
+    skip_front = front
+    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2)(skip_front)
+    skip_front = Activation(name=f"logic_ReLU_layer_shortcut", activation="relu")(skip_front)
+    skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
 
     # Logic Block
     ## extra Telescope Features
     input_params = Input(name="feature_input", shape=input_features_shape)
     front = Concatenate()([input_params, front])
-    skip_front = front
 
     ## dense blocks
     for dense_i in range(dense_layer_blocks):
@@ -125,8 +225,10 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
         front = Activation(name=f"logic_ReLU_layer_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
         front = Dropout(name=f"logic_Dropout_layer_{dense_i}", rate=0.25)(front)
-    front = Concatenate()([front, skip_front])
-    front = Reshape((1, 1,  latent_variables + input_features_shape[0] + latent_variables//2), name="logic_reshape")(front)
+
+    # Add Skip connection
+    front = Add()([front, skip_front])
+    front = Reshape((1, 1,  latent_variables//2), name="logic_reshape")(front)
 
     # Deconvolution Blocks
     ## calculate deconvolution parameters
@@ -153,48 +255,8 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
         output = Dense(units=len(targets), activation="lineal")(front)
 
     elif target_mode in ["probability_map", "one_cell", "distance"]:
-        for deconv_i in range(deconv_blocks - 1):
-            filters = 2**(deconv_blocks - deconv_i - 1)
-            if len(targets) == 1:
-                if deconv_i == 0:
-                    conv_transpose = Conv2DTranspose
-                    get_new_shape = lambda layer: (layer.get_shape()[2],)
-                    axis = [1]
-                    kernel_size = (1, first_deconv[0])
-                    strides = 1
-                else:
-                    kernel_size = (1, 3)
-                    strides = (1, 3)
-            elif len(targets) == 2:
-                if deconv_i == 0:
-                    conv_transpose = Conv2DTranspose
-                    get_new_shape = lambda layer: (layer.get_shape()[1], layer.get_shape()[2])
-                    axis = [1, 2]
-                    kernel_size = first_deconv
-                    strides = 1
-                else:
-                    kernel_size = 3
-                    strides = 3
-            elif len(targets) == 3:
-                if deconv_i == 0:
-                    front = Reshape((1, 1, 1, latent_variables//2))(front)
-                    conv_transpose = Conv3DTranspose
-                    get_new_shape = lambda layer: (layer.get_shape()[1], layer.get_shape()[2], layer.get_shape()[3])
-                    axis = [1, 2, 3]
-                    kernel_size = first_deconv
-                    strides = 1
-                else:
-                    kernel_size = 3
-                    strides = 3
-            front = conv_transpose(filters=filters, kernel_size=kernel_size,
-                            strides=strides, padding="valid", output_padding=0,
-                            kernel_initializer='he_uniform')(front)
-            front = Activation("relu")(front)
-            front = BatchNormalization()(front)
-        front = conv_transpose(filters=1, kernel_size=1, strides=1, output_padding=0)(front)
-        shape = get_new_shape(front)
-        front = Reshape(shape)(front)
-        output = softmax(front, axis=axis)
+        #output = deconvolution_block(front, targets, deconv_blocks, first_deconv, latent_variables)
+        output = upsampling_block(front, targets, deconv_blocks, first_deconv, latent_variables)
 
     elif target_mode in ["two_outputs_probability_map", "two_outputs_one_cell"]:
         raise NotImplementedError
