@@ -51,4 +51,4 @@ PIXELS_POSITION = {}
 for mode in ("simple", "simple_shift"): #time_split, time_split_shift):
     PIXELS_POSITION[mode] = {}
     for telescope in TELESCOPES:
-        PIXELS_POSITION[mode][telescope] = np.loadtxt(path.join(pixpos_folder, mode, f"{telescope}.npy"), dtype=int)
+        PIXELS_POSITION[mode][telescope] = np.loadtxt(path.join(pixpos_folder, mode, f"{telescope}.npy"), dtype=float).astype(int)

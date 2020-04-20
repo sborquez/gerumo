@@ -341,7 +341,7 @@ def probability_map(target_values, target_names, target_shapes, target_domains, 
     y = np.zeros((len(target_values), *target_shapes), dtype=float)
     target_domains_arr = np.array(target_domains)
     target_resolutions_arr = np.array(target_resolutions)
-    indices = ((target_values - target_domains_arr[:,0])/target_resolutions_arr).astype(int)
+    indices = np.floor((target_values - target_domains_arr[:,0])/target_resolutions_arr).astype(int)
     target_shapes_arr = np.array(target_shapes)
 
     # pre calculated probability map
@@ -370,7 +370,8 @@ def one_cell(target_values, target_names, target_shapes, target_domains, target_
     y = np.zeros((len(target_values), *target_shapes), dtype=float)
     target_domains_arr = np.array(target_domains)
     target_resolutions_arr = np.array(target_resolutions)
-    indices = ((target_values - target_domains_arr[:,0])/target_resolutions_arr).astype(int)
+    indices = np.floor((target_values - target_domains_arr[:,0])/target_resolutions_arr).astype(int)
+    #FIX index error
     if len(target_names) == 1:
         y[np.arange(len(y)), indices[:,0]] = 1
     elif len(target_names) == 2:
