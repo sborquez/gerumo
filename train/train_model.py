@@ -14,21 +14,33 @@ import numpy as np
 from tensorflow import keras
 from tensorflow.keras.utils import plot_model
 
+
+
 if __name__ == "__main__":
 
     """
     argparse
     """
+    # NAME
+    model_name = "UMONNA_UNIT_MST_V2"
+
     # Debug
     save_plot = False
     plot_only = False
     summary = False
 
     # Dataset Parameters
+    # output_folder = "/home/sborquez/data/output"
+    # train_events_csv    = "/home/sborquez/data/small/train_events.csv"
+    # train_telescope_csv = "/home/sborquez/data/small/train_telescopes.csv" 
+    # validation_events_csv    = "/home/sborquez/data/small/validation_events.csv"
+    # validation_telescope_csv = "/home/sborquez/data/small/validation_telescopes.csv"
+    output_folder = "./output"
     train_events_csv    = "../dataset/train_events.csv"
     train_telescope_csv = "../dataset/train_telescopes.csv" 
     validation_events_csv    = "../dataset/validation_events.csv"
     validation_telescope_csv = "../dataset/validation_telescopes.csv"
+    
     telescopes = ["MST_FlashCam"]
     min_observations = [3]
 
@@ -66,17 +78,17 @@ if __name__ == "__main__":
 
     # Training Parameters
     batch_size = 32
-    epochs = 15
+
+    epochs = 3
     loss = "crossentropy"
     learning_rate = 1e-1
-    save_checkpoints = False
-    output_folder = "./output"
-    checkpoint_filepath = "%s_%s_e{epoch:03d}_{val_loss:.4f}.h5"%(telescopes[0], loss)
+    save_checkpoints = True
+    checkpoint_filepath = "%s_%s_%s_e{epoch:03d}_{val_loss:.4f}.h5"%(model_name, telescopes[0], loss)
     checkpoint_filepath = path.join(output_folder, checkpoint_filepath)
 
     # Prepare datasets
-    train_dataset      = load_dataset(train_events_csv, train_telescope_csv) 
-    validation_dataset = load_dataset(validation_events_csv, validation_telescope_csv)
+    train_dataset      = load_dataset(train_events_csv, train_telescope_csv)[:100]
+    validation_dataset = load_dataset(validation_events_csv, validation_telescope_csv)[:100]
 
     train_dataset = aggregate_dataset(train_dataset, az=True, log10_mc_energy=True)
     train_dataset = filter_dataset(train_dataset, telescopes, min_observations, target_domains)
@@ -99,7 +111,7 @@ if __name__ == "__main__":
                                             preprocess_input_pipes=preprocess_input_pipes,
                                             preprocess_output_pipes=preprocess_output_pipes
                                             )
-    validation_generator = AssemblerUnitGenerator(validation_dataset, batch_size, 
+    validation_generator = AssemblerUnitGenerator(validation_dataset, batch_size//4, 
                                                     input_image_mode=input_image_mode,
                                                     input_image_mask=input_image_mask, 
                                                     input_features=input_features,
@@ -130,6 +142,7 @@ if __name__ == "__main__":
     if summary:
         umonna.summary()
     if save_plot:
+        # TODO: Move this to debug
         plot_model(umonna, to_file="umonna.png", show_shapes=True)
         plot_model(umonna, to_file="umonna_simple.png", show_shapes=False)
         if plot_only:
@@ -158,13 +171,16 @@ if __name__ == "__main__":
         epochs = epochs,
         verbose = 1,
         validation_data = validation_generator,
+        validation_steps = len(validation_generator),
         callbacks = callbacks,
         use_multiprocessing = False,
         workers = 5,
         max_queue_size = 20,
     )
-    training_time = time.time() - start_time
+    training_time = (time.time() - start_time)/60.0
+    print(f"Training time: {training_time:.3f} [min]")
 
+    plot_model_training_history(history, training_time, model_name, epochs, output_folder)
     # # Validate
     # i = 6
     # batch_0 = train_generator[120]
