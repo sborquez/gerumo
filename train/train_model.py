@@ -12,12 +12,18 @@ from os import path
 
 import numpy as np
 from tensorflow import keras
+from tensorflow.keras.utils import plot_model
 
 if __name__ == "__main__":
 
     """
     argparse
     """
+    # Debug
+    save_plot = False
+    plot_only = False
+    summary = False
+
     # Dataset Parameters
     train_events_csv    = "../dataset/train_events.csv"
     train_telescope_csv = "../dataset/train_telescopes.csv" 
@@ -31,6 +37,7 @@ if __name__ == "__main__":
     input_image_mask = True
     input_features = ["x", "y"]
     target_mode = "probability_map"
+    #target_mode = "one_cell"
     #target_mode = "distance"
     targets = ["alt", "az"] #, "log10_mc_energy"]
     target_shapes = {
@@ -39,9 +46,9 @@ if __name__ == "__main__":
         'log10_mc_energy': 81
     }
     target_domains = {
-        'alt': (1.05, 1.38), 
-        'az': (-0.524, 0.524), 
-        'log10_mc_energy': (-1.3, 2.4)
+        'alt': (1.05, 1.382), 
+        'az': (-0.52, 0.52), 
+        'log10_mc_energy': (-1.74, 2.44)
     }
     target_sigmas = {
         'alt': 0.002, 
@@ -58,9 +65,9 @@ if __name__ == "__main__":
     }
 
     # Training Parameters
-    batch_size = 16
-    epochs = 5
-    loss = "hellinger"
+    batch_size = 32
+    epochs = 15
+    loss = "crossentropy"
     learning_rate = 1e-1
     save_checkpoints = False
     output_folder = "./output"
@@ -119,8 +126,15 @@ if __name__ == "__main__":
                     targets, target_mode, 
                     target_shapes=target_shapes, 
                     latent_variables=600)
-    umonna.summary()
-    
+    # Debug
+    if summary:
+        umonna.summary()
+    if save_plot:
+        plot_model(umonna, to_file="umonna.png", show_shapes=True)
+        plot_model(umonna, to_file="umonna_simple.png", show_shapes=False)
+        if plot_only:
+            exit(0)
+
     ## Loss function
     if loss == "crossentropy":
         loss = crossentropy_loss(dimensions=len(targets))
@@ -133,7 +147,8 @@ if __name__ == "__main__":
     
     ## fit
     umonna.compile(
-        optimizer=keras.optimizers.Adam(lr=learning_rate),
+        #optimizer=keras.optimizers.Adam(lr=learning_rate),
+        optimizer=keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.01, nesterov=True),
         loss=loss
     )
 
@@ -150,22 +165,20 @@ if __name__ == "__main__":
     )
     training_time = time.time() - start_time
 
-    # Save
-
-    # Validate
+    # # Validate
     # i = 6
-    # batch_0 = train_generator[0]
+    # batch_0 = train_generator[120]
     # prediction = umonna.predict(batch_0[0])[i]
     # target = batch_0[1][i]
 
     # import matplotlib.pyplot as plt
 
     # plt.imshow(target)
-    # plt.title("Target")
+    # plt.title("Target_2")
     # plt.show()
 
     # plt.imshow(prediction)
-    # plt.title("Prediction")
+    # plt.title("Prediction_2")
     # plt.show()
 
 
