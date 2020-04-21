@@ -263,7 +263,7 @@ def split_dataset(dataset, validation_ratio=0.1):
 
     return train_dataset, val_dataset
 
-def load_dataset(events_path, telescopes_path):
+def load_dataset(events_path, telescopes_path, replace_folder=None):
     """Load events.csv and telescopes.csv files into dataframes.
     
     Parameters
@@ -272,6 +272,11 @@ def load_dataset(events_path, telescopes_path):
         Path to events.csv file.
     telescopes_path : `str`
         Path to telescopes.csv file.
+    replace_folder : `str` or `None`
+        Path to folder containing hdf5 files. Replace the folder 
+        column from csv file. Usefull if the csv files are shared
+        between different machines. Default None, means no change
+        applied.
 
     Returns
     -------
@@ -281,6 +286,10 @@ def load_dataset(events_path, telescopes_path):
     # Load data
     events_data = pd.read_csv(events_path, delimiter=";")
     telescopes_data = pd.read_csv(telescopes_path, delimiter=";")
+
+    # Change dataset folder
+    if replace_folder is not None:
+        events_data.folder = replace_folder
 
     # Join tables
     dataset = pd.merge(events_data, telescopes_data, on="event_unique_id", validate="1:m")

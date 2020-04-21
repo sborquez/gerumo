@@ -16,3 +16,4 @@ docs/build_*
 .DS_Store
 
 train/output
+dataset

@@ -107,11 +107,11 @@ def filter_dataset(dataset, telescopes=[], number_of_observations=[], domain={})
 
     Parameters
     ==========
-    telescopes : `list` of `str`
-        Selected telescopes type for the dataset.
-    number_of_observations : `list` of `int`
+    telescopes : `list` of `str` or 'str'
+        Selected telescopes type for the dataset. 'str' if is just one.
+    number_of_observations : `list` of `int` or 'int
         For each telescope in 'telescopes' parameter, the minimum amount
-        of observations.
+        of observations. 'int' if is just one.
     domain : `dict` [ `str`,  `tuple` of `int`]
         A dictionary with names of columns and their value range.
     Returns
@@ -119,6 +119,11 @@ def filter_dataset(dataset, telescopes=[], number_of_observations=[], domain={})
      `pd.DataFrame`
         Filtered dataset.
     """
+    if isinstance(telescopes, str):
+        telescopes = [telescopes]
+    if isinstance(number_of_observations, int):
+        number_of_observations = [number_of_observations]
+
     # filter telescopes
     filtered_dataset = dataset[dataset.type.isin(telescopes)]
     # filter number of observatoins
