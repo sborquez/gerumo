@@ -26,5 +26,5 @@ source activate /home/sborquez/envs/gerumo
 echo "Running train_model.sh"
 echo ""
 
-cd /home/sborquez/gerumo/train
-python train_model.py
+cd /user/s/sborquez/gerumo/train
+python train_model.py --config ./config/umonna_mst_nlhpc.json
