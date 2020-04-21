@@ -12,3 +12,7 @@ CUSTOM_OBJECTS = {
     # LAYERS
     "HexConvLayer": HexConvLayer,
 }
+
+MODELS = {
+    "umonna_unit": umonna_unit,
+}
