@@ -134,14 +134,9 @@ def filter_dataset(dataset, telescopes=[], number_of_observations=[], domain={})
                             .event_unique_id.unique()
         filtered_dataset = filtered_dataset[filtered_dataset.event_unique_id.isin(filtered_events)]
     # filter domain
-    selection = None
+    selection = np.ones((len(filtered_dataset),), dtype=bool)
     for target, (vmin, vmax) in domain.items():
-        if selection is None:
-            selection = (vmin <= filtered_dataset[target]) & (filtered_dataset[target] <= vmax)
-        else:
-            selection |= (vmin <= filtered_dataset[target]) & (filtered_dataset[target] <= vmax)
-    if selection is None:
-        return filtered_dataset
+        selection &= ((vmin <= filtered_dataset[target]) & (filtered_dataset[target] <= vmax))
     return filtered_dataset[selection]
 
 
