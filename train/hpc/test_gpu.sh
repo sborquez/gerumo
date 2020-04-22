@@ -12,5 +12,5 @@ source activate /user/s/sborquez/envs/gerumo
 echo "Running test_gpu.sh"
 echo ""
 
-cd /home/sborquez/gerumo/train
+cd /user/s/sborquez/gerumo/train
 python debug.py --gpu
