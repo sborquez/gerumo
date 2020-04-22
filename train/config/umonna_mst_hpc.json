@@ -10,6 +10,7 @@
     "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output",
     "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_train",
     "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_train",
+    "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_test",
     "train_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/small/train_events.csv",
     "train_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/small/train_telescopes.csv", 
     "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/small/validation_events.csv",

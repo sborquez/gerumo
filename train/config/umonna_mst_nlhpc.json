@@ -10,6 +10,7 @@
     "output_folder" : "/home/sborquez/data/output",
     "replace_folder_train" : "/home/sborquez/data/train",
     "replace_folder_validation" : "/home/sborquez/data/train",
+    "replace_folder_test" : "/home/sborquez/data/test",
     "train_events_csv"    : "/home/sborquez/data/small/train_events.csv",
     "train_telescope_csv" : "/home/sborquez/data/small/train_telescopes.csv", 
     "validation_events_csv"    : "/home/sborquez/data/small/validation_events.csv",
