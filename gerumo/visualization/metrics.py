@@ -1,7 +1,17 @@
+"""
+Metrics Visualizations
+======================
+
+Generate plot for different metrics of models.
+
+Here you can find training metrics, single model evaluation
+and models comparations.
+"""
+
 from os.path import join
 import matplotlib.pyplot as plt
 
-def plot_model_training_history(history, training_time, model_name, epochs, output_folder="."):
+def plot_model_training_history(history, training_time, model_name, epochs, output_folder=None):
     fig = plt.figure(figsize=(12,6))
     epochs = [i for i in range(1, epochs+1)]
     plt.plot(epochs, history.history['loss'], "*--", label="Train")
@@ -12,5 +22,8 @@ def plot_model_training_history(history, training_time, model_name, epochs, outp
     plt.legend()
     plt.xticks(epochs, rotation=-90)
     plt.grid()
-    fig.savefig(join(output_folder, f'{model_name} - Training Loss.png'))
-    plt.close(fig)
+    if output_folder is not None:
+        fig.savefig(join(output_folder, f'{model_name} - Training Loss.png'))
+        plt.close(fig)
+    else:
+        plt.show()

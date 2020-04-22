@@ -1,6 +1,9 @@
 """
-data
-=====
+Data
+====
+
+Load, preprocess and filted data.
+
 """
 
 from .constants import (
