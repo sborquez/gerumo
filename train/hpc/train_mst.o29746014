@@ -1,0 +1,6 @@
+Running train_model_mst.sh
+
+Loading config from: ./config/umonna_mst_hpc_3d.json
+Train for 7988 steps, validate for 3525 steps
+Epoch 1/15
+   1/7988 [..............................] - ETA: 38:30:13

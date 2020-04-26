@@ -18,7 +18,7 @@
     "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/test/events.csv",
     "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/test/telescopes.csv",
     "telescope" : "MST_FlashCam",
-    "min_observations" : 3,
+    "min_observations" : 1,
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
     "input_features" : ["x", "y"],
@@ -35,12 +35,12 @@
         "log10_mc_energy": [-1.74, 2.44]
     },
     "target_sigmas" : {
-        "alt": 0.002, 
-        "az":  0.002, 
-        "log10_mc_energy": 0.002
+        "alt": 0.0015, 
+        "az":  0.0015, 
+        "log10_mc_energy": 0.0015
     },
-    "batch_size" : 32,
-    "epochs" : 30,
+    "batch_size" : 64,
+    "epochs" : 15,
     "loss" : "crossentropy",
     "learning_rate" : 1e-1,
     "save_checkpoints" : true
