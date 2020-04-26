@@ -64,6 +64,9 @@ def train_model(model_name, model_constructor, model_extra_params,
             save_checkpoints = True,
             save_plot=False, plot_only=False, summary=False):
 
+    target_domains_list = target_mode_config["target_domains"]
+    target_domains = {target: target_domain for target, target_domain in zip(targets, target_domains_list)}
+
     # Prepare datasets
     train_dataset      = load_dataset(train_events_csv, train_telescope_csv, replace_folder_train)
     validation_dataset = load_dataset(validation_events_csv, validation_telescope_csv, replace_folder_validation)

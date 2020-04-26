@@ -17,3 +17,6 @@ docs/build_*
 
 train/output
 dataset
+
+sandbox.ipynb
+sandbox-checkpoint.ipynb

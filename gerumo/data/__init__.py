@@ -25,5 +25,5 @@ from .utils import (
     get_shape
 )
 from .generator import (
-    AssemblerUnitGenerator
+    AssemblerUnitGenerator, AssemblerGenerator
 )

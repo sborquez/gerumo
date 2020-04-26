@@ -3,7 +3,9 @@ Umonna
 ======
 
 Uncertain Multi Observer Neural Network Assembler
+with non-parametric distributions models.
 """
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (
@@ -16,7 +18,7 @@ from tensorflow.keras.layers import (
     Activation, BatchNormalization, Dropout
 )
 
-from .base import AssemblerModel
+from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
 
 def calculate_target_shapes(deconv_blocks=5, first_deconv=(3, 3, 3)):
@@ -269,3 +271,43 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
     
     return model
+
+class Umonna(ModelAssembler):
+    def __init__(self, sst1m_model_path=None, mst_model_path=None, lst_model_path=None, targets=[], output_shape=(),
+                 assembler_mode="normalized_product", point_estimation_mode="expected_value"):
+        super().__init__(sst1m_model_path=sst1m_model_path, mst_model_path=mst_model_path, lst_model_path=lst_model_path, targets=targets, output_shape=output_shape)
+        
+        if assembler_mode not in ["normalized_product", "wasserstein_barycenter"]:
+            raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
+        self.assemble_mode = assembler_mode
+        
+        if point_estimation_mode not in ["expected_value", "argmax"]:
+            raise ValueError(f"Invalid point_estimation_mode: {point_estimation_mode}")
+        self.point_estimation_mode = point_estimation_mode
+
+    def point_estimation(self, y_predictions):
+        if self.point_estimation_mode == "expected_value":
+            y_point_estimations = self.expected_value(y_predictions)
+        elif self.point_estimation_mode == "argmax":
+            y_point_estimations = self.argmax(y_predictions)
+        return y_point_estimations
+
+    def expected_value(self, y_predictions):
+        raise NotImplementedError
+
+    def argmax(self, y_predictions):
+        raise NotImplementedError
+
+    def assemble(self, y_i_by_telescope):
+        y_i_all = np.concatenate(list(y_i_by_telescope.values()))
+        if self.assemble_mode == "normalized_product":
+            yi_assembled = self.normalized_product(y_i_all)
+        elif self.assemble_mode == "wasserstein_barycenter":
+            yi_assembled = self.wasserstein_barycenter(y_i_all)
+        return yi_assembled
+        
+    def normalized_product(self, y_i):
+        raise NotImplementedError
+
+    def wasserstein_barycenter(self, y_i):
+        raise NotImplementedError
