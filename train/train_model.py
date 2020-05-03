@@ -22,7 +22,7 @@ def get_default_target_mode_config(targets=["alt", "az", "log10_mc_energy"], ret
     target_domains = {
         'alt': (1.05, 1.382), 
         'az': (-0.52, 0.52), 
-        'log10_mc_energy': (-1.74, 2.44)
+        'log10_mc_energy': (-2.351, 2.47)
     }
     target_sigmas = {
         'alt': 0.002, 

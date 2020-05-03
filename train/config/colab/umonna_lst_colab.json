@@ -1,5 +1,5 @@
 {
-    "model_name": "UMONNA_UNIT_SST_V2",
+    "model_name": "UMONNA_UNIT_LST_V2",
     "model_constructor": "umonna_unit",
     "model_extra_params": {
         "latent_variables": 600
@@ -17,7 +17,7 @@
     "validation_telescope_csv" : "/content/drive/Shared drives/umonna/data/data/small/validation_telescopes.csv",
     "test_events_csv"    : "/content/drive/Shared drives/umonna/data/data/test/events.csv",
     "test_telescope_csv" : "/content/drive/Shared drives/umonna/data/data/test/telescopes.csv",
-    "telescope" : "SST1M_DigiCam",
+    "telescope" : "LST_LSTCam",
     "min_observations" : 1,
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
@@ -32,7 +32,7 @@
     "target_domains" : {
         "alt": [1.05, 1.382], 
         "az": [-0.52, 0.52], 
-        "log10_mc_energy": [-1.74, 2.44]
+        "log10_mc_energy": [-2.351, 2.47]
     },
     "target_sigmas" : {
         "alt": 0.002, 

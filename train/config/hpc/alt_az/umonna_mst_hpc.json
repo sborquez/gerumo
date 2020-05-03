@@ -1,5 +1,5 @@
 {
-    "model_name": "UMONNA_UNIT_MST_V2_3D_onecell",
+    "model_name": "UMONNA_UNIT_MST_V2",
     "model_constructor": "umonna_unit",
     "model_extra_params": {
         "latent_variables": 600
@@ -7,7 +7,7 @@
     "save_plot" : false,
     "plot_only" : false,
     "summary" : false,
-    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/3d_onecell",
+    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az_prob",
     "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_train",
     "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_train",
     "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_test",
@@ -22,8 +22,8 @@
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
     "input_features" : ["x", "y"],
-    "targets" : ["alt", "az", "log10_mc_energy"],
-    "target_mode" : "one_cell",
+    "targets" : ["alt", "az"],
+    "target_mode" : "probability_map",
     "target_shapes" : {
         "alt": 81, 
         "az": 81, 
@@ -32,7 +32,7 @@
     "target_domains" : {
         "alt": [1.05, 1.382], 
         "az": [-0.52, 0.52], 
-        "log10_mc_energy": [-1.74, 2.44]
+        "log10_mc_energy": [-2.351, 2.47]
     },
     "target_sigmas" : {
         "alt": 0.0015, 
