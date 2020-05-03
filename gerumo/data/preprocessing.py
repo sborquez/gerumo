@@ -126,13 +126,14 @@ def filter_dataset(dataset, telescopes=[], number_of_observations=[], domain={})
 
     # filter telescopes
     filtered_dataset = dataset[dataset.type.isin(telescopes)]
-    # filter number of observatoins
-    for telescope, observations in zip(telescopes, number_of_observations):
-        filtered_events = filtered_dataset[filtered_dataset.type == telescope]\
-                            .groupby("event_unique_id")\
-                            .filter(lambda g: g.event_id.count() >= observations)\
-                            .event_unique_id.unique()
-        filtered_dataset = filtered_dataset[filtered_dataset.event_unique_id.isin(filtered_events)]
+    # # filter number of observatoins
+    # FIXME: 
+    # for telescope, observations in zip(telescopes, number_of_observations):
+    #     filtered_events = filtered_dataset[filtered_dataset.type == telescope]\
+    #                         .groupby("event_unique_id")\
+    #                         .filter(lambda g: len(g) >= observations)\
+    #                         .event_unique_id.unique()
+    #     filtered_dataset = filtered_dataset[filtered_dataset.event_unique_id.isin(filtered_events)]
     # filter domain
     selection = np.ones((len(filtered_dataset),), dtype=bool)
     for target, (vmin, vmax) in domain.items():
@@ -417,7 +418,7 @@ def targets_to_matrix(targets_values,
                       target_names=["alt", "az", "log10_mc_energy"], 
                       target_mode="probability_map",
                       target_mode_config={"target_shapes": (81, 81, 81),
-                                          "target_domains": [(1.04, 1.39), (-0.52, 0.52), (-1.74, 2.44)],
+                                          "target_domains": [(1.04, 1.39), (-0.52, 0.52), (-2.351, 2.47)],
                                           "target_resolutions": (0.034999999999, 0.10400000000000001, 0.418),
                                           "target_sigmas": (0.02, 0.02, 0.02)}):
     if target_mode == "lineal":

@@ -17,7 +17,7 @@ from tensorflow.keras.layers import (
     Dense, Flatten, Concatenate, Reshape,
     Activation, BatchNormalization, Dropout
 )
-
+from . import CUSTOM_OBJECTS
 from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
 
@@ -269,45 +269,65 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
 
     model_name = f"Umonna_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
-    
     return model
 
 class Umonna(ModelAssembler):
-    def __init__(self, sst1m_model_path=None, mst_model_path=None, lst_model_path=None, targets=[], output_shape=(),
-                 assembler_mode="normalized_product", point_estimation_mode="expected_value"):
-        super().__init__(sst1m_model_path=sst1m_model_path, mst_model_path=mst_model_path, lst_model_path=lst_model_path, targets=targets, output_shape=output_shape)
-        
-        if assembler_mode not in ["normalized_product", "wasserstein_barycenter"]:
+    def __init__(self, sst1m_model_or_path=None, mst_model_or_path=None, lst_model_or_path=None,
+                 targets=[], target_domains=tuple(), target_resolutions=tuple(), target_shapes=(),
+                 assembler_mode="normalized_product", point_estimation_mode="expected_value", custom_objects=CUSTOM_OBJECTS):
+        super().__init__(sst1m_model_or_path=sst1m_model_or_path, mst_model_or_path=mst_model_or_path, lst_model_or_path=lst_model_or_path,
+                         targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=custom_objects)
+        if assembler_mode not in ["normalized_product"]:
             raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
         self.assemble_mode = assembler_mode
         
-        if point_estimation_mode not in ["expected_value", "argmax"]:
+        if point_estimation_mode not in ["expected_value"]:
             raise ValueError(f"Invalid point_estimation_mode: {point_estimation_mode}")
         self.point_estimation_mode = point_estimation_mode
+        self.target_resolutions = target_resolutions
 
     def point_estimation(self, y_predictions):
         if self.point_estimation_mode == "expected_value":
             y_point_estimations = self.expected_value(y_predictions)
-        elif self.point_estimation_mode == "argmax":
-            y_point_estimations = self.argmax(y_predictions)
+        target_domains_arr = np.array(self.target_domains)
+        target_resolutions_arr = np.array(self.target_resolutions)
+        y_point_estimations = (y_point_estimations*target_resolutions_arr) + target_domains_arr[:,0]
         return y_point_estimations
 
     def expected_value(self, y_predictions):
-        raise NotImplementedError
+        y_point_estimations = []
+        if len(self.targets) == 1:
+            indexes = np.arange(self.target_shapes[0])
+            for y_i in y_predictions:
+                pos_0 = np.dot(y_i, indexes)
+                y_point_estimations.append((pos_0, ))
+        elif len(self.targets) == 2:
+            indexes_0 = np.arange(self.target_shapes[0])
+            indexes_1 = np.arange(self.target_shapes[1])
+            for y_i in y_predictions:
+                pos_0 = np.dot(y_i.sum(axis=1), indexes_0)
+                pos_1 = np.dot(y_i.sum(axis=0), indexes_1)
+                y_point_estimations.append((pos_0, pos_1))
+        elif len(self.targets) == 3:
+            indexes_0 = np.arange(self.target_shapes[0])
+            indexes_1 = np.arange(self.target_shapes[1])
+            indexes_2 = np.arange(self.target_shapes[2])
+            for y_i in y_predictions:
+                pos_0 = np.dot(y_i.sum(axis=(1,2)), indexes_0)
+                pos_1 = np.dot(y_i.sum(axis=(0,2)), indexes_1)
+                pos_2 = np.dot(y_i.sum(axis=(0,1)), indexes_2)
+                y_point_estimations.append((pos_0, pos_1, pos_2))
+        return np.array(y_point_estimations)
 
-    def argmax(self, y_predictions):
-        raise NotImplementedError
 
     def assemble(self, y_i_by_telescope):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
         if self.assemble_mode == "normalized_product":
             yi_assembled = self.normalized_product(y_i_all)
-        elif self.assemble_mode == "wasserstein_barycenter":
-            yi_assembled = self.wasserstein_barycenter(y_i_all)
         return yi_assembled
         
     def normalized_product(self, y_i):
-        raise NotImplementedError
-
-    def wasserstein_barycenter(self, y_i):
-        raise NotImplementedError
+        epsilon = 1e-16
+        Y_i = np.exp(np.sum(np.log(y_i+epsilon), axis=0))
+        Y_i /= Y_i.sum()
+        return Y_i

@@ -15,6 +15,7 @@ CUSTOM_OBJECTS = {
     "mse_loss": mse_loss,
     "mean_distance_loss": mean_distance_loss,
     "crossentropy_loss": crossentropy_loss,
+    "loss": crossentropy_loss(), #dummy loss
     # LAYERS
     "HexConvLayer": HexConvLayer,
 }

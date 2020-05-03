@@ -7,33 +7,57 @@ Base models interface for create new multiobservers regresors.
 from . import CUSTOM_OBJECTS
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import Sequence
+from tensorflow.keras.models import Model
 from tqdm import tqdm
 from sklearn.metrics import r2_score
 import numpy as np
 
 class ModelAssembler():
-    def __init__(self, sst1m_model_path=None, mst_model_path=None, lst_model_path=None,
-                    targets=[], output_shape=()):
-        
+    def __init__(self, sst1m_model_or_path=None, mst_model_or_path=None, lst_model_or_path=None,
+                    targets=[], target_domains={}, target_shapes=(), custom_objects=CUSTOM_OBJECTS):
+        assert not ((sst1m_model_or_path is None) and (mst_model_or_path is None) and (lst_model_or_path is None)), "No models given" 
         self.models = {}
         self.telescopes = []
-        self.sst1m_model_path = sst1m_model_path
-        if self.sst1m_model_path is not None:
-            self.models["SST1M_DigiCam"] = load_model(self.sst1m_model_path, custom_objects=CUSTOM_OBJECTS)
+
+        # LOAD SST1M_DigiCam Model
+        if sst1m_model_or_path is not None:
             self.telescopes.append("SST1M_DigiCam")
-            
-        self.mst_model_path = mst_model_path
-        if self.mst_model_path is not None:
-            self.models["MST_FlashCam"] = load_model(self.mst_model_path, custom_objects=CUSTOM_OBJECTS)
+            if isinstance(sst1m_model_or_path, str):
+                self.sst1m_model_path = sst1m_model_or_path
+                self.models["SST1M_DigiCam"] = load_model(self.sst1m_model_path, custom_objects=custom_objects)
+            elif isinstance(sst1m_model_or_path, Model):
+                self.sst1m_model_path = None
+                self.models["SST1M_DigiCam"] = sst1m_model_or_path
+        else:
+            self.sst1m_model_path = None
+
+        # LOAD MST_FlashCam Model
+        if mst_model_or_path is not None:
             self.telescopes.append("MST_FlashCam")
-        
-        self.lst_model_path = lst_model_path
-        if self.lst_model_path is not None:
-            self.__models["LST_LSTCam"] = load_model(self.lst_model_path, custom_objects=CUSTOM_OBJECTS)
+            if isinstance(mst_model_or_path, str):
+                self.mst_model_path = mst_model_or_path
+                self.models["MST_FlashCam"] = load_model(self.mst_model_path, custom_objects=custom_objects)
+            elif isinstance(mst_model_or_path, Model):
+                self.mst_model_path = None
+                self.models["MST_FlashCam"] = mst_model_or_path
+        else:
+            self.mst_model_path = None
+
+        # LOAD LST_LSTCam Model
+        if lst_model_or_path is not None:
             self.telescopes.append("LST_LSTCam")
+            if isinstance(lst_model_or_path, str):
+                self.lst_model_path = lst_model_or_path
+                self.models["LST_LSTCam"] = load_model(self.lst_model_path, custom_objects=custom_objects)
+            elif isinstance(lst_model_or_path, Model):
+                self.lst_model_path = None
+                self.models["LST_LSTCam"] = lst_model_or_path
+        else:
+            self.lst_model_path = None
 
         self.targets = targets
-        self.output_shape = output_shape
+        self.target_domains = target_domains
+        self.target_shapes = target_shapes
 
     def predict(self, x, **kwargs):
         y_predictions = []
