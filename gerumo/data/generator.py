@@ -140,6 +140,7 @@ class AssemblerGenerator(keras.utils.Sequence):
                  target_mode_config,
                  preprocess_input_pipes={},
                  preprocess_output_pipes={},
+                 include_event_id=False,
                  shuffle=False):
 
         if isinstance(telescopes, str):
@@ -170,6 +171,7 @@ class AssemblerGenerator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.size = len(self.dataset)
         self.shuffle = shuffle
+        self.include_event_id = include_event_id
 
         self.on_epoch_end()
 
@@ -231,6 +233,9 @@ class AssemblerGenerator(keras.utils.Sequence):
                 event_by_telescope[telescope_type] = [ 
                     event_images_by_telescope, event_telescopes_features_by_telescope
                 ]
+
+            if self.include_event_id:
+                event_by_telescope["event_id"] = event
 
             X.append(event_by_telescope)
 
