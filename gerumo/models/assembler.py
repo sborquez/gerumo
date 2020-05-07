@@ -144,11 +144,15 @@ class ModelAssembler():
         y_true = np.array(y_true_points)
 
         # Calculate R2 score
-        if len(self.targets) > 1:
-            score = r2_score(y_true, y_pred, multioutput="raw_values")
-        else:
-            score = r2_score(y_true, y_pred)
-
+        # FIX: nan or infinite values
+        try:
+            if len(self.targets) > 1:
+                score = r2_score(y_true, y_pred, multioutput="raw_values")
+            else:
+                score = [r2_score(y_true, y_pred)]
+        except:
+            score = None
+            
         if return_predictions:
             # To dataframe
             df_data = {"event_id": events_ids}

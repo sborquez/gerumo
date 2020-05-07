@@ -46,7 +46,8 @@ class HexConvLayer(Layer):
         # Infer shape in running time
         else:
             self.reshape = None
-
+    
+    #@tf.autograph.experimental.do_not_convert
     def call(self, inputs):
         input_left = self.left_split(inputs)
         input_right = self.right_split(inputs)
