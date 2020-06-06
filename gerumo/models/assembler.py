@@ -100,6 +100,7 @@ class ModelAssembler():
             y_predictions = self.predict_point(self, x, **kwargs)
 
         elif isinstance(x, Sequence):
+            raise NotImplementedError("Deprecated by new generator")
             # Evaluation data
             events_ids    = []
             y_true_points = []
