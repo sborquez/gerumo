@@ -18,4 +18,4 @@ from .metrics import (\
     show_regression_identity, show_residual_error, show_residual_error_distribution
 )
 
-from .data import show_input_sample, show_target_sample
+from .dataset import show_input_sample, show_target_sample
