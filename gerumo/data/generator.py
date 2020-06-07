@@ -214,7 +214,7 @@ class AssemblerGenerator(keras.utils.Sequence):
     def __len__(self):
         'Denotes the number of batches per epoch'
         if 0 < len(self.dataset) < self.batch_size:
-            return 1:
+            return 1
         else:
             return int(np.floor(len(self.dataset) / self.batch_size))
 
