@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -q gpuk
-#PBS -N train_lst
+#PBS -N train_lst_all_e
 #PBS -l walltime=168:00:00
 
 # ----------------MÃ³dulos-----------------------------
@@ -13,6 +13,9 @@ echo "Running train_model_lst.sh"
 echo ""
  
 cd /user/s/sborquez/gerumo/train
-#python train_model.py --config ./config/umonna_lst_hpc.json
-python train_model.py --config ./config/umonna_lst_hpc_3d.json
-#python train_model.py --config ./config/umonna_lst_hpc_onecell.json
+
+#python train_model.py --config ./config/hpc/energy/umonna_lst_hpc_onecell.json
+python train_model.py --config ./config/hpc/energy/umonna_lst_hpc_all.json
+#python train_model.py --config ./config/hpc/alt_az/umonna_lst_hpc_onecell.json
+#python train_model.py --config ./config/hpc/alt_az_energy/umonna_lst_hpc_onecell.json
+#python train_model.py --config ./config/hpc/alt_az/umonna_lst_hpc_all.json
