@@ -59,11 +59,26 @@ class ModelAssembler():
         self.targets = targets
         self.target_domains = target_domains
         self.target_shapes = target_shapes
+        self.mode = ModelAssembler.select_mode(targets)
 
-    def predict(self, x, **kwargs):
+    @staticmethod
+    def select_mode(targets):
+        if len(targets) == 1 and targets[0] in ["mc_energy", "log10_mc_energy"]:
+            return "energy reconstruction"
+
+        elif len(targets) == 2 and sorted(targets) == sorted(["alt", "az"]):
+            return "angular reconstruction"
+
+        elif len(targets) == 3 and\
+            (sorted(targets) == sorted(["alt", "az", "mc_energy"]) \
+                or sorted(targets) == sorted(["alt", "az", "log10_mc_energy"])):
+            return "complete reconstruction"
+
+    def predict(self, x, pbar=None, **kwargs):
         y_predictions = []
-        if isinstance(x, list):
-            for x_i in tqdm(x):
+        if isinstance(x, list) or isinstance(x, np.ndarray):
+            iterator = x if pbar is None else pbar(x)
+            for x_i in iterator:
                 y_i_by_telescope = {}
                 for telescope in self.telescopes:
                     x_i_telescope = x_i[telescope]
@@ -75,7 +90,8 @@ class ModelAssembler():
                 y_predictions.append(y_i_assembled)
 
         elif isinstance(x, Sequence):
-            for x_batch_j, _ in x:
+            iterator = x if pbar is None else pbar(x)
+            for x_batch_j, _ in iterator:
                 for x_i in x_batch_j:
                     y_i_by_telescope = {}
                     for telescope in self.telescopes:
@@ -93,78 +109,69 @@ class ModelAssembler():
         y_predictions = self.predict(x, **kwargs)
         return self.point_estimation(y_predictions)
 
-    def evaluate(self, x, y_true_points=None, return_predictions=False, **kwargs):
+    def evaluate(self, x, y_true_points=None, return_event_predictions=None, pbar=None, **kwargs):
+        """
+        evaluate predict points from a generator, return a point predictions table.
+        """
+
         if isinstance(x, list):
-            raise y_true_points is None
-            events_ids = [x_i["event_id"] if "event_id" in x_i else i for i, x_i in enumerate(x)]
-            y_predictions = self.predict_point(self, x, **kwargs)
+            raise NotImplementedError
+            # raise y_true_points is None
+            # events_ids = [x_i["event_id"] if "event_id" in x_i else i for i, x_i in enumerate(x)]
+            # y_predictions = self.predict_point(self, x, **kwargs)
 
         elif isinstance(x, Sequence):
-            raise NotImplementedError("Deprecated by new generator")
             # Evaluation data
-            events_ids    = []
             y_true_points = []
+            event_ids = []
+            true_energy = []
             y_predictions = []
-
+            y_predictions_points = []
+            
             # Save original generator parameters
             original_target_mode = x.target_mode
             original_event_flag = x.include_event_id
-
+            original_true_energy_flag = x.include_true_energy
+            
             # Set evaluation parameters to generator
             x.target_mode = "lineal"
             x.include_event_id = True
+            x.include_true_energy = True
 
             # Iterate for each batch
-            for x_batch_j, y_batch_j in x:
-                # Iterate for each event in batch 
-                # this include multiple observations for an event
-                for x_i, y_i_true in zip(x_batch_j, y_batch_j):      
-                    # Predict for each telescope type
-                    y_i_by_telescope = {}
-                    for telescope in self.telescopes:
-                        x_i_telescope = x_i[telescope]
-                        # check if events has at least one observation with this telescope type
-                        if len(x_i_telescope[0]) > 0:
-                            model_telescope = self.models[telescope]
-                            y_i_by_telescope[telescope] = model_telescope.predict(x_i_telescope, verbose=0, **kwargs)
-                    # Assemble multiples predictions
-                    y_i_assembled = self.assemble(y_i_by_telescope)
-                    # Save event_id, target and prediction values     
-                    events_ids.append(x_i["event_id"])
-                    y_true_points.append(y_i_true)
-                    y_predictions.append(y_i_assembled)
+            iterator = x if pbar is None else pbar(x)
+            for x_batch_j, y_batch_j, meta in iterator:
+                # Model predictions 
+                predictions_batch_j = self.predict(x_batch_j)
+                point_predictions_batch_j = self.point_estimation(predictions_batch_j)
 
-            # Model predictions to points
-            y_predictions = self.point_estimation(y_predictions)
+                # Update records
+                y_true_points.extend(y_batch_j)
+                event_ids.extend(meta["event_id"])
+                true_energy.extend(meta["true_energy"])
+
+                if return_event_predictions is not None:
+                    for prediction_i, prediction_point_i, target_point_i, event_i in zip(predictions_batch_j, point_predictions_batch_j, y_batch_j, meta["event_id"]):
+                        if event_i in return_event_predictions:
+                                y_predictions.append((prediction_i, prediction_point_i, target_point_i, event_i))
+                y_predictions_points.extend(point_predictions_batch_j)
             
             # Set original generator parameters
             x.target_mode = original_target_mode
             x.include_event_id = original_event_flag
+            x.include_true_energy = original_true_energy_flag
         
-        y_pred = np.array(y_predictions)
-        y_true = np.array(y_true_points)
+        results = {
+            "predictions": np.array(y_predictions_points), 
+            "targets": np.array(y_true_points), 
+            "true_energy": np.array(true_energy), 
+            "event_id": np.array(event_ids)
+        }
 
-        # Calculate R2 score
-        # FIX: nan or infinite values
-        try:
-            if len(self.targets) > 1:
-                score = r2_score(y_true, y_pred, multioutput="raw_values")
-            else:
-                score = [r2_score(y_true, y_pred)]
-        except:
-            score = None
-            
-        if return_predictions:
-            # To dataframe
-            df_data = {"event_id": events_ids}
-            for i, target in enumerate(self.targets):
-                df_data[f"true_{target}"] = y_true[:,i]
-                df_data[f"pred_{target}"] = y_pred[:,i]
-            df = pd.DataFrame(df_data)
-            df = df.set_index("event_id")
-            return score, df
+        if return_event_predictions is not None:
+            return results, y_predictions
         else:
-            return score
+            return results
 
     def point_estimation(self, y_predictions):
         raise NotImplementedError

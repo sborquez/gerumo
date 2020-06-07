@@ -122,6 +122,8 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         """
         meta : {
             "event_id"    : event id, for identify each plot
+            "telescope_id": telescope id, for identify each telescope
+            "telescope_type": for identify each type
             "true_energy" : value of mc_energy in TeV for ploting angular resolution
         }
         """
@@ -129,8 +131,9 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         batch_dataset = self.dataset.iloc[list_indexes]
 
         if self.include_event_id:
+            meta["telescope_id"] = batch_dataset.telescope_id.to_numpy()
             meta["event_id"] = batch_dataset.event_unique_id.to_numpy()
-
+            meta["type"]    = batch_dataset["type"].to_numpy()
         if self.include_true_energy:
             meta["true_energy"] = batch_dataset.mc_energy.to_numpy()
 
@@ -210,7 +213,10 @@ class AssemblerGenerator(keras.utils.Sequence):
 
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.dataset) / self.batch_size))
+        if 0 < len(self.dataset) < self.batch_size:
+            return 1:
+        else:
+            return int(np.floor(len(self.dataset) / self.batch_size))
 
     def __getitem__(self, index):
         'Generate one batch of data'

@@ -1,5 +1,5 @@
 {
-    "model_name": "UMONNA_V2_ENERGY",
+    "model_name": "UMONNA_V2_ENERGY_ALL",
     "assembler_constructor": "umonna",
     "output_folder" : "/content/drive/Shared drives/umonna/data/results",
     "evaluation": {
@@ -32,9 +32,7 @@
     "test_events_csv"    : "/content/drive/Shared drives/umonna/data/data/test/events.csv",
     "test_telescope_csv" : "/content/drive/Shared drives/umonna/data/data/test/telescopes.csv",
     "telescopes" : {
-        "LST_LSTCam": "/content/drive/Shared drives/umonna/data/models/energy/small/UMONNA_UNIT_LST_V2_ENERGY_LST_LSTCam_crossentropy_e010_3.1496.h5",
-        "MST_FlashCam": "/content/drive/Shared drives/umonna/data/models/energy/small/UMONNA_UNIT_MST_V2_ENERGY_MST_FlashCam_crossentropy_e015_3.4590.h5",
-        "SST1M_DigiCam": "/content/drive/Shared drives/umonna/data/models/energy/small/UMONNA_UNIT_SST_V2_ENERGY_SST1M_DigiCam_crossentropy_e004_3.3022.h5"
+        "LST_LSTCam": "/content/drive/Shared drives/umonna/data/models/energy/all/UMONNA_UNIT_LST_V2_ENERGY_ALL_LST_LSTCam_crossentropy_e001_3.2452.h5"
     },
     "min_observations" : [0, 0, 0],
     "input_image_mode" : "simple-shift",

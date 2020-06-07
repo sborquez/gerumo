@@ -14,7 +14,7 @@ from matplotlib.colors import LogNorm
 import seaborn as sns
 from scipy.stats import norm
 import numpy as np
-from ctaplot import *
+import ctaplot
 
 
 """
@@ -151,7 +151,7 @@ def show_prediction_3d(prediction, prediction_point, targets, target_domains,
     raise NotImplementedError
 
 def plot_assembler_prediction(prediction, prediction_point, targets, target_domains,
-                              target_resolutions,  event_id=None, targets_values=None,
+                              target_resolutions,  title=None, targets_values=None,
                               save_to=None):
     """
     Display the assembled prediction of a event, the probability and the predicted point.
@@ -164,8 +164,10 @@ def plot_assembler_prediction(prediction, prediction_point, targets, target_doma
     ax = plt.gca()
     
     # Style
-    if event_id is not None:
-        title = f"Prediction for event {event_id}"
+    if isinstance(title, str):
+        title = f"Prediction for event {title}"
+    elif isinstance(title, tuple):
+        title = f"Prediction for event {title[0]}\ntelescope id {title[1]}"
     else:
         title = f"Prediction for a event"
     plt.title(title)
