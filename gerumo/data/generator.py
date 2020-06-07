@@ -25,6 +25,8 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
                  target_mode_config,
                  preprocess_input_pipes=[],
                  preprocess_output_pipes=[],
+                 include_event_id=False,
+                 include_true_energy=False,
                  shuffle=False):
 
         # Dataset with one telescope type
@@ -51,6 +53,8 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.size = len(self.dataset)
         self.shuffle = shuffle
+        self.include_event_id = include_event_id
+        self.include_true_energy = include_true_energy
 
         self.on_epoch_end()
 
@@ -65,7 +69,14 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
 
         # Generate data
         X, y = self.__data_generation(indexes)
-        return X, y
+
+        # This is for CTA evaluation metrics
+        if self.include_event_id or self.include_true_energy:
+            meta = self.__meta_generation(indexes)
+            return X, y, meta
+        
+        else:
+            return X, y
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
@@ -105,6 +116,26 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
 
         return X, y
 
+    def __meta_generation(self, list_indexes):
+        'Generates metadata of the batch samples'
+        # Initialization
+        """
+        meta : {
+            "event_id"    : event id, for identify each plot
+            "true_energy" : value of mc_energy in TeV for ploting angular resolution
+        }
+        """
+        meta = {}
+        batch_dataset = self.dataset.iloc[list_indexes]
+
+        if self.include_event_id:
+            meta["event_id"] = batch_dataset.event_unique_id.to_numpy()
+
+        if self.include_true_energy:
+            meta["true_energy"] = batch_dataset.mc_energy.to_numpy()
+
+        return meta
+
 
 class AssemblerGenerator(keras.utils.Sequence):
     """
@@ -140,6 +171,8 @@ class AssemblerGenerator(keras.utils.Sequence):
                  target_mode_config,
                  preprocess_input_pipes={},
                  preprocess_output_pipes={},
+                 include_event_id=False,
+                 include_true_energy=False,
                  shuffle=False):
 
         if isinstance(telescopes, str):
@@ -170,6 +203,8 @@ class AssemblerGenerator(keras.utils.Sequence):
         self.batch_size = batch_size
         self.size = len(self.dataset)
         self.shuffle = shuffle
+        self.include_event_id = include_event_id
+        self.include_true_energy = include_true_energy
 
         self.on_epoch_end()
 
@@ -184,7 +219,14 @@ class AssemblerGenerator(keras.utils.Sequence):
 
         # Generate data
         X, y = self.__data_generation(indexes)
-        return X, y
+        
+        # This is for CTA evaluation metrics
+        if self.include_event_id or self.include_true_energy:
+            meta = self.__meta_generation(indexes)
+            return X, y, meta
+        
+        else:
+            return X, y
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
@@ -211,6 +253,14 @@ class AssemblerGenerator(keras.utils.Sequence):
         # event_telescope_features_tel1_array : (n_samples, n_features)
         
         y : (n_events, *target_dim)
+
+        # optionals
+        meta : {
+            #optional
+            "mc_energy: [ ... ],
+            #optional
+            "events_id: [ ... ]
+        }
         """
         for event in batch_events:
             event_dataset = self.dataset.get_group(event).sort_values(by="type")
@@ -231,10 +281,10 @@ class AssemblerGenerator(keras.utils.Sequence):
                 event_by_telescope[telescope_type] = [ 
                     event_images_by_telescope, event_telescopes_features_by_telescope
                 ]
-
             X.append(event_by_telescope)
 
         if self.target_mode is not None:
+            # return the target of the first member of each grouped event
             events_targets = self.dataset.first()
             events_targets = events_targets[events_targets.index.isin(batch_events)][self.targets]
             y = targets_to_matrix(targets_values=events_targets.values, 
@@ -246,3 +296,25 @@ class AssemblerGenerator(keras.utils.Sequence):
             y = None
 
         return X, y
+
+    def __meta_generation(self, list_indexes):
+        'Generates metadata of the batch samples'
+        # Initialization
+        """
+        meta : {
+            "event_id"    : event id, for identify each plot
+            "true_energy" : value of mc_energy in TeV for ploting angular resolution
+        }
+        """
+                # Initialization
+        meta = {}
+        batch_events = self.events[list_indexes]
+
+        if self.include_event_id:
+            meta["event_id"] = batch_events
+
+        if self.include_true_energy:
+            grouped_mc_energy = self.dataset.mc_energy
+            meta["true_energy"] = np.array([grouped_mc_energy.get_group(event).iloc[0] for event in batch_events])
+
+        return meta

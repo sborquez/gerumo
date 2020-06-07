@@ -327,7 +327,9 @@ class Umonna(ModelAssembler):
         return yi_assembled
         
     def normalized_product(self, y_i):
-        epsilon = 1e-16
+        epsilon = 1e-20
         Y_i = np.exp(np.sum(np.log(y_i+epsilon), axis=0))
-        Y_i /= Y_i.sum()
+        Y_i_sum = Y_i.sum()
+        if Y_i_sum > 0:
+            Y_i /= Y_i.sum()            
         return Y_i

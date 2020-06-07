@@ -1,5 +1,5 @@
 """
-Data Visualizations
+Dataset Visualizations
 ======================
 
 Generate plot for display dataset, images and targets.
