@@ -14,6 +14,7 @@ from matplotlib.colors import LogNorm
 import seaborn as sns
 from scipy.stats import norm
 import numpy as np
+import pandas as pd
 import ctaplot
 
 
