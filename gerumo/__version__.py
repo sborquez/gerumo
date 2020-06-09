@@ -2,7 +2,7 @@
 __version__.py
 ~~~~~~~~~~~~~~
 
-Information about the current version of the py-package-template package.
+Information about the current version of the gerumo package.
 """
 
 __title__ = 'gerumo'

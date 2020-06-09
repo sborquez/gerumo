@@ -11,6 +11,8 @@ import numpy as np
 from . import load_cameras, cameras_to_images, targets_to_matrix
 
 
+__all__ = ['AssemblerUnitGenerator', 'AssemblerGenerator']
+
 class AssemblerUnitGenerator(keras.utils.Sequence):
     """
     AssemblerUnitGenerator

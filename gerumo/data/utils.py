@@ -5,6 +5,9 @@ Utilities functions
 
 from math import ceil
 
+
+__all__ = ['get_resolution', 'get_shape']
+
 def get_resolution(targets, targets_domain, targets_shape):
     """Return the targets resolution for each target given the targets shape"""
     targets_resolution = {}

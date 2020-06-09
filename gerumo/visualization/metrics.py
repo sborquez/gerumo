@@ -18,6 +18,14 @@ import pandas as pd
 import ctaplot
 
 
+__all__ = [
+    'plot_model_training_history', 
+    'plot_assembler_prediction', 'show_prediction_1d', 'show_prediction_2d', 'show_prediction_3d',
+    'plot_regression_evaluation', 'show_regression_identity', 'show_residual_error', 'show_residual_error_distribution',
+    'plot_energy_resolution_comparison', 'plot_error_and_energy_resolution', 'show_energy_resolution', 'show_absolute_error_energy', 
+    'plot_error_and_angular_resolution', 'plot_angular_resolution_comparison', 'show_angular_resolution', 'show_absolute_error_angular'
+]
+
 """
 Training Metrics
 ================
@@ -53,7 +61,7 @@ Regression Metrics
 """
 
 
-def label_formater(target, use_degrees=False, only_units=False):
+def _label_formater(target, use_degrees=False, only_units=False):
     units = {
         "az" : "[deg]" if use_degrees else "[rad]",
         "alt": "[deg]" if use_degrees else "[rad]",
@@ -101,7 +109,7 @@ def show_prediction_1d(prediction, prediction_point, targets, target_domains,
     # Style
     axis.set_facecolor('lightgrey')
     axis.set_xlim(target_domains[0])
-    axis.set_xlabel(label_formater(targets[0]))
+    axis.set_xlabel(_label_formater(targets[0]))
     axis.legend()
     return axis
 
@@ -139,8 +147,8 @@ def show_prediction_2d(prediction, prediction_point, targets, target_domains,
       axis.scatter(x=[targets_values[1]], y=[targets_values[0]], c="black",marker="o", 
                    label=f"target=({targets_values[0]:.4f}, {targets_values[1]:.4f})", alpha=0.9)
     # Style
-    axis.set_ylabel(label_formater(targets[0]))
-    axis.set_xlabel(label_formater(targets[1]))
+    axis.set_ylabel(_label_formater(targets[0]))
+    axis.set_xlabel(_label_formater(targets[1]))
     axis.legend()
     return axis
 
@@ -221,7 +229,7 @@ def show_regression_identity(prediction_points, targets_points, score, target, a
         axis.plot([vmin, vmax], [vmin, vmax], "w--", label="identity", linewidth=3)
 
     # Style
-    title = label_formater(target)
+    title = _label_formater(target)
     axis.set_title(f"Regression on {title}")
     axis.set_ylabel("True Values")
     axis.set_xlabel("Predicted Values")
@@ -271,7 +279,7 @@ def show_residual_error(prediction_points, targets_points, score, target, axis=N
     axis.plot([x_vmin, x_vmax], [0, 0], "r--")
 
     # Style
-    title = label_formater(target)
+    title = _label_formater(target)
     axis.set_title(f"Residual Error on {title}")
     axis.set_xlabel("Predicted Values")
     axis.set_ylabel("Residual Error")
@@ -302,7 +310,7 @@ def show_residual_error_distribution(prediction_points, targets_points, score, t
     weights = np.ones_like(residual_error)/len(residual_error)
 
     # Plot
-    unit = label_formater(target, only_units=True)
+    unit = _label_formater(target, only_units=True)
     legend = f"mean: {residual_error.mean():.4f} {unit}\nstd: {residual_error.std():.4f} {unit}"
     if vertical:
         axis.hist(residual_error, weights=weights, bins=40, range=(-1*lim, lim),
@@ -312,7 +320,7 @@ def show_residual_error_distribution(prediction_points, targets_points, score, t
                   label=legend)
 
     # Style
-    title = label_formater(target)
+    title = _label_formater(target)
     axis.set_title(f"Residual Error Distribution on {title}")
     if vertical:
         axis.set_ylabel("Residual Error")

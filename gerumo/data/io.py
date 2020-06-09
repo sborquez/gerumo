@@ -20,15 +20,22 @@ import numpy as np
 
 from . import TARGETS, TELESCOPES
 
+
+__all__ = [
+    'extract_data', 
+    'generate_dataset', 'load_dataset', 'save_dataset', 'split_dataset',
+    'load_camera', 'load_cameras'
+]
+
 # Table names and atributes
-events_table = "Events"
-array_info_table = "Array_Information"
-telescope_table = "Telescopes"
-telescopes_indices = [ f"{telescope_type}_indices" for telescope_type in TELESCOPES ]
-telescopes_multiplicity = [ f"{telescope_type}_multiplicity" for telescope_type in TELESCOPES ]
+_events_table = "Events"
+_array_info_table = "Array_Information"
+_telescope_table = "Telescopes"
+_telescopes_indices = [ f"{telescope_type}_indices" for telescope_type in TELESCOPES ]
+_telescopes_multiplicity = [ f"{telescope_type}_multiplicity" for telescope_type in TELESCOPES ]
 
 # CSV events data
-event_fieldnames = [
+_event_fieldnames = [
     'event_unique_id',  # hdf5 event identifier
     'event_id',         # Unique event identifier
     'source',           # hfd5 filename
@@ -42,7 +49,7 @@ event_fieldnames = [
 ]
 
 # CSV Telescope events data
-telescope_fieldnames = [
+_telescope_fieldnames = [
     'telescope_id',        # Unique telescope identifier
     'event_unique_id',     # hdf5 event identifier
     'type',                # Telescope type
@@ -73,7 +80,7 @@ def extract_data(hdf5_filepath):
     ## has 3 indices starting from 0, for each telescope type. 
     ## 'real_telescopes_id' translate events indices ('activation_telescope_id') to array ids ('telescope_id').
 
-    for telescope in hdf5_file.root[array_info_table]:
+    for telescope in hdf5_file.root[_array_info_table]:
         telescope_type = telescope["type"]
         telescope_type = telescope_type.decode("utf-8") if isinstance(telescope_type, bytes) else telescope_type
         telescope_id = telescope["id"]
@@ -91,7 +98,7 @@ def extract_data(hdf5_filepath):
 
     # add uuid to avoid duplicated event numbers 
     try:
-        for i, event in enumerate(hdf5_file.root[events_table]):
+        for i, event in enumerate(hdf5_file.root[_events_table]):
             # Event data
             event_unique_id = uuid.uuid4().hex[:20]
             event_data = dict(
@@ -110,7 +117,7 @@ def extract_data(hdf5_filepath):
 
             # Observations data
             ## For each telescope type
-            for telescope_type, telescope_indices, telescope_multiplicity in zip(TELESCOPES, telescopes_indices, telescopes_multiplicity):
+            for telescope_type, telescope_indices, telescope_multiplicity in zip(TELESCOPES, _telescopes_indices, _telescopes_multiplicity):
                 telescopes = event[telescope_indices]
                 # number of activated telescopes
                 multiplicity = event[telescope_multiplicity]
@@ -202,9 +209,9 @@ def generate_dataset(files_path=None, folder_path=None, output_folder=".", appen
     
     # csv writers
     telescope_writer = csv.DictWriter(telescope_info_csv, delimiter=";", 
-                                    fieldnames=telescope_fieldnames, lineterminator="\n")
+                                    fieldnames=_telescope_fieldnames, lineterminator="\n")
     events_writer = csv.DictWriter(events_info_csv, delimiter=';', 
-                                fieldnames=event_fieldnames, lineterminator="\n")
+                                fieldnames=_event_fieldnames, lineterminator="\n")
 
     if not append:
         events_writer.writeheader()
@@ -313,8 +320,8 @@ def save_dataset(dataset, output_folder, prefix=None):
         events.csv and telescope.csv path.
     """
 
-    event_drop = [field for field in telescope_fieldnames if field != 'event_unique_id']
-    telescope_drop = [field for field in event_fieldnames if field != 'event_unique_id']
+    event_drop = [field for field in _telescope_fieldnames if field != 'event_unique_id']
+    telescope_drop = [field for field in _event_fieldnames if field != 'event_unique_id']
 
     telescope_data = dataset.drop(columns=telescope_drop)
     event_data = dataset.drop(columns=event_drop)

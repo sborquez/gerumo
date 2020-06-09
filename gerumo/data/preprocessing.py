@@ -12,12 +12,19 @@ from scipy.stats import multivariate_normal
 from os import path
 from . import IMAGES_SIZE, INPUT_SHAPE, TELESCOPES, PIXELS_POSITION
 
+__all__ = [
+    'aggregate_dataset', 'filter_dataset',
+    'camera_to_image', 'cameras_to_images',
+    'targets_to_matrix'
+]
+
+
 """
 Utils Functions
 ===============
 """
 
-def __extract_pixel_positions(hdf5_file, output_folder):
+def _extract_pixel_positions(hdf5_file, output_folder):
     """Extract and save from file the information about pixel position.
     Extract and apply transformation  to pixel position of each telescope 
     type and for each camera_to_image 'mode'. Saves it to use them in the
@@ -149,7 +156,7 @@ Prepare input images, normalize and standarize values
 from images and features. 
 """
 
-def simple(charge, peakpos, telescope_type, mask):
+def _simple(charge, peakpos, telescope_type, mask):
     x, y = PIXELS_POSITION["simple"][telescope_type] #(x, y)
     image_size = IMAGES_SIZE[telescope_type]
     if mask:
@@ -163,7 +170,7 @@ def simple(charge, peakpos, telescope_type, mask):
         canvas[y, x, 2] = 1
     return canvas
 
-def simple_shift(charge, peakpos, telescope_type, mask):
+def _simple_shift(charge, peakpos, telescope_type, mask):
     x_left, x_right, y = PIXELS_POSITION["simple_shift"][telescope_type] #(x_l, x_r, y)
     image_size = IMAGES_SIZE[telescope_type]
     if mask:
@@ -180,10 +187,10 @@ def simple_shift(charge, peakpos, telescope_type, mask):
         canvas[1, y, x_right, 2] = 1
     return canvas
 
-def time_split(charge, peakpos, telescope_type, mask):
+def _time_split(charge, peakpos, telescope_type, mask):
     raise NotImplementedError
 
-def time_split_shift(charge, peakpos, telescope_type, mask):
+def _time_split_shift(charge, peakpos, telescope_type, mask):
     raise NotImplementedError
 
 def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True):
@@ -222,13 +229,13 @@ def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True):
         result_image
     """
     if mode == "simple":
-        result_image = simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask)
     elif mode == "simple-shift":
-        result_image = simple_shift(charge, peakpos, telescope_type, mask)
+        result_image = _simple_shift(charge, peakpos, telescope_type, mask)
     elif mode == "time-split":
-        result_image = simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask)
     elif mode == "time-split-shift":
-        result_image = simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask)
     else:
         raise ValueError(f"invalid 'mode': {mode}")
     return result_image

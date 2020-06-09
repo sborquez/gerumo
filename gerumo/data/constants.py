@@ -6,6 +6,14 @@ from os import path
 from astropy.units.cds import rad, deg, eV
 import numpy as np
 
+
+__all__ = [ 
+    'TELESCOPES', 'TELESCOPE_FEATURES', 
+    'TARGETS', 'TARGET_UNITS',
+    'IMAGES_SIZE', 'INPUT_SHAPE', 'PIXELS_POSITION'
+]
+
+
 # Telescopes types
 TELESCOPES = ["LST_LSTCam", "MST_FlashCam", "SST1M_DigiCam"]
 
