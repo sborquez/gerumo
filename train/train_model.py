@@ -118,8 +118,7 @@ def train_model(model_name, model_constructor, model_extra_params,
     target_shapes = target_mode_config["target_shapes"]
     model = model_constructor(telescope, input_image_mode, input_image_mask, 
                     input_img_shape, input_features_shape,
-                    targets, target_mode, 
-                    target_shapes=target_shapes, 
+                    targets, target_mode, target_shapes, 
                     **model_extra_params)
     # Debug
     if summary:
@@ -140,11 +139,13 @@ def train_model(model_name, model_constructor, model_extra_params,
         loss = mse_loss()
     elif loss == "distance":
         loss = mean_distance_loss(target_shapes)
+    elif loss == "negloglike":
+        loss = negloglike_loss(pdf_multivariate_normal, dimensions=len(targets))
     
     ## fit
     model.compile(
-        #optimizer=keras.optimizers.Adam(lr=learning_rate),
-        optimizer=keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.01, nesterov=True),
+        optimizer=keras.optimizers.Adam(lr=learning_rate),
+        #optimizer=keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.01, nesterov=True),
         loss=loss
     )
 
@@ -260,17 +261,24 @@ if __name__ == "__main__":
         target_mode = config["target_mode"]
         target_shapes = config["target_shapes"]
         target_domains = config["target_domains"]
-        target_resolutions = get_resolution(targets, target_domains, target_shapes)
+        if target_mode != 'lineal':
+            target_resolutions = get_resolution(targets, target_domains, target_shapes)
         
-        # Prepare Generator target_mode_config 
-        target_mode_config = {
-            "target_shapes":      tuple([target_shapes[target]      for target in targets]),
-            "target_domains":     tuple([target_domains[target]     for target in targets]),
-            "target_resolutions": tuple([target_resolutions[target] for target in targets])
-        }
-        if target_mode == "probability_map":
-            target_sigmas = config["target_sigmas"]
-            target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
+            # Prepare Generator target_mode_config 
+            target_mode_config = {
+                "target_shapes":      tuple([target_shapes[target]      for target in targets]),
+                "target_domains":     tuple([target_domains[target]     for target in targets]),
+                "target_resolutions": tuple([target_resolutions[target] for target in targets])
+            }
+            if target_mode == "probability_map":
+                target_sigmas = config["target_sigmas"]
+                target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
+        else:
+            target_mode_config = {
+                "target_domains":     tuple([target_domains[target]     for target in targets]),
+                "target_shapes":      tuple([np.inf      for target in targets]),
+            }
+            target_resolutions = None
 
         # Training Parameters
         batch_size = config["batch_size"]

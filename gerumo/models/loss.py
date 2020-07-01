@@ -58,10 +58,7 @@ def mean_distance_loss(shape):
         return c_inv * K.sum(K.pow(y_true_ * y_pred_, 2), axis=-1)
     return loss
 
-def wasserstein_loss():
-    """Return the Wasserstein loss function for multidimension probability map."""
-    raise NotImplementedError
-    def loss(y_true, y_pred):
-        """Wasserstein loss function."""
-        return 0
+def negloglike_loss(pdf, dimensions):
+    def loss(y_true, y_params_pred):
+        return -y_params_pred.log_prob(y_true)
     return loss
