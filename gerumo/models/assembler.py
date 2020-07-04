@@ -21,41 +21,14 @@ class ModelAssembler():
         self.telescopes = []
 
         # LOAD SST1M_DigiCam Model
-        if sst1m_model_or_path is not None:
-            self.telescopes.append("SST1M_DigiCam")
-            if isinstance(sst1m_model_or_path, str):
-                self.sst1m_model_path = sst1m_model_or_path
-                self.models["SST1M_DigiCam"] = load_model(self.sst1m_model_path, custom_objects=custom_objects)
-            elif isinstance(sst1m_model_or_path, Model):
-                self.sst1m_model_path = None
-                self.models["SST1M_DigiCam"] = sst1m_model_or_path
-        else:
-            self.sst1m_model_path = None
+        self.sst_model_path = self.load_model("SST1M_DigiCam", sst1m_model_or_path, custom_objects)
 
         # LOAD MST_FlashCam Model
-        if mst_model_or_path is not None:
-            self.telescopes.append("MST_FlashCam")
-            if isinstance(mst_model_or_path, str):
-                self.mst_model_path = mst_model_or_path
-                self.models["MST_FlashCam"] = load_model(self.mst_model_path, custom_objects=custom_objects)
-            elif isinstance(mst_model_or_path, Model):
-                self.mst_model_path = None
-                self.models["MST_FlashCam"] = mst_model_or_path
-        else:
-            self.mst_model_path = None
+        self.mst_model_path = self.load_model("MST_FlashCam", mst_model_or_path, custom_objects)
 
         # LOAD LST_LSTCam Model
-        if lst_model_or_path is not None:
-            self.telescopes.append("LST_LSTCam")
-            if isinstance(lst_model_or_path, str):
-                self.lst_model_path = lst_model_or_path
-                self.models["LST_LSTCam"] = load_model(self.lst_model_path, custom_objects=custom_objects)
-            elif isinstance(lst_model_or_path, Model):
-                self.lst_model_path = None
-                self.models["LST_LSTCam"] = lst_model_or_path
-        else:
-            self.lst_model_path = None
-
+        self.lst_model_path = self.load_model("LST_LSTCam", lst_model_or_path, custom_objects)
+       
         self.targets = targets
         self.target_domains = target_domains
         self.target_shapes = target_shapes
@@ -83,9 +56,8 @@ class ModelAssembler():
                 for telescope in self.telescopes:
                     x_i_telescope = x_i[telescope]
                     # check if events has at least one observation with this telescope type
-                    if len(x_i_telescope[0]) > 0: 
-                        model_telescope = self.models[telescope]
-                        y_i_by_telescope[telescope] = model_telescope.predict(x_i_telescope, verbose=0, **kwargs)
+                    if len(x_i_telescope[0]) > 0:
+                        y_i_by_telescope[telescope] = self.model_estimation(x_i_telescope, telescope, verbose=0, **kwargs)
                 y_i_assembled = self.assemble(y_i_by_telescope)
                 y_predictions.append(y_i_assembled)
 
@@ -98,12 +70,23 @@ class ModelAssembler():
                         x_i_telescope = x_i[telescope]
                         # check if events has at least one observation with this telescope type
                         if len(x_i_telescope[0]) > 0:
-                            model_telescope = self.models[telescope]
-                            y_i_by_telescope[telescope] = model_telescope.predict(x_i_telescope, verbose=0, **kwargs)
+                            y_i_by_telescope[telescope] = self.model_estimation(x_i_telescope, telescope, verbose=0, **kwargs)
                     y_i_assembled = self.assemble(y_i_by_telescope)
                     y_predictions.append(y_i_assembled)
-
         return np.array(y_predictions)
+
+    def load_model(self, telescope, model_or_path, custom_objects):
+        if model_or_path is not None:
+            self.telescopes.append(telescope)
+            if isinstance(model_or_path, str):
+                self.models[telescope] = load_model(model_or_path, custom_objects=custom_objects)
+                return model_or_path
+            elif isinstance(model_or_path, Model):
+                self.models[telescope] = model_or_path
+                return None
+        else:
+            return None
+
 
     def predict_point(self, x, **kwargs):
         y_predictions = self.predict(x, **kwargs)
@@ -173,10 +156,11 @@ class ModelAssembler():
         else:
             return results
 
+    def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
+        raise NotImplementedError
+
     def point_estimation(self, y_predictions):
         raise NotImplementedError
 
     def assemble(self, y_i_by_telescope):
         raise NotImplementedError
-
-

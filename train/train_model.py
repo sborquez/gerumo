@@ -140,7 +140,7 @@ def train_model(model_name, model_constructor, model_extra_params,
     elif loss == "distance":
         loss = mean_distance_loss(target_shapes)
     elif loss == "negloglike":
-        loss = negloglike_loss(pdf_multivariate_normal, dimensions=len(targets))
+        loss = negloglike_loss(dimensions=len(targets))
     
     ## fit
     model.compile(
@@ -302,4 +302,4 @@ if __name__ == "__main__":
         target_mode, targets, target_mode_config, 
         batch_size, epochs, loss, learning_rate, save_checkpoints, 
         save_plot, plot_only, summary 
-    )   
+    )

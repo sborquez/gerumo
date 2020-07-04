@@ -8,7 +8,7 @@ Custom models, meta-models, layers and loss funtions.
 
 
 from .loss import hellinger_loss, crossentropy_loss, mse_loss, mean_distance_loss, negloglike_loss
-from .layers import HexConvLayer, softmax
+from .layers import HexConvLayer, softmax, MultivariateNormalTriL
 
 CUSTOM_OBJECTS = {
     # LOSSES

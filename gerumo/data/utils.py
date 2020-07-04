@@ -25,3 +25,14 @@ def get_shape(targets, targets_domain, targets_resolution):
         resolution = targets_resolution[target]
         targets_shape[target]  = ceil((vmax -vmin) / resolution)
     return targets_resolution
+
+def describe_dataset(dataset):
+    files = dataset.source.nunique()
+    events = dataset.event_unique_id.nunique()
+    obs = len(dataset)
+    by_telescope = dataset.type.value_counts()
+    print('files', files)
+    print('events', events)
+    print('observations', obs)
+    print('obsevation by telescopes')
+    print(by_telescope)

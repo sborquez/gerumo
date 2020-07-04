@@ -33,6 +33,7 @@
     "test_telescope_csv" : "/content/drive/Shared drives/umonna/data/data/test/telescopes.csv",
     "telescopes" : {
         "LST_LSTCam": "/content/drive/Shared drives/umonna/data/models/energy/all/UMONNA_UNIT_LST_V2_ENERGY_ALL_LST_LSTCam_crossentropy_e011_2.9660.h5",
+        "MST_FlashCam": "/content/drive/Shared drives/umonna/data/models/energy/all/UMONNA_UNIT_MST_V2_ENERGY_ALL_MST_FlashCam_crossentropy_e002_3.6092.h5",
         "SST1M_DigiCam": "/content/drive/Shared drives/umonna/data/models/energy/all/UMONNA_UNIT_SST_V2_ENERGY_ALL_SST1M_DigiCam_crossentropy_e014_3.3196.h5"
     },
     "min_observations" : [0, 0, 0],

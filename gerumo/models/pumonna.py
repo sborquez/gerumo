@@ -8,6 +8,7 @@ with parametric distributions models
 
 import numpy as np
 import scipy as sp
+import scipy.stats as st
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.keras.models import Model
@@ -144,23 +145,44 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
 
 class ParametricUmonna(ModelAssembler):
     def __init__(self, sst1m_model_or_path=None, mst_model_or_path=None, lst_model_or_path=None,
-                 targets=[], target_domains=tuple(), target_resolutions=tuple(), target_shapes=(),
-                 assembler_mode="gaussian_barycenter_W2", point_estimation_mode="expected_value", custom_objects=CUSTOM_OBJECTS):
+                 targets=[], target_domains=tuple(), target_shapes=(),
+                 assembler_mode="normalized_product", point_estimation_mode="expected_value", custom_objects=CUSTOM_OBJECTS):
+        
+
+        # add tensorflow probability layers
+        copy_custom_objects = dict(custom_objects)
+        copy_custom_objects['MultivariateNormalTriL'] = ParametricUmonna.MultivariateNormalTriL_loader(len(targets))
+        
         super().__init__(sst1m_model_or_path=sst1m_model_or_path, mst_model_or_path=mst_model_or_path, lst_model_or_path=lst_model_or_path,
-                         targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=custom_objects)
-        if assembler_mode not in ["gaussian_barycenter_W2"]:
+                         targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=copy_custom_objects)
+        if assembler_mode not in ['normalized_product', "gaussian_barycenter_W2"]:
             raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
         self.assemble_mode = assembler_mode
         
         if point_estimation_mode not in ["expected_value"]:
             raise ValueError(f"Invalid point_estimation_mode: {point_estimation_mode}")
         self.point_estimation_mode = point_estimation_mode
-        self.target_resolutions = target_resolutions
         self.barycenter_fixpoint_iterations = 25
+        self.target_resolutions = None
+
+    @staticmethod
+    def MultivariateNormalTriL_loader(event_size):
+        """
+        helper function to loading model from checkpoint 
+        """
+        def load_MultivariateNormalTriL(name, trainable, dtype, function, function_type, module, output_shape, output_shape_type, output_shape_module, arguments, make_distribution_fn, convert_to_tensor_fn):
+            return tfp.layers.MultivariateNormalTriL(event_size, name=name, trainable=trainable, dtype=dtype, convert_to_tensor_fn=convert_to_tensor_fn)
+        return load_MultivariateNormalTriL
     
     def model_estimation(self, x_i_telescope, telescope, verbose, **kwargs):
         model_telescope = self.models[telescope]
-        return model_telescope(x_i_telescope)
+        y_predictions_batch = model_telescope(x_i_telescope)
+        
+        #split batch in individuals distributions
+        locs = y_predictions_batch.loc.numpy().squeeze(axis=(1,2))
+        scales = y_predictions_batch.scale.to_dense().numpy().squeeze(axis=(1,2))
+        y_predictions = [tfp.distributions.MultivariateNormalTriL(loc, scale) for loc, scale in zip(locs, scales)]
+        return y_predictions
 
     def point_estimation(self, y_predictions):
         if self.point_estimation_mode == "expected_value":
@@ -168,16 +190,26 @@ class ParametricUmonna(ModelAssembler):
         return y_point_estimations
 
     def expected_value(self, y_predictions):
-        y_mus =  y_predictions.loc
-        return y_mus
+        if isinstance(y_predictions[0], st.rv_continuous):
+            y_mus = np.array([y_i.mean() for y_i in y_predictions])
+            return y_mus
+        else:
+            y_mus = np.array([y_i.mean() for y_i in y_predictions])
+            return y_mus
 
     def assemble(self, y_i_by_telescope):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
         if self.assemble_mode == "gaussian_barycenter_W2":
             yi_assembled = self.gaussian_barycenter_W2(y_i_all)
+        elif self.assemble_mode == "normalized_product":
+            yi_assembled = self.normalized_product(y_i_all)
         return yi_assembled
-        
+
+    def normalized_product(self, y_i):
+        return normalized_product_gen(y_i, self.target_domains)
+
     def gaussian_barycenter_W2(self, y_i):
+        raise NotImplementedError
         return None
         # Parameters
         n = len(y_i)
@@ -195,3 +227,35 @@ class ParametricUmonna(ModelAssembler):
         barycenter_mu = mus.mean(axis=0, keepdims=True)
         compressed = np.vstack((barycenter_mu, barycenter_sigma))
         return compressed
+
+class normalized_product_gen(st.rv_continuous):
+    "Product of Gaussian distributions"
+    def __init__(self, distributions, integration_domain=[[-5,5],[-5,5]], **kwargs):
+        super().__init__(**kwargs)    
+        self.distributions = distributions
+        self.integration_domain = integration_domain
+        self.dim = distributions[0].event_shape[0]
+        if self.dim == 1:
+            xmin, xmax = integration_domain[0]
+            self.domain = np.arange(xmin, xmax, .05)
+        elif self.dim == 2:
+            xmin, xmax = integration_domain[0]
+            ymin, ymax = integration_domain[1]
+            self.domain = np.mgrid[xmin:xmax:(xmax-xmin)/10., ymin:ymax:(ymax-ymin)/10.]
+            #self.norm_const = np.sum(self._pdf(np.dstack((self.domain[0], self.domain[1]))))
+        elif self.dim == 3:
+            raise NotImplementedError
+
+    def _pdf(self, x):
+        return np.prod([Ni.prob(x) for Ni in self.distributions], axis=0)
+    
+    def prob(self, x):
+        return self._pdf(x)
+    
+    def mean(self):
+        if self.dim == 2:
+            pos = np.dstack((self.domain[0], self.domain[1]))
+        else:
+            raise NotImplementedError
+        prob = self.prob(pos)
+        return pos[np.unravel_index(np.argmax(prob, axis=None), prob.shape)]

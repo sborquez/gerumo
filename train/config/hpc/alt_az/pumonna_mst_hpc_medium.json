@@ -1,0 +1,39 @@
+{
+    "model_name": "PUMONNA_UNIT_MST_ML",
+    "model_constructor": "pumonna_unit",
+    "model_extra_params": {
+        "latent_variables": 600
+    },
+    "save_plot" : false,
+    "plot_only" : false,
+    "summary" : false,
+    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
+    "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_train",
+    "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_train",
+    "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_test",
+    "train_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/medium/train_events.csv",
+    "train_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/medium/train_telescopes.csv", 
+    "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/medium/val_events.csv",
+    "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/medium/val_telescopes.csv",
+    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/test/small_events.csv",
+    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/test/small_telescopes.csv",
+    "telescope" : "MST_FlashCam",
+    "min_observations" : 1,
+    "input_image_mode" : "simple-shift",
+    "input_image_mask" : true,
+    "input_features" : ["x", "y"],
+    "targets" : ["alt", "az"],
+    "target_mode" : "lineal",
+    "target_shapes" : null,
+    "target_domains" : {
+        "alt": [1.05, 1.382], 
+        "az": [-0.52, 0.52], 
+        "log10_mc_energy": [-2.351, 2.47]
+    },
+    "target_sigmas" : null,
+    "batch_size" : 64,
+    "epochs" : 30,
+    "loss" : "negloglike",
+    "learning_rate" : 1e-3,
+    "save_checkpoints" : true
+}

@@ -35,7 +35,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
     preprocess_output_pipes = []
 
     # Generators
-    batch_size = 64
+    batch_size = 16
     telescope_types = [t for t in telescopes.keys() if telescopes[t] is not None]
     
     # Test generators
@@ -63,7 +63,9 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
     mst = telescopes.get("MST_FlashCam", None)
     lst = telescopes.get("LST_LSTCam", None)
 
-    assembler = assembler_constructor(
+
+    if target_mode_config["target_resolutions"] is not None:
+        assembler = assembler_constructor(
                     sst1m_model_or_path=sst,
                     mst_model_or_path=mst,
                     lst_model_or_path=lst,
@@ -73,7 +75,18 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
                     target_resolutions=target_mode_config["target_resolutions"],
                     assembler_mode="normalized_product",
                     point_estimation_mode="expected_value"
-                )
+        )
+    else:
+        assembler = assembler_constructor(
+                    sst1m_model_or_path=sst,
+                    mst_model_or_path=mst,
+                    lst_model_or_path=lst,
+                    targets=targets, 
+                    target_shapes=target_mode_config["target_shapes"],
+                    target_domains=target_mode_config["target_domains"],
+                    assembler_mode="normalized_product",
+                    point_estimation_mode="expected_value"
+        )
     mode = assembler.mode
     models_results = {}
 
@@ -125,7 +138,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
             targets_values.extend(t)
 
             # Predictions
-            p = model.predict(x)
+            p = assembler.model_estimation(x, telescope_i, 0)
             p_points = assembler.point_estimation(p)
             predictions_points.extend(p_points)
 
@@ -147,7 +160,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
                     os.makedirs(plot_folder, exist_ok = True) 
                     save_path = path.join(plot_folder, f"{event_id}_{telescope_id}.png")
                     
-                    plot_assembler_prediction(prediction, prediction_point, targets, 
+                    plot_prediction(prediction, prediction_point, targets, 
                                             assembler.target_domains, assembler.target_resolutions, 
                                             (event_id, telescope_id),
                                             target, save_to=save_path)
@@ -247,7 +260,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
         os.makedirs(plot_folder, exist_ok = True) 
         for prediction, prediction_point, target_point, event_id in zip(predictions, predictions_points, targets_values, event_ids):
             save_path = path.join(plot_folder, f"{event_id}.png")
-            plot_assembler_prediction(prediction, prediction_point, targets, 
+            plot_prediction(prediction, prediction_point, targets, 
                                     assembler.target_domains, assembler.target_resolution, 
                                     event_id, target_point, save_to=save_path)
 
@@ -325,20 +338,27 @@ if __name__ == "__main__":
     input_image_mask = config["input_image_mask"]
     input_features = config["input_features"]
     targets = config["targets"]
-    target_mode = "lineal"
+    target_mode = "lineal" if config["assembler_constructor"] != 'umonna' else config['target_mode']
     target_shapes = config["target_shapes"]
     target_domains = config["target_domains"]
-    target_resolutions = get_resolution(targets, target_domains, target_shapes)
+    if target_mode != 'lineal':
+        target_resolutions = get_resolution(targets, target_domains, target_shapes)
 
-    # Prepare Generator target_mode_config 
-    target_mode_config = {
-        "target_shapes":      tuple([target_shapes[target]      for target in targets]),
-        "target_domains":     tuple([target_domains[target]     for target in targets]),
-        "target_resolutions": tuple([target_resolutions[target] for target in targets])
-    }
-    if target_mode == "probability_map":
-        target_sigmas = config["target_sigmas"]
-        target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
+        # Prepare Generator target_mode_config 
+        target_mode_config = {
+            "target_shapes":      tuple([target_shapes[target]      for target in targets]),
+            "target_domains":     tuple([target_domains[target]     for target in targets]),
+            "target_resolutions": tuple([target_resolutions[target] for target in targets])
+        }
+        if target_mode == "probability_map":
+            target_sigmas = config["target_sigmas"]
+            target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
+    else:
+        target_mode_config = {
+            "target_domains":     tuple([target_domains[target]     for target in targets]),
+            "target_shapes":      tuple([np.inf      for target in targets]),
+            "target_resolutions": None
+        }
 
     # Evaluation Parameters
     evaluation_config = config["evaluation"]

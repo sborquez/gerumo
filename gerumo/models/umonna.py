@@ -286,6 +286,10 @@ class Umonna(ModelAssembler):
         self.point_estimation_mode = point_estimation_mode
         self.target_resolutions = target_resolutions
 
+    def model_estimation(self, x_i_telescope, telescope, verbose, **kwargs):
+        model_telescope = self.models[telescope]
+        return model_telescope.predict(x_i_telescope, verbose=verbose, **kwargs)
+
     def point_estimation(self, y_predictions):
         if self.point_estimation_mode == "expected_value":
             y_point_estimations = self.expected_value(y_predictions)

@@ -12,7 +12,7 @@ from os.path import join
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import seaborn as sns
-from scipy.stats import norm
+from scipy.stats import norm, multivariate_normal
 import numpy as np
 import pandas as pd
 import ctaplot
@@ -20,7 +20,7 @@ import ctaplot
 
 __all__ = [
     'plot_model_training_history', 
-    'plot_assembler_prediction', 'show_prediction_1d', 'show_prediction_2d', 'show_prediction_3d',
+    'plot_prediction', 'show_prediction_1d', 'show_prediction_2d', 'show_prediction_3d',
     'plot_regression_evaluation', 'show_regression_identity', 'show_residual_error', 'show_residual_error_distribution',
     'plot_energy_resolution_comparison', 'plot_error_and_energy_resolution', 'show_energy_resolution', 'show_absolute_error_energy', 
     'plot_error_and_angular_resolution', 'plot_angular_resolution_comparison', 'show_angular_resolution', 'show_absolute_error_angular'
@@ -159,14 +159,52 @@ def show_prediction_3d(prediction, prediction_point, targets, target_domains,
     """
     raise NotImplementedError
 
-def plot_assembler_prediction(prediction, prediction_point, targets, target_domains,
-                              target_resolutions,  title=None, targets_values=None,
-                              save_to=None):
+def show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_values=None, axis=None):
+    """
+    Display pdf distribution for a 2 dimensional models output.
+    """
+
+    # Create new figure
+    if axis is None:
+        plt.figure(figsize=(8,8))
+        axis = plt.gca()
+
+    # Draw probability
+    xx, yy = np.mgrid[target_domains[0][0]:target_domains[0][1]:.005,  target_domains[1][0]:target_domains[1][1]:.005]
+    pos = np.dstack((xx, yy))
+    pdf = prediction.prob(pos)
+    if not isinstance(pdf, np.ndarray):
+        pdf = pdf.numpy()
+    ## Probability map 
+    im = axis.contourf(yy.T, xx.T, pdf.T, cmap='jet') #, norm=LogNorm(vmin=pdf.min(), vmax=pdf.max()))
+    axis.set_xlim(( target_domains[1][0], target_domains[1][1]))
+    axis.set_ylim((target_domains[0][0], target_domains[0][1]))
+
+    ## Add color bar
+    plt.colorbar(im, ax=axis, extend='max')
+
+    # Add predicted point
+    axis.scatter(x=[prediction_point[1]], y=[prediction_point[0]], c="w", marker="*", 
+                 label=f"prediction=({prediction_point[0]:.4f}, {prediction_point[1]:.4f})", alpha=0.9)
+    # Add target point
+    if targets_values is not None:
+      axis.scatter(x=[targets_values[1]], y=[targets_values[0]], c="black",marker="o", 
+                   label=f"target=({targets_values[0]:.4f}, {targets_values[1]:.4f})", alpha=0.9)
+    # Style
+    axis.set_ylabel(_label_formater(targets[0]))
+    axis.set_xlabel(_label_formater(targets[1]))
+    axis.legend()
+    return axis
+
+def plot_prediction(prediction, prediction_point, targets, target_domains,
+                              target_resolutions=None,  title=None, targets_values=None,
+                              save_to=None, ):
     """
     Display the assembled prediction of a event, the probability and the predicted point.
     If targets_values is not None, the target point is included in the figure.
     """
     #TODO: change function name
+    #TODO: remove target resolution
 
     # Create new Figure
     plt.figure(figsize=(8,8))
@@ -181,15 +219,24 @@ def plot_assembler_prediction(prediction, prediction_point, targets, target_doma
         title = f"Prediction for a event"
     plt.title(title)
 
-    # Show prediction according to targets dim 
-    if len(targets) == 1:
-        ax = show_prediction_1d(prediction, prediction_point, targets, target_domains, 
-                       target_resolutions, targets_values, ax)
-    elif len(targets) == 2:
-        ax = show_prediction_2d(prediction, prediction_point, targets, target_domains, 
-                       target_resolutions, targets_values, ax)
-    elif len(targets) == 3:
-        pass
+    if target_resolutions is None:
+        # Show prediction according to targets dim 
+        if len(targets) == 1:
+            pass
+        elif len(targets) == 2:
+            ax = show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_values, ax)
+        elif len(targets) == 3:
+            pass
+    else:
+        # Show prediction according to targets dim 
+        if len(targets) == 1:
+            ax = show_prediction_1d(prediction, prediction_point, targets, target_domains, 
+                        target_resolutions, targets_values, ax)
+        elif len(targets) == 2:
+            ax = show_prediction_2d(prediction, prediction_point, targets, target_domains, 
+                        target_resolutions, targets_values, ax)
+        elif len(targets) == 3:
+            pass
 
     # Save or Show
     if save_to is not None:

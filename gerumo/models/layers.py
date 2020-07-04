@@ -76,3 +76,8 @@ class HexConvLayer(Layer):
         })
         return config
         
+
+
+import tensorflow_probability as tfp
+
+MultivariateNormalTriL = tfp.layers.MultivariateNormalTriL
