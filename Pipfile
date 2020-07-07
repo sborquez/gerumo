@@ -4,14 +4,22 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-bleach = ">=3.1.4"
-urllib3 = ">=1.24.2"
-Jinja2 = ">=2.10.1"
-numpy = "*"
+bleach = "3.1.5"
+urllib3 = "1.25.9"
+jinja2 = "2.11.2"
 requests = "*"
 twine = "*"
+numpy = "*"
+scipy = "*"
+seaborn = "*"
+jupyter = "*"
+pandas = "*"
+pytables = "*"
+h5py = "*" 
+scikit-learn = "*"
+tensorflow = "2.1.0"
+tensorflow-probability  = "0.8.0"
 ctaplot = "*"
-tensorflow = "2.*"
 
 [dev-packages]
 "flake8" = "*"
