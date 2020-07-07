@@ -261,7 +261,7 @@ if __name__ == "__main__":
         target_mode = config["target_mode"]
         target_shapes = config["target_shapes"]
         target_domains = config["target_domains"]
-        if target_mode != 'lineal':
+        if config["assembler_constructor"] == 'umonna':
             target_resolutions = get_resolution(targets, target_domains, target_shapes)
         
             # Prepare Generator target_mode_config 
@@ -276,9 +276,10 @@ if __name__ == "__main__":
         else:
             target_mode_config = {
                 "target_domains":     tuple([target_domains[target]     for target in targets]),
-                "target_shapes":      tuple([np.inf      for target in targets]),
+                "target_shapes":      tuple([np.inf                     for target in targets]),
+                "target_resolutions": tuple([np.inf                     for target in targets])
             }
-            target_resolutions = None
+            target_resolutions = tuple([np.inf      for target in targets])
 
         # Training Parameters
         batch_size = config["batch_size"]

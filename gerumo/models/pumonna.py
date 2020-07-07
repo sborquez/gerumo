@@ -145,7 +145,7 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
 
 class ParametricUmonna(ModelAssembler):
     def __init__(self, sst1m_model_or_path=None, mst_model_or_path=None, lst_model_or_path=None,
-                 targets=[], target_domains=tuple(), target_shapes=(),
+                 targets=[], target_domains=tuple(), target_resolutions=tuple(), target_shapes=(),
                  assembler_mode="normalized_product", point_estimation_mode="expected_value", custom_objects=CUSTOM_OBJECTS):
         
 
@@ -163,7 +163,7 @@ class ParametricUmonna(ModelAssembler):
             raise ValueError(f"Invalid point_estimation_mode: {point_estimation_mode}")
         self.point_estimation_mode = point_estimation_mode
         self.barycenter_fixpoint_iterations = 25
-        self.target_resolutions = None
+        self.target_resolutions = target_resolutions
 
     @staticmethod
     def MultivariateNormalTriL_loader(event_size):

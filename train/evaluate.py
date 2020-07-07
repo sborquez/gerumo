@@ -63,30 +63,17 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
     mst = telescopes.get("MST_FlashCam", None)
     lst = telescopes.get("LST_LSTCam", None)
 
-
-    if target_mode_config["target_resolutions"] is not None:
-        assembler = assembler_constructor(
-                    sst1m_model_or_path=sst,
-                    mst_model_or_path=mst,
-                    lst_model_or_path=lst,
-                    targets=targets, 
-                    target_shapes=target_mode_config["target_shapes"],
-                    target_domains=target_mode_config["target_domains"],
-                    target_resolutions=target_mode_config["target_resolutions"],
-                    assembler_mode="normalized_product",
-                    point_estimation_mode="expected_value"
-        )
-    else:
-        assembler = assembler_constructor(
-                    sst1m_model_or_path=sst,
-                    mst_model_or_path=mst,
-                    lst_model_or_path=lst,
-                    targets=targets, 
-                    target_shapes=target_mode_config["target_shapes"],
-                    target_domains=target_mode_config["target_domains"],
-                    assembler_mode="normalized_product",
-                    point_estimation_mode="expected_value"
-        )
+    assembler = assembler_constructor(
+                sst1m_model_or_path=sst,
+                mst_model_or_path=mst,
+                lst_model_or_path=lst,
+                targets=targets, 
+                target_shapes=target_mode_config["target_shapes"],
+                target_domains=target_mode_config["target_domains"],
+                target_resolutions=target_mode_config["target_resolutions"],
+                assembler_mode="normalized_product",
+                point_estimation_mode="expected_value"
+    )
     mode = assembler.mode
     models_results = {}
 
@@ -338,10 +325,10 @@ if __name__ == "__main__":
     input_image_mask = config["input_image_mask"]
     input_features = config["input_features"]
     targets = config["targets"]
-    target_mode = "lineal" if config["assembler_constructor"] != 'umonna' else config['target_mode']
+    target_mode = "lineal"
     target_shapes = config["target_shapes"]
     target_domains = config["target_domains"]
-    if target_mode != 'lineal':
+    if  config["assembler_constructor"] == 'umonna':
         target_resolutions = get_resolution(targets, target_domains, target_shapes)
 
         # Prepare Generator target_mode_config 
@@ -357,8 +344,9 @@ if __name__ == "__main__":
         target_mode_config = {
             "target_domains":     tuple([target_domains[target]     for target in targets]),
             "target_shapes":      tuple([np.inf      for target in targets]),
-            "target_resolutions": None
+            "target_resolutions": tuple([np.inf      for target in targets])
         }
+        target_resolutions = tuple([np.inf      for target in targets])
 
     # Evaluation Parameters
     evaluation_config = config["evaluation"]

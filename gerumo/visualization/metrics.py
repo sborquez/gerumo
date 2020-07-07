@@ -219,7 +219,7 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
         title = f"Prediction for a event"
     plt.title(title)
 
-    if target_resolutions is None:
+    if np.any(np.array(target_resolutions) == np.inf) :
         # Show prediction according to targets dim 
         if len(targets) == 1:
             pass
