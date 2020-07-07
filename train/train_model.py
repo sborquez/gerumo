@@ -92,7 +92,7 @@ def train_model(model_name, model_constructor, model_extra_params,
                                             preprocess_input_pipes=preprocess_input_pipes,
                                             preprocess_output_pipes=preprocess_output_pipes
                                             )
-    validation_generator = AssemblerUnitGenerator(validation_dataset, batch_size//4, 
+    validation_generator = AssemblerUnitGenerator(validation_dataset, max(batch_size//4, 1), 
                                                     input_image_mode=input_image_mode,
                                                     input_image_mask=input_image_mask, 
                                                     input_features=input_features,

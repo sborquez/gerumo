@@ -17,4 +17,5 @@ cd /user/s/sborquez/gerumo/train
 #python train_model.py --config ./config/hpc/alt_az/umonna_sst_hpc_onecell.json
 #python train_model.py --config ./config/hpc/alt_az_energy/umonna_sst_hpc_onecell.json
 #python train_model.py --config ./config/hpc/alt_az/umonna_sst_hpc_all.json
-python train_model.py --config ./config/hpc/energy/umonna_sst_hpc_all.json
+python train_model.py --config ./config/hpc/alt_az/umonna_sst_hpc_hd_all.json
+#python train_model.py --config ./config/hpc/energy/umonna_sst_hpc_all.json
