@@ -144,8 +144,8 @@ def train_model(model_name, model_constructor, model_extra_params,
     
     ## fit
     model.compile(
-        optimizer=keras.optimizers.Adam(lr=learning_rate),
-        #optimizer=keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.01, nesterov=True),
+        #optimizer=keras.optimizers.Adam(lr=learning_rate),
+        optimizer=keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.01, nesterov=True),
         loss=loss
     )
 
@@ -261,7 +261,7 @@ if __name__ == "__main__":
         target_mode = config["target_mode"]
         target_shapes = config["target_shapes"]
         target_domains = config["target_domains"]
-        if config["assembler_constructor"] == 'umonna':
+        if config["model_constructor"] == 'umonna':
             target_resolutions = get_resolution(targets, target_domains, target_shapes)
         
             # Prepare Generator target_mode_config 

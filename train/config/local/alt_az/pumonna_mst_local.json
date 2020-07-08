@@ -1,5 +1,5 @@
 {
-    "model_name": "PUMONNA_reg_UNIT_MST_ALL",
+    "model_name": "PUMONNA_reg_UNIT_MST",
     "model_constructor": "pumonna_unit",
     "model_extra_params": {
         "latent_variables": 600

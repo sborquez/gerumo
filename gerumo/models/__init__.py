@@ -24,15 +24,18 @@ CUSTOM_OBJECTS = {
 
 from .umonna import umonna_unit, Umonna
 from .pumonna import pumonna_unit, ParametricUmonna
+from .bmo import bmo_unit, BMO
 
 MODELS = {
     "umonna_unit": umonna_unit,
-    "pumonna_unit": pumonna_unit
+    "pumonna_unit": pumonna_unit,
+    "bmo_unit": bmo_unit,
 }
 
 from .assembler import ModelAssembler
 ASSEMBLERS = {
     "umonna": Umonna,
-    "pumonna": ParametricUmonna
+    "pumonna": ParametricUmonna,
+    "bmo": BMO,
 }
 

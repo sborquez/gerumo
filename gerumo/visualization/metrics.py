@@ -12,7 +12,7 @@ from os.path import join
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import seaborn as sns
-from scipy.stats import norm, multivariate_normal
+from scipy.stats import norm, multivariate_normal, rv_continuous, gaussian_kde
 import numpy as np
 import pandas as pd
 import ctaplot
@@ -170,11 +170,19 @@ def show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_v
         axis = plt.gca()
 
     # Draw probability
-    xx, yy = np.mgrid[target_domains[0][0]:target_domains[0][1]:.005,  target_domains[1][0]:target_domains[1][1]:.005]
-    pos = np.dstack((xx, yy))
-    pdf = prediction.prob(pos)
-    if not isinstance(pdf, np.ndarray):
-        pdf = pdf.numpy()
+    if isinstance(prediction, rv_continuous):
+        xx, yy = np.mgrid[target_domains[0][0]:target_domains[0][1]:.005,  target_domains[1][0]:target_domains[1][1]:.005]
+        pos = np.dstack((xx, yy))
+        pdf = prediction.prob(pos)
+        if not isinstance(pdf, np.ndarray):
+            pdf = pdf.numpy()
+    elif isinstance(prediction, gaussian_kde):
+        xx, yy = np.mgrid[target_domains[0][0]:target_domains[0][1]:.005,  target_domains[1][0]:target_domains[1][1]:.005]
+        pos = np.dstack((xx, yy))
+        plot_shape = pos.shape
+        pos = pos.reshape(-1, plot_shape[-1])
+        pdf = prediction.pdf(pos.T).reshape(plot_shape[:-1])
+
     ## Probability map 
     im = axis.contourf(yy.T, xx.T, pdf.T, cmap='jet') #, norm=LogNorm(vmin=pdf.min(), vmax=pdf.max()))
     axis.set_xlim(( target_domains[1][0], target_domains[1][1]))
