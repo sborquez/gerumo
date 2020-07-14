@@ -18,7 +18,7 @@ import logging
 import pandas as pd
 import numpy as np
 
-from . import TARGETS, TELESCOPES
+from . import TARGETS, TELESCOPES, TELESCOPES_ALIAS
 
 
 __all__ = [
@@ -76,23 +76,23 @@ _array_attributes = {
     }
 }
 
-_telescopes_indices = [ f"{telescope_type}_indices" for telescope_type in TELESCOPES ]
-_telescopes_multiplicity = [ f"{telescope_type}_multiplicity" for telescope_type in TELESCOPES ]
-
 _telescope_table = {
     "ML1": "Telescope_Info",
-    "ML2": "Telescopes"
+    "ML2": "Telescope_Type_Information"
 }
 
 _telescopes_info_attributes = {
     "ML1": {
         "num_pixels":   "num_pixels",
+        "type":         "tel_type",
+        "pixel_pos":    "pixel_pos",
     },
     "ML2": {
-        ...
+        "num_pixels":   "num_pixels",
+        "type":         "type",
+        "pixel_pos":    "pixel_positions",
     }
 }
-
 
 # CSV events data
 _event_fieldnames = [
@@ -163,45 +163,51 @@ def extract_data(hdf5_filepath, version='ML2'):
             # Event data
             event_unique_id = uuid.uuid4().hex[:20]
             event_data = dict(
-                event_unique_id = event_unique_id,
-                event_id = event[_event_attributes[version]["event_id"]] ,
-                source = source,
-                folder = folder,
-                core_x = event[_event_attributes[version]["core_x"]],
-                core_y = event[_event_attributes[version]["core_y"]],
-                h_first_int = event[_event_attributes[version]["h_first_int"]],
-                alt = event[_event_attributes[version]["alt"]],
-                az = event[_event_attributes[version]["az"]],
-                mc_energy = event[_event_attributes[version]["mc_energy"]]
+                        event_unique_id = event_unique_id,
+                        event_id = event[_event_attributes[version]["event_id"]] ,
+                        source = source,
+                        folder = folder,
+                        core_x = event[_event_attributes[version]["core_x"]],
+                        core_y = event[_event_attributes[version]["core_y"]],
+                        h_first_int = event[_event_attributes[version]["h_first_int"]],
+                        alt = event[_event_attributes[version]["alt"]],
+                        az = event[_event_attributes[version]["az"]],
+                        mc_energy = event[_event_attributes[version]["mc_energy"]]
             )
             events_data.append(event_data)
-
+            
             # Observations data
             ## For each telescope type
-            for telescope_type, telescope_indices, telescope_multiplicity in zip(TELESCOPES, _telescopes_indices, _telescopes_multiplicity):
+            for telescope_type in TELESCOPES:
+                telescope_type_alias = TELESCOPES_ALIAS[version][telescope_type]
+                telescope_indices = f"{telescope_type_alias}_indices"
                 telescopes = event[telescope_indices]
                 # number of activated telescopes
-                multiplicity = event[telescope_multiplicity]
-                
+                if version == "ML2":
+                    telescope_multiplicity = f"{telescope_type_alias}_multiplicity"
+                    multiplicity = event[telescope_multiplicity]
+                else:
+                    multiplicity = np.sum(telescopes != 0)
+                    
                 if multiplicity == 0: # No telescope of this type were activated
                     continue
-                
+
                 # Select activated telescopes
                 activation_mask = telescopes != 0
                 activated_telescopes = np.arange(len(telescopes))[activation_mask]
                 observation_indices = telescopes[activation_mask]
-                
+
                 ## For each activated telescope
                 for activate_telescope, observation_indice in zip(activated_telescopes, observation_indices):
                     # Telescope Data
-                    real_telescope_id = real_telescopes_id[telescope_type][activate_telescope]
+                    real_telescope_id = real_telescopes_id[telescope_type_alias][activate_telescope]
                     telescope_data = dict(
                         telescope_id = real_telescope_id,
                         event_unique_id = event_unique_id,
                         type = telescope_type,
-                        x = array_data[telescope_type][real_telescope_id]["x"],
-                        y = array_data[telescope_type][real_telescope_id]["y"],
-                        z = array_data[telescope_type][real_telescope_id]["z"],
+                        x = array_data[telescope_type_alias][real_telescope_id]["x"],
+                        y = array_data[telescope_type_alias][real_telescope_id]["y"],
+                        z = array_data[telescope_type_alias][real_telescope_id]["z"],
                         observation_indice = observation_indice
                     )
                     telescopes_data.append(telescope_data)

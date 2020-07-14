@@ -8,7 +8,7 @@ import numpy as np
 
 
 __all__ = [ 
-    'TELESCOPES', 'TELESCOPE_FEATURES', 
+    'TELESCOPES', 'TELESCOPES_ALIAS', 'TELESCOPE_FEATURES', 'TELESCOPE_CAMERA', 
     'TARGETS', 'TARGET_UNITS',
     'IMAGES_SIZE', 'INPUT_SHAPE', 'PIXELS_POSITION'
 ]
@@ -16,9 +16,26 @@ __all__ = [
 
 # Telescopes types
 TELESCOPES = ["LST_LSTCam", "MST_FlashCam", "SST1M_DigiCam"]
+TELESCOPES_ALIAS = {
+    "ML1": {
+        "LST_LSTCam":    "LST", 
+        "MST_FlashCam":  "MSTF", 
+        "SST1M_DigiCam": "SST1"
+    },
+    "ML2": {
+        "LST_LSTCam":    "LST_LSTCam", 
+        "MST_FlashCam":  "MST_FlashCam",
+        "SST1M_DigiCam": "SST1M_DigiCam"
+    } 
+}
 
 # Telescope array informatin
 TELESCOPE_FEATURES = ["x", "y"]
+TELESCOPE_CAMERA   = {
+    "LST_LSTCam":    "LSTCam", 
+    "MST_FlashCam":  "FlashCam", 
+    "SST1M_DigiCam": "DigiCam"
+}
 
 # Regression Targets
 TARGETS = ["alt", "az", "mc_energy", "log10_mc_energy"]
