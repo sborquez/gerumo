@@ -28,11 +28,71 @@ __all__ = [
 ]
 
 # Table names and atributes
-_events_table = "Events"
-_array_info_table = "Array_Information"
-_telescope_table = "Telescopes"
+_events_table = {
+    "ML1": "Event_Info",
+    "ML2": "Events"
+}
+
+_event_attributes = {
+    "ML1": {
+        "event_id":     "event_number",
+        "core_x":       "core_x",
+        "core_y":       "core_y",
+        "alt":          "alt",
+        "az":           "az",
+        "h_first_int": "h_first_int",
+        "mc_energy":    "mc_energy",
+    },
+    "ML2": {
+        "event_id":     "event_id",
+        "core_x":       "core_x",
+        "core_y":       "core_y",
+        "alt":          "alt",
+        "az":           "az",
+        "h_first_int":  "h_first_int",
+        "mc_energy":    "mc_energy",
+    }
+}
+
+_array_info_table = {
+    "ML1":  "Array_Info",
+    "ML2": "Array_Information"
+}
+
+_array_attributes = {
+    "ML1": {
+        "type":         "tel_type",
+        "telescope_id": "tel_id",
+        "x":            "tel_x",
+        "y":            "tel_y",
+        "z":            "tel_z",  
+    },
+    "ML2": {
+        "type":         "type",
+        "telescope_id": "id",
+        "x":            "x",
+        "y":            "y",
+        "z":            "z",  
+    }
+}
+
 _telescopes_indices = [ f"{telescope_type}_indices" for telescope_type in TELESCOPES ]
 _telescopes_multiplicity = [ f"{telescope_type}_multiplicity" for telescope_type in TELESCOPES ]
+
+_telescope_table = {
+    "ML1": "Telescope_Info",
+    "ML2": "Telescopes"
+}
+
+_telescopes_info_attributes = {
+    "ML1": {
+        "num_pixels":   "num_pixels",
+    },
+    "ML2": {
+        ...
+    }
+}
+
 
 # CSV events data
 _event_fieldnames = [
@@ -59,7 +119,7 @@ _telescope_fieldnames = [
     'observation_indice'   # Observation indice in table
 ]
 
-def extract_data(hdf5_filepath):
+def extract_data(hdf5_filepath, version='ML2'):
     """Extract data from one hdf5 file."""
 
     hdf5_file = tables.open_file(hdf5_filepath, "r")
@@ -80,38 +140,39 @@ def extract_data(hdf5_filepath):
     ## has 3 indices starting from 0, for each telescope type. 
     ## 'real_telescopes_id' translate events indices ('activation_telescope_id') to array ids ('telescope_id').
 
-    for telescope in hdf5_file.root[_array_info_table]:
-        telescope_type = telescope["type"]
+    for telescope in hdf5_file.root[_array_info_table[version]]:
+        telescope_type = telescope[_array_attributes[version]["type"]]
         telescope_type = telescope_type.decode("utf-8") if isinstance(telescope_type, bytes) else telescope_type
-        telescope_id = telescope["id"]
+        telescope_id = telescope[_array_attributes[version]["telescope_id"]]
+        #HERE
         if telescope_type not in array_data:
             array_data[telescope_type] = {}
             real_telescopes_id[telescope_type] = []
         
         array_data[telescope_type][telescope_id] = {
             "id": telescope_id,
-            "x": telescope["x"],
-            "y": telescope["y"],
-            "z": telescope["z"],
+            "x": telescope[_array_attributes[version]["x"]],
+            "y": telescope[_array_attributes[version]["y"]],
+            "z": telescope[_array_attributes[version]["z"]],
         }
         real_telescopes_id[telescope_type].append(telescope_id)
 
     # add uuid to avoid duplicated event numbers 
     try:
-        for i, event in enumerate(hdf5_file.root[_events_table]):
+        for i, event in enumerate(hdf5_file.root[_events_table[version]]):
             # Event data
             event_unique_id = uuid.uuid4().hex[:20]
             event_data = dict(
                 event_unique_id = event_unique_id,
-                event_id = event["event_id"] ,
+                event_id = event[_event_attributes[version]["event_id"]] ,
                 source = source,
                 folder = folder,
-                core_x = event["core_x"],
-                core_y = event["core_y"],
-                h_first_int = event["h_first_int"],
-                alt = event["alt"],
-                az = event["az"],
-                mc_energy = event["mc_energy"]
+                core_x = event[_event_attributes[version]["core_x"]],
+                core_y = event[_event_attributes[version]["core_y"]],
+                h_first_int = event[_event_attributes[version]["h_first_int"]],
+                alt = event[_event_attributes[version]["alt"]],
+                az = event[_event_attributes[version]["az"]],
+                mc_energy = event[_event_attributes[version]["mc_energy"]]
             )
             events_data.append(event_data)
 
@@ -157,7 +218,7 @@ def extract_data(hdf5_filepath):
 
     return events_data, telescopes_data
 
-def generate_dataset(files_path=None, folder_path=None, output_folder=".", append=False):
+def generate_dataset(files_path=None, folder_path=None, output_folder=".", append=False, version="ML2"):
     """Generate events.csv and telescope.csv files. 
 
     Files generated contains information about the events and their observations
@@ -221,7 +282,7 @@ def generate_dataset(files_path=None, folder_path=None, output_folder=".", appen
     total_observations = 0
     for file in tqdm(files):
         logging.info(f"Extracting: {file}")
-        events_data, telescopes_data = extract_data(file)
+        events_data, telescopes_data = extract_data(file, version)
         total_events += len(events_data)
         total_observations += len(telescopes_data)
         try:
