@@ -94,6 +94,17 @@ _telescopes_info_attributes = {
     }
 }
 
+_images_attributes = {
+    "ML1": {
+        "charge":   "image_charge",
+        "peakpos":   "image_peak_times",
+    },
+    "ML2": {
+        "charge":   "charge",
+        "peakpos":   "peakpos",
+    }    
+}
+
 # CSV events data
 _event_fieldnames = [
     'event_unique_id',  # hdf5 event identifier
@@ -405,18 +416,19 @@ def save_dataset(dataset, output_folder, prefix=None):
 
     return event_path, telescope_path
     
-def load_camera(source, folder, telescope_type, observation_indice):
+def load_camera(source, folder, telescope_type, observation_indice, version="ML2"):
     """Load charge and timepeak from hdf5 file for a observation."""
 
     hdf5_filepath = path.join(folder, source)
     hdf5_file = tables.open_file(hdf5_filepath, "r")
-    image = hdf5_file.root[telescope_type][observation_indice]
+    telescope_alias = TELESCOPES_ALIAS[version][telescope_type]
+    image = hdf5_file.root[telescope_alias][observation_indice]
     hdf5_file.close()
     charge = image["charge"]
     peakpos = image["peakpos"]
     return charge, peakpos
 
-def load_cameras(dataset):
+def load_cameras(dataset, version="ML2"):
     """Load charge and time peak from hdf5 files for a dataset.
     
     Returns
@@ -435,12 +447,13 @@ def load_cameras(dataset):
         hdf5_file = tables.open_file(hdf5_filepath, "r")
         # and over telescope tables
         for telescope_type in telescopes:
+            telescope_alias = TELESCOPES_ALIAS[version][telescope_type]
             # select indices for this file and telescope
             selector = (dataset["hdf5_filepath"] == hdf5_filepath) & (dataset["type"] == telescope_type)
             observations_indices_selected = dataset[selector]["observation_indice"].to_numpy()
             respond_indices_selected = indices[selector]
             # load images and copy results
-            images = hdf5_file.root[telescope_type][observations_indices_selected]
+            images = hdf5_file.root[telescope_alias][observations_indices_selected]
             for i, img in zip(respond_indices_selected, images):
                 respond[i] = (img["charge"], img["peakpos"]) 
         hdf5_file.close()

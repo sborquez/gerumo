@@ -10,6 +10,7 @@ from os.path import join
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import LogNorm
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
 from scipy.stats import norm, multivariate_normal, rv_continuous, gaussian_kde
 import numpy as np
@@ -54,3 +55,32 @@ def plot_telescope_geometry(tel_type, pixel_positions, num_pixels=None):
         ax1.scatter(pixel_positions[0], pixel_positions[2], color=colors)
         ax2.scatter(pixel_positions[1], pixel_positions[2], color=colors)
     plt.show()
+
+def plot_dataset_targets(dataset, targets=["alt", "az", "log_mc_energy"]):
+    pass
+
+def plot_observation_scatter(charge, peakpos, pixel_positions, telescope_type=None, event_unique_id=None):
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
+    ax1.set_title("Charge")
+    divider = make_axes_locatable(ax1)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    im = ax1.scatter(pixel_positions[0], pixel_positions[1], c=charge)
+    plt.colorbar(im, cax=cax)
+
+    plt.colorbar(im, cax=cax)
+    ax2.set_title("Peak Pos")
+    divider = make_axes_locatable(ax2)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    im = ax2.scatter(pixel_positions[0], pixel_positions[1], c=peakpos)
+    plt.colorbar(im, cax=cax)
+
+    if event_unique_id is None:
+        title = f"{'' if telescope_type is None else telescope_type}"
+    else:
+        title = f"{'' if telescope_type is None else telescope_type}\nevent: {event_unique_id}"
+
+    plt.suptitle(title);
+    plt.show()
+
+def plot_observation_input():
+    pass
