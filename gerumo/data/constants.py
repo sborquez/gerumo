@@ -73,7 +73,16 @@ INPUT_SHAPE = {
 
 pixpos_folder = path.join(path.dirname(__file__), "pixels_positions")
 PIXELS_POSITION = {}
-for mode in ("simple", "simple_shift"): #time_split, time_split_shift):
-    PIXELS_POSITION[mode] = {}
-    for telescope in TELESCOPES:
-        PIXELS_POSITION[mode][telescope] = np.loadtxt(path.join(pixpos_folder, mode, f"{telescope}.npy"), dtype=float).astype(int)
+try:
+    for version in ("ML1", "ML2"):
+        PIXELS_POSITION[version] = {}
+        for mode in ("raw", "simple", "simple_shift"): #time_split, time_split_shift):
+            PIXELS_POSITION[version][mode] = {}
+            for telescope in TELESCOPES:
+                path_  = path.join(pixpos_folder, version, mode, f"{telescope}.npy")
+                pixpos = np.loadtxt(path_, dtype=float)
+                pixpos = pixpos.astype(int) if  mode != 'raw' else pixpos
+                PIXELS_POSITION[version][mode][telescope] = pixpos
+except OSError as err:
+    print(err)
+    print('Try running extract_pixel_positions to generate pixpos files.')
