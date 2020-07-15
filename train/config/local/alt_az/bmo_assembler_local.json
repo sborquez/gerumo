@@ -1,6 +1,7 @@
 {
     "model_name": "BMO_ALT_AZ",
     "assembler_constructor": "bmo",
+    "version" : "ML1",
     "output_folder" : "D:/sebas/Google Drive/Projects/gerumo/train/output",
     "evaluation": {
         "seed": 1312,
@@ -33,11 +34,11 @@
             "predictions_raw":    "sample"
         }
     },
-    "replace_folder_test" : "D:/sebas/Google Drive/Projects/gerumo/dataset",
-    "test_events_csv"    : "D:/sebas/Google Drive/Projects/gerumo/dataset/train_events.csv",
-    "test_telescope_csv" : "D:/sebas/Google Drive/Projects/gerumo/dataset/train_telescopes.csv",
+    "replace_folder_test" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1",
+    "test_events_csv"    : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/train_events.csv",
+    "test_telescope_csv" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/train_telescopes.csv",
     "telescopes" : {
-        "MST_FlashCam": "D:/sebas/Google Drive/Projects/gerumo/train/output/BMO_UNIT_MST_MST_FlashCam_mse_e004_0.1395.h5"
+        "MST_FlashCam": "D:/sebas/Desktop/umonna/BMO/BMO_UNIT_MST_ML_MST_FlashCam_mse_e003_0.0096.h5"
     },
     "min_observations" : [0,0,0],
     "input_image_mode" : "simple-shift",

@@ -29,7 +29,8 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
                  preprocess_output_pipes=[],
                  include_event_id=False,
                  include_true_energy=False,
-                 shuffle=False):
+                 shuffle=False,
+                 version="ML1"):
 
         # Dataset with one telescope type
         self.dataset = dataset
@@ -57,6 +58,9 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         self.shuffle = shuffle
         self.include_event_id = include_event_id
         self.include_true_energy = include_true_energy
+
+        # Dataset version
+        self.version = version
 
         self.on_epoch_end()
 
@@ -99,9 +103,9 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         """
         batch_dataset = self.dataset.iloc[list_indexes]
         # dataset contains only one telescope type
-        telescope_types = [self.telescope_type]*len(batch_dataset) 
-        images = cameras_to_images(load_cameras(batch_dataset), telescope_types, 
-                                   self.input_image_mode, self.input_image_mask)
+        telescope_types = [self.telescope_type]*len(batch_dataset)
+        cameras = load_cameras(batch_dataset, version=self.version)
+        images = cameras_to_images(cameras, telescope_types, self.input_image_mode, self.input_image_mask, version=self.version)
         batch_images = np.array(images)                                   
         batch_telescope_features = batch_dataset[self.input_features].values
         # TODO: Add preprocessing steps
@@ -178,7 +182,8 @@ class AssemblerGenerator(keras.utils.Sequence):
                  preprocess_output_pipes={},
                  include_event_id=False,
                  include_true_energy=False,
-                 shuffle=False):
+                 shuffle=False,
+                 version="ML1"):
 
         if isinstance(telescopes, str):
             telescopes = [telescopes]
@@ -210,6 +215,9 @@ class AssemblerGenerator(keras.utils.Sequence):
         self.shuffle = shuffle
         self.include_event_id = include_event_id
         self.include_true_energy = include_true_energy
+
+        # Dataset Version
+        self.version = version
 
         self.on_epoch_end()
 
@@ -274,9 +282,9 @@ class AssemblerGenerator(keras.utils.Sequence):
             event_dataset = self.dataset.get_group(event).sort_values(by="type")
             # dataset contains only one telescope type
             telescope_types = list(event_dataset.type)
-
-            event_images = cameras_to_images(load_cameras(event_dataset), telescope_types, 
-                                   self.input_image_mode, self.input_image_mask)
+            cameras = load_cameras(event_dataset, version=self.version)
+            event_images = cameras_to_images(cameras, telescope_types, 
+                                   self.input_image_mode, self.input_image_mask, version=self.version)
 
             event_telescopes_features = event_dataset[self.input_features].values
 

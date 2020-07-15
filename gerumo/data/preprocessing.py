@@ -98,8 +98,8 @@ Prepare input images, normalize and standarize values
 from images and features. 
 """
 
-def _simple(charge, peakpos, telescope_type, mask):
-    x, y = PIXELS_POSITION["simple"][telescope_type] #(x, y)
+def _simple(charge, peakpos, telescope_type, mask, version="ML1"):
+    x, y = PIXELS_POSITION[version]["simple"][telescope_type] #(x, y)
     image_size = IMAGES_SIZE[telescope_type]
     if mask:
         input_shape = INPUT_SHAPE["simple-mask"][telescope_type]
@@ -112,8 +112,8 @@ def _simple(charge, peakpos, telescope_type, mask):
         canvas[y, x, 2] = 1
     return canvas
 
-def _simple_shift(charge, peakpos, telescope_type, mask):
-    x_left, x_right, y = PIXELS_POSITION["simple_shift"][telescope_type] #(x_l, x_r, y)
+def _simple_shift(charge, peakpos, telescope_type, mask, version="ML1"):
+    x_left, x_right, y = PIXELS_POSITION[version]["simple_shift"][telescope_type] #(x_l, x_r, y)
     image_size = IMAGES_SIZE[telescope_type]
     if mask:
         input_shape = INPUT_SHAPE["simple-shift-mask"][telescope_type]
@@ -129,13 +129,13 @@ def _simple_shift(charge, peakpos, telescope_type, mask):
         canvas[1, y, x_right, 2] = 1
     return canvas
 
-def _time_split(charge, peakpos, telescope_type, mask):
+def _time_split(charge, peakpos, telescope_type, mask, version="ML1"):
     raise NotImplementedError
 
-def _time_split_shift(charge, peakpos, telescope_type, mask):
+def _time_split_shift(charge, peakpos, telescope_type, mask, version="ML1"):
     raise NotImplementedError
 
-def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True):
+def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True, version="ML1"):
     """
     Transform the charge and peakpos values into an rectangle image.
 
@@ -171,18 +171,20 @@ def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True):
         result_image
     """
     if mode == "simple":
-        result_image = _simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask, version)
     elif mode == "simple-shift":
-        result_image = _simple_shift(charge, peakpos, telescope_type, mask)
+        result_image = _simple_shift(charge, peakpos, telescope_type, mask, version)
+    
+    # TODO: delete these
     elif mode == "time-split":
-        result_image = _simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask, version)
     elif mode == "time-split-shift":
-        result_image = _simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask, version)
     else:
         raise ValueError(f"invalid 'mode': {mode}")
     return result_image
 
-def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True):
+def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True, version="ML1"):
     """
     Transform the charge and peakpos values into rectangle images.
 
@@ -210,6 +212,8 @@ def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True):
         This define the result_image. (default='simple')
     mask : `bool`, optional
         Add a mask channel to the result_image. (default=True)
+    version : `str`, optional
+        Prod3b ML version. (default='ML1')
     Returns
     -------
     `list` of `numpy.ndarray` or `list` of `tuple` of `numpy.ndarray`
@@ -217,7 +221,7 @@ def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True):
     """
     result_images = []
     for (charge, peakpos), telescope_type in zip(cameras, telescopes_type):
-        result_images.append(camera_to_image(charge, peakpos, telescope_type, mode, mask))
+        result_images.append(camera_to_image(charge, peakpos, telescope_type, mode, mask, version))
     return result_images
 
 

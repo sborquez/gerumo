@@ -13,40 +13,11 @@ from tensorflow import keras
 from tensorflow.keras.utils import plot_model
 
 
-def get_default_target_mode_config(targets=["alt", "az", "log10_mc_energy"], return_sigmas=True):
-    target_shapes = {
-        'alt': 81, 
-        'az': 81, 
-        'log10_mc_energy': 81
-    }
-    target_domains = {
-        'alt': (1.05, 1.382), 
-        'az': (-0.52, 0.52), 
-        'log10_mc_energy': (-2.351, 2.47)
-    }
-    target_sigmas = {
-        'alt': 0.002, 
-        'az':  0.002, 
-        'log10_mc_energy': 0.002
-    }
-    target_resolutions = get_resolution(targets, target_domains, target_shapes)
-    # Prepare Generator target_mode_config 
-    target_mode_config = {
-        "target_shapes":      tuple([target_shapes[target]      for target in targets]),
-        "target_domains":     tuple([target_domains[target]     for target in targets]),
-        "target_resolutions": tuple([target_resolutions[target] for target in targets])
-    }
-    if return_sigmas:
-        target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
-    return target_mode_config
-
-def load_config(json_path):
-    pass
-
 def train_model(model_name, model_constructor, model_extra_params, 
             telescope, 
             train_events_csv, train_telescope_csv,
             validation_events_csv, validation_telescope_csv,
+            version = "ML1",
             replace_folder_train = None,
             replace_folder_validation = None,
             output_folder = "./output", 
@@ -54,12 +25,14 @@ def train_model(model_name, model_constructor, model_extra_params,
             input_image_mode = "simple-shift",
             input_image_mask = True,
             input_features = ["x", "y"],
-            target_mode = "probability_map",
+            target_mode = "lineal",
             targets = ["alt", "az", "log10_mc_energy"],
-            target_mode_config = get_default_target_mode_config(),
+            target_mode_config = {},
             batch_size = 32,
             epochs = 3,
             loss = "crossentropy",
+            optimizer = 'sgd',
+            optimizer_parameters = {},
             learning_rate = 1e-1,
             save_checkpoints = True,
             save_plot=False, plot_only=False, summary=False):
@@ -82,26 +55,30 @@ def train_model(model_name, model_constructor, model_extra_params,
     preprocess_output_pipes = []
 
     # Generators
-    train_generator = AssemblerUnitGenerator(train_dataset, batch_size, 
-                                            input_image_mode=input_image_mode, 
-                                            input_image_mask=input_image_mask, 
-                                            input_features=input_features,
-                                            targets=targets,
-                                            target_mode=target_mode, 
-                                            target_mode_config=target_mode_config,
-                                            preprocess_input_pipes=preprocess_input_pipes,
-                                            preprocess_output_pipes=preprocess_output_pipes
-                                            )
-    validation_generator = AssemblerUnitGenerator(validation_dataset, max(batch_size//4, 1), 
-                                                    input_image_mode=input_image_mode,
-                                                    input_image_mask=input_image_mask, 
-                                                    input_features=input_features,
-                                                    targets=targets,
-                                                    target_mode=target_mode, 
-                                                    target_mode_config=target_mode_config,
-                                                    preprocess_input_pipes=preprocess_input_pipes,
-                                                    preprocess_output_pipes=preprocess_output_pipes
-                                                    )
+    train_generator =   AssemblerUnitGenerator(
+                            train_dataset, batch_size, 
+                            input_image_mode=input_image_mode, 
+                            input_image_mask=input_image_mask, 
+                            input_features=input_features,
+                            targets=targets,
+                            target_mode=target_mode, 
+                            target_mode_config=target_mode_config,
+                            preprocess_input_pipes=preprocess_input_pipes,
+                            preprocess_output_pipes=preprocess_output_pipes,
+                            version=version
+                        )
+    validation_generator =  AssemblerUnitGenerator(
+                                validation_dataset, max(batch_size//4, 1), 
+                                input_image_mode=input_image_mode,
+                                input_image_mask=input_image_mask, 
+                                input_features=input_features,
+                                targets=targets,
+                                target_mode=target_mode, 
+                                target_mode_config=target_mode_config,
+                                preprocess_input_pipes=preprocess_input_pipes,
+                                preprocess_output_pipes=preprocess_output_pipes,
+                                version=version
+                            )
     # CallBacks
     callbacks = []
     if save_checkpoints:
@@ -131,22 +108,24 @@ def train_model(model_name, model_constructor, model_extra_params,
             exit(0)
 
     ## Loss function
+    loss = loss if loss.split('_')[-1] == 'loss' else f'{loss}_loss'
     if loss == "crossentropy":
-        loss = crossentropy_loss(dimensions=len(targets))
-    elif loss == "hellinger":
-        loss = hellinger_loss()
-    elif loss == "mse":
-        loss = mse_loss()
+        loss_ = LOSS[loss](dimensions=len(targets))
     elif loss == "distance":
-        loss = mean_distance_loss(target_shapes)
-    elif loss == "negloglike":
-        loss = negloglike_loss(dimensions=len(targets))
-    
+        loss_ = mean_distance_loss(target_shapes)
+    else:
+        loss_ = LOSS[loss]()
+
+    ## Optimizer
+    optimizer_ = OPTIMIZERS[optimizer](
+        learning_rate=learning_rate,
+        **optimizer_parameters
+    )
+
     ## fit
     model.compile(
-        #optimizer=keras.optimizers.Adam(lr=learning_rate),
-        optimizer=keras.optimizers.SGD(learning_rate=learning_rate, momentum=0.01, nesterov=True),
-        loss=loss
+        optimizer=optimizer_,
+        loss=loss_
     )
 
     start_time = time.time()
@@ -165,23 +144,7 @@ def train_model(model_name, model_constructor, model_extra_params,
     print(f"Training time: {training_time:.3f} [min]")
 
     plot_model_training_history(history, training_time, model_name, epochs, output_folder)
-
-    # # Validate
-    # i = 6
-    # batch_0 = train_generator[120]
-    # prediction = umonna.predict(batch_0[0])[i]
-    # target = batch_0[1][i]
-
-    # import matplotlib.pyplot as plt
-
-    # plt.imshow(target)
-    # plt.title("Target_2")
-    # plt.show()
-
-    # plt.imshow(prediction)
-    # plt.title("Prediction_2")
-    # plt.show()
-
+    
     return model
 
 if __name__ == "__main__":
@@ -189,118 +152,93 @@ if __name__ == "__main__":
     import json
 
     ap = argparse.ArgumentParser(description="Train a model.")
-    ap.add_argument("-c", "--config", type=str, default=None, help="Configuration file for model/experiment.")
+    ap.add_argument("-c", "--config", type=str, required=True, help="Configuration file for model/experiment.")
     args = vars(ap.parse_args()) 
     config_file = args["config"]
-    if config_file is None:
-        print("Loading default configuration.")
-        # Model
-        model_name = "UMONNA_UNIT_MST_V2"
-        model_constructor = umonna_unit
-        model_extra_params = {"latent_variables": 600}
+    
+    print(f"Loading config from: {config_file}")
+    with open(config_file) as cfg_file:
+        config = json.load(cfg_file)
 
-        # Dataset Parameters
-        output_folder = "./output"
-        replace_folder_train = "D:/sebas/Google Drive/Projects/gerumo/dataset"
-        replace_folder_validation = "D:/sebas/Google Drive/Projects/gerumo/dataset"
-        train_events_csv    = "../dataset/train_events.csv"
-        train_telescope_csv = "../dataset/train_telescopes.csv" 
-        validation_events_csv    = "../dataset/validation_events.csv"
-        validation_telescope_csv = "../dataset/validation_telescopes.csv"
-        
-        # Input and Target Parameters 
-        telescope = "MST_FlashCam"
-        min_observations = 3
-        input_image_mode = "simple-shift"
-        input_image_mask = True
-        input_features = ["x", "y"]
-        targets = ["alt", "az"] #,"log10_mc_energy"]
-        target_mode = "probability_map"
+    # Model
+    model_name = config["model_name"]
+    model_constructor = MODELS[config["model_constructor"]]
+    model_extra_params = config["model_extra_params"]
+
+    # Dataset Parameters
+    version = config["version"]
+    output_folder = config["output_folder"]
+    replace_folder_train = config["replace_folder_train"]
+    replace_folder_validation = config["replace_folder_validation"]
+    train_events_csv    = config["train_events_csv"]
+    train_telescope_csv = config["train_telescope_csv"]
+    validation_events_csv    = config["validation_events_csv"]
+    validation_telescope_csv = config["validation_telescope_csv"]
+    
+    # Input and Target Parameters 
+    telescope = config["telescope"]
+    min_observations = config["min_observations"]
+    input_image_mode = config["input_image_mode"]
+    input_image_mask = config["input_image_mask"]
+    input_features = config["input_features"]
+    targets = config["targets"]
+    target_mode = config["target_mode"]
+    target_shapes = config["target_shapes"]
+    target_domains = config["target_domains"]
+    if config["model_constructor"] == 'umonna':
+        target_resolutions = get_resolution(targets, target_domains, target_shapes)
+    
+        # Prepare Generator target_mode_config 
+        target_mode_config = {
+            "target_shapes":      tuple([target_shapes[target]      for target in targets]),
+            "target_domains":     tuple([target_domains[target]     for target in targets]),
+            "target_resolutions": tuple([target_resolutions[target] for target in targets])
+        }
         if target_mode == "probability_map":
-            target_mode_config = get_default_target_mode_config(targets, True)
-        else:
-            target_mode_config = get_default_target_mode_config(targets, False)
-
-        # Training Parameters
-        batch_size = 32
-        epochs = 3
-        loss = "crossentropy"
-        learning_rate = 1e-1
-        save_checkpoints = True
-
-        # Debug
-        save_plot = False
-        plot_only = False
-        summary = False
+            target_sigmas = config["target_sigmas"]
+            target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
     else:
-        print(f"Loading config from: {config_file}")
-        with open(config_file) as cfg_file:
-            config = json.load(cfg_file)
+        target_mode_config = {
+            "target_domains":     tuple([target_domains[target]     for target in targets]),
+            "target_shapes":      tuple([np.inf                     for target in targets]),
+            "target_resolutions": tuple([np.inf                     for target in targets])
+        }
+        target_resolutions = tuple([np.inf      for target in targets])
 
-        # Model
-        model_name = config["model_name"]
-        model_constructor = MODELS[config["model_constructor"]]
-        model_extra_params = config["model_extra_params"]
+    # Training Parameters
+    batch_size = config["batch_size"]
+    epochs = config["epochs"]
+    loss = config["loss"]
+    optimizer = config["optimizer"]["name"].lower()
+    learning_rate = config["optimizer"]["learning_rate"]
+    optimizer_parameters = config["optimizer"]["extra_parameters"]
+    save_checkpoints = config["save_checkpoints"]
 
-        # Dataset Parameters
-        output_folder = config["output_folder"]
-        replace_folder_train = config["replace_folder_train"]
-        replace_folder_validation = config["replace_folder_validation"]
-        train_events_csv    = config["train_events_csv"]
-        train_telescope_csv = config["train_telescope_csv"]
-        validation_events_csv    = config["validation_events_csv"]
-        validation_telescope_csv = config["validation_telescope_csv"]
-        
-        # Input and Target Parameters 
-        telescope = config["telescope"]
-        min_observations = config["min_observations"]
-        input_image_mode = config["input_image_mode"]
-        input_image_mask = config["input_image_mask"]
-        input_features = config["input_features"]
-        targets = config["targets"]
-        target_mode = config["target_mode"]
-        target_shapes = config["target_shapes"]
-        target_domains = config["target_domains"]
-        if config["model_constructor"] == 'umonna':
-            target_resolutions = get_resolution(targets, target_domains, target_shapes)
-        
-            # Prepare Generator target_mode_config 
-            target_mode_config = {
-                "target_shapes":      tuple([target_shapes[target]      for target in targets]),
-                "target_domains":     tuple([target_domains[target]     for target in targets]),
-                "target_resolutions": tuple([target_resolutions[target] for target in targets])
-            }
-            if target_mode == "probability_map":
-                target_sigmas = config["target_sigmas"]
-                target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
-        else:
-            target_mode_config = {
-                "target_domains":     tuple([target_domains[target]     for target in targets]),
-                "target_shapes":      tuple([np.inf                     for target in targets]),
-                "target_resolutions": tuple([np.inf                     for target in targets])
-            }
-            target_resolutions = tuple([np.inf      for target in targets])
-
-        # Training Parameters
-        batch_size = config["batch_size"]
-        epochs = config["epochs"]
-        loss = config["loss"]
-        learning_rate = config["learning_rate"]
-        save_checkpoints = config["save_checkpoints"]
-
-        # Debug
-        save_plot = config["save_plot"]
-        plot_only = config["plot_only"]
-        summary = config["summary"]
+    # Debug
+    save_plot = config["save_plot"]
+    plot_only = config["plot_only"]
+    summary = config["summary"]
 
     model = train_model(
+        # Model parameters
         model_name, model_constructor, model_extra_params, telescope,
+        # Dataset parameters
         train_events_csv, train_telescope_csv,
-        validation_events_csv, validation_telescope_csv,
+        validation_events_csv, validation_telescope_csv, 
+        version,
+        # Dataset directory parameters
         replace_folder_train, replace_folder_validation,
-        output_folder, min_observations,
+        output_folder, 
+        # Input parameters
+        min_observations,
         input_image_mode, input_image_mask, input_features,
+        # Target paramters
         target_mode, targets, target_mode_config, 
-        batch_size, epochs, loss, learning_rate, save_checkpoints, 
-        save_plot, plot_only, summary 
+        # Training paramters
+        batch_size, epochs, 
+        loss, 
+        optimizer, optimizer_parameters, learning_rate, 
+        save_checkpoints, save_plot, 
+        # Debug parameters
+        plot_only, summary 
     )
