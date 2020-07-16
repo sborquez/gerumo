@@ -2,6 +2,7 @@
     "model_name": "UMONNA_V2_ALT_AZ_ALL",
     "assembler_constructor": "umonna",
     "output_folder" : "/content/drive/Shared drives/umonna/data/results",
+    "version" : "ML2",
     "evaluation": {
         "seed": 1312,
         "Assembler": {

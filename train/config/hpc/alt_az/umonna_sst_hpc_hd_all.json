@@ -7,6 +7,7 @@
     "save_plot" : false,
     "plot_only" : false,
     "summary" : false,
+    "version": "ML2",
     "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
     "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_train",
     "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/Prod3_Paranal_Baseline_NSB1x_gamma-diffuse_North_20deg_DL1_ML2_train",
@@ -42,6 +43,13 @@
     "batch_size" : 16,
     "epochs" : 20,
     "loss" : "crossentropy",
-    "learning_rate" : 1e-2,
-    "save_checkpoints" : true
+    "save_checkpoints" : true,
+    "optimizer": {
+        "learning_rate": 1e-3,
+        "name": "sgd",
+        "extra_parameters": {
+            "momentum": 0.01,
+            "nesterov": true
+        }
+    }
 }
