@@ -7,6 +7,7 @@
     "save_plot" : false,
     "plot_only" : false,
     "summary" : false,
+    "version" : "ML1",
     "output_folder" : "D:/sebas/Google Drive/Projects/gerumo/train/output",
     "replace_folder_train" : "D:/sebas/Google Drive/Projects/gerumo/dataset",
     "replace_folder_validation" : "D:/sebas/Google Drive/Projects/gerumo/dataset",
@@ -34,6 +35,10 @@
     "batch_size" : 64,
     "epochs" : 50,
     "loss" : "negloglike",
-    "learning_rate" : 1e-3,
-    "save_checkpoints" : true
+    "save_checkpoints" : true,
+    "optimizer": {
+        "learning_rate": 1e-3,
+        "name": "adam",
+        "extra_parameters": null
+    }
 }

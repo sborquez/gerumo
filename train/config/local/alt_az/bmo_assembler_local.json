@@ -35,8 +35,8 @@
         }
     },
     "replace_folder_test" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1",
-    "test_events_csv"    : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/train_events.csv",
-    "test_telescope_csv" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/train_telescopes.csv",
+    "test_events_csv"    : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/validation_events.csv",
+    "test_telescope_csv" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/validation_telescopes.csv",
     "telescopes" : {
         "MST_FlashCam": "D:/sebas/Desktop/umonna/BMO/BMO_UNIT_MST_ML_MST_FlashCam_mse_e003_0.0096.h5"
     },

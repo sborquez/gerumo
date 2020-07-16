@@ -212,6 +212,7 @@ if __name__ == "__main__":
     optimizer = config["optimizer"]["name"].lower()
     learning_rate = config["optimizer"]["learning_rate"]
     optimizer_parameters = config["optimizer"]["extra_parameters"]
+    optimizer_parameters = {} if optimizer_parameters is None else optimizer_parameters
     save_checkpoints = config["save_checkpoints"]
 
     # Debug

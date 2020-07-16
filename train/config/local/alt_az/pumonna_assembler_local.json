@@ -1,6 +1,7 @@
 {
     "model_name": "PUMONNA_ALT_AZ",
     "assembler_constructor": "pumonna",
+    "version" : "ML1",
     "output_folder" : "D:/sebas/Google Drive/Projects/gerumo/train/output",
     "evaluation": {
         "seed": 1312,
@@ -33,9 +34,9 @@
             "predictions_raw":    "sample"
         }
     },
-    "replace_folder_test" : "D:/sebas/Google Drive/Projects/gerumo/dataset",
-    "test_events_csv"    : "D:/sebas/Google Drive/Projects/gerumo/dataset/train_events.csv",
-    "test_telescope_csv" : "D:/sebas/Google Drive/Projects/gerumo/dataset/train_telescopes.csv",
+    "replace_folder_test" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1",
+    "test_events_csv"    : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/validation_events.csv",
+    "test_telescope_csv" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/validation_telescopes.csv",
     "telescopes" : {
         "MST_FlashCam": "D:/sebas/Google Drive/Projects/gerumo/train/output/PUMONNA_reg_UNIT_MST_ALL_MST_FlashCam_negloglike_e018_-0.1911.h5"
     },
