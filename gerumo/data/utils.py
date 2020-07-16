@@ -7,12 +7,12 @@ from math import ceil
 from os.path import join
 import numpy as np
 import tables
-from .io import _telescope_table, _telescopes_info_attributes
+from .dataset import _telescope_table, _telescopes_info_attributes
 from . import TELESCOPES, TELESCOPES_ALIAS
 
 __all__ = [
     'get_resolution', 'get_shape', 
-    'LST_LSTCam_align', 'to_simple_and_shift', 'extract_pixel_positions',
+    'extract_pixel_positions',
 ]
 
 
@@ -20,7 +20,6 @@ __all__ = [
 Utils Functions
 ===============
 """
-
 
 def get_resolution(targets, targets_domain, targets_shape):
     """Return the targets resolution for each target given the targets shape"""
@@ -30,6 +29,7 @@ def get_resolution(targets, targets_domain, targets_shape):
         shape = targets_shape[target]
         targets_resolution[target]  = (vmax -vmin) / shape
     return targets_resolution
+
 
 def get_shape(targets, targets_domain, targets_resolution):
     """Return the targets shape for each target given the targets resolution"""
@@ -42,29 +42,9 @@ def get_shape(targets, targets_domain, targets_resolution):
 
 
 """
-Dataset Functions
-===============
-"""
-
-
-def describe_dataset(dataset):
-    files = dataset.source.nunique()
-    events = dataset.event_unique_id.nunique()
-    obs = len(dataset)
-    by_telescope = dataset.type.value_counts()
-    print('files', files)
-    print('events', events)
-    print('observations', obs)
-    print('obsevation by telescopes')
-    print(by_telescope)
-
-
-
-"""
 Pixel Positions Functions
 ===============
 """
-
 
 def LST_LSTCam_align(pixels_position_array):
     xs = pixels_position_array[0,:]
