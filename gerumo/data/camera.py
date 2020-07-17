@@ -9,6 +9,8 @@ different square images from charge and peakpos value.
 
 import numpy as np
 import tables
+from ctapipe.instrument import CameraGeometry
+from astropy import units
 from os import path
 from . import (
     IMAGES_SIZE, INPUT_SHAPE, 
@@ -17,7 +19,7 @@ from . import (
 )
 
 __all__ = [
-    'load_camera', 'load_cameras',
+    'load_camera', 'load_cameras', 'load_camera_geometry',
     'camera_to_image', 'cameras_to_images'
 ]
 
@@ -35,7 +37,7 @@ _images_attributes = {
 
 
 
-def load_camera(source, folder, telescope_type, observation_indice, version="ML2"):
+def load_camera(source, folder, telescope_type, observation_indice, version="ML1"):
     """Load charge and timepeak from hdf5 file for a observation."""
 
     hdf5_filepath = path.join(folder, source)
@@ -47,7 +49,7 @@ def load_camera(source, folder, telescope_type, observation_indice, version="ML2
     peakpos = image[_images_attributes[version]["peakpos"]]
     return charge, peakpos
 
-def load_cameras(dataset, version="ML2"):
+def load_cameras(dataset, version="ML1"):
     """Load charge and time peak from hdf5 files for a dataset.
     
     Returns
@@ -78,6 +80,12 @@ def load_cameras(dataset, version="ML2"):
         hdf5_file.close()
     return respond
     
+def load_camera_geometry(telescope_type, version="ML1"):
+    geometry = CameraGeometry.from_name(TELESCOPE_CAMERA[telescope_type])
+    pixpos = PIXELS_POSITION[version]['raw'][telescope_type]
+    geometry.pix_x = units.quantity.Quantity(pixpos[0], 'meter')
+    geometry.pix_y = units.quantity.Quantity(pixpos[1], 'meter')
+    return geometry
 
 """
 Input preprocessing Functions
@@ -153,6 +161,8 @@ def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True, v
         result_image = _simple(charge, peakpos, telescope_type, mask, version)
     elif mode == "simple-shift":
         result_image = _simple_shift(charge, peakpos, telescope_type, mask, version)
+    elif mode == "raw":
+        result_image = np.vstack((charge, peakpos))
     else:
         raise ValueError(f"invalid 'mode': {mode}")
     return result_image
