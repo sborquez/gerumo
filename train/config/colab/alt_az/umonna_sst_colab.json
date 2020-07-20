@@ -7,6 +7,7 @@
     "save_plot" : false,
     "plot_only" : false,
     "summary" : false,
+    "version": "ML2",
     "output_folder" : "/content/drive/Shared drives/umonna/data/output",
     "replace_folder_train" : "/content/drive/Shared drives/umonna/data/data/raw/Train",
     "replace_folder_validation" : "/content/drive/Shared drives/umonna/data/data/raw/Train",
@@ -42,6 +43,13 @@
     "batch_size" : 32,
     "epochs" : 30,
     "loss" : "crossentropy",
-    "learning_rate" : 1e-1,
-    "save_checkpoints" : true
+    "save_checkpoints" : true,
+    "optimizer": {
+        "learning_rate": 1e-3,
+        "name": "sgd",
+        "extra_parameters": {
+            "momentum": 0.01,
+            "nesterov": true
+        }
+    }
 }

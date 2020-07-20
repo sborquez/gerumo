@@ -16,7 +16,7 @@ from sklearn.metrics import r2_score
 
 
 def evaluate(model_name, assembler_constructor, telescopes, evaluation_config, 
-             test_events_csv, test_telescope_csv, replace_folder_test, 
+             test_events_csv, test_telescope_csv, version, replace_folder_test, 
              output_folder, min_observations,
              input_image_mode, input_image_mask, input_features,
              target_mode, targets, target_mode_config, target_domains):
@@ -39,18 +39,20 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
     telescope_types = [t for t in telescopes.keys() if telescopes[t] is not None]
     
     # Test generators
-    test_generator = AssemblerGenerator(test_dataset, telescope_types,
-                                        batch_size, 
-                                        input_image_mode=input_image_mode, 
-                                        input_image_mask=input_image_mask, 
-                                        input_features=input_features,
-                                        targets=targets,
-                                        target_mode=target_mode, 
-                                        target_mode_config=target_mode_config,
-                                        preprocess_input_pipes=preprocess_input_pipes,
-                                        preprocess_output_pipes=preprocess_output_pipes,
-                                        include_event_id=True,
-                                        include_true_energy=True
+    test_generator =    AssemblerGenerator(
+                            test_dataset, telescope_types,
+                            batch_size, 
+                            input_image_mode=input_image_mode, 
+                            input_image_mask=input_image_mask, 
+                            input_features=input_features,
+                            targets=targets,
+                            target_mode=target_mode, 
+                            target_mode_config=target_mode_config,
+                            preprocess_input_pipes=preprocess_input_pipes,
+                            preprocess_output_pipes=preprocess_output_pipes,
+                            include_event_id=True,
+                            include_true_energy=True,
+                            version=version
     )
 
     # Sample Generator
@@ -95,19 +97,21 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
         # Telescope Sample Dataset
         test_dataset_telescope = filter_dataset(test_dataset, [telescope_i], min_observations, target_domains)
         bs =  1 if 0 < len(test_dataset_telescope) < batch_size else batch_size
-        telescope_generator = AssemblerUnitGenerator(test_dataset_telescope, 
-                                                batch_size=bs, 
-                                                input_image_mode=input_image_mode, 
-                                                input_image_mask=input_image_mask, 
-                                                input_features=input_features,
-                                                targets=targets,
-                                                target_mode="lineal",
-                                                target_mode_config=target_mode_config,
-                                                preprocess_input_pipes=preprocess_input_pipes,
-                                                preprocess_output_pipes=preprocess_output_pipes,
-                                                include_event_id=True,
-                                                include_true_energy=True
-                                                )
+        telescope_generator =   AssemblerUnitGenerator(
+                                    test_dataset_telescope, 
+                                    batch_size=bs, 
+                                    input_image_mode=input_image_mode, 
+                                    input_image_mask=input_image_mask, 
+                                    input_features=input_features,
+                                    targets=targets,
+                                    target_mode="lineal",
+                                    target_mode_config=target_mode_config,
+                                    preprocess_input_pipes=preprocess_input_pipes,
+                                    preprocess_output_pipes=preprocess_output_pipes,
+                                    include_event_id=True,
+                                    include_true_energy=True,
+                                    version=version
+                                )
         # Prepare targets points
         targets_values = []
         event_ids = []
@@ -317,6 +321,7 @@ if __name__ == "__main__":
     replace_folder_test = config["replace_folder_test"]
     test_events_csv    = config["test_events_csv"]
     test_telescope_csv = config["test_telescope_csv"]
+    version = config["version"]
 
     # Input and Target Parameters 
     telescopes = config["telescopes"]
@@ -352,8 +357,8 @@ if __name__ == "__main__":
     evaluation_config = config["evaluation"]
 
     evaluate(
-        model_name, telescopes, evaluation_config,
-        test_events_csv, test_telescope_csv, replace_folder_test, 
+        model_name, assembler_constructor, telescopes, evaluation_config,
+        test_events_csv, test_telescope_csv, version, replace_folder_test, 
         output_folder, min_observations,
         input_image_mode, input_image_mask, input_features,
         target_mode, targets, target_mode_config, target_domains

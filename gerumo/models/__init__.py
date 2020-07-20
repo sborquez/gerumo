@@ -7,21 +7,60 @@ Custom models, meta-models, layers and loss funtions.
 """
 
 
-from .loss import hellinger_loss, crossentropy_loss, mse_loss, mean_distance_loss, negloglike_loss
-from .layers import HexConvLayer, softmax, MultivariateNormalTriL
 
-CUSTOM_OBJECTS = {
-    # LOSSES
+"""
+Custom Loss
+============
+"""
+from .loss import hellinger_loss, crossentropy_loss, mse_loss, mean_distance_loss, negloglike_loss
+LOSS = {
     "hellinger_loss": hellinger_loss,
     "mse_loss": mse_loss,
     "mean_distance_loss": mean_distance_loss,
     "crossentropy_loss": crossentropy_loss,
     "negloglike_loss": negloglike_loss,
-    "loss": crossentropy_loss(), #dummy loss
-    # LAYERS
+}
+
+
+"""
+Custom Layers
+==============
+"""
+from .layers import HexConvLayer, softmax, MultivariateNormalTriL
+LAYERS = {
     "HexConvLayer": HexConvLayer,
 }
 
+
+"""
+Custom Objects
+==========
+"""
+CUSTOM_OBJECTS = {
+    # LOSSES
+    "loss": crossentropy_loss(), #dummy loss
+    **LOSS,
+    # LAYERS
+    **LAYERS
+}
+
+
+"""
+Optimizers
+==========
+"""
+from tensorflow.keras.optimizers import (Adam, SGD, RMSprop)
+OPTIMIZERS = {
+    "adam"    : Adam,
+    "sgd"     : SGD,
+    "rmsprop" : RMSprop  
+}
+
+
+"""
+Models and Assemblers
+==========
+"""
 from .umonna import umonna_unit, Umonna
 from .pumonna import pumonna_unit, ParametricUmonna
 from .bmo import bmo_unit, BMO
@@ -38,4 +77,6 @@ ASSEMBLERS = {
     "pumonna": ParametricUmonna,
     "bmo": BMO,
 }
+
+
 

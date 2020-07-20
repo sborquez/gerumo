@@ -24,64 +24,6 @@ Utils Functions
 ===============
 """
 
-def _extract_pixel_positions(hdf5_file, output_folder):
-    """Extract and save from file the information about pixel position.
-    Extract and apply transformation  to pixel position of each telescope 
-    type and for each camera_to_image 'mode'. Saves it to use them in the
-    'camera_to_image' function.
-
-    Note: This function is used just once. The pixel position can be shared
-    in a numpy file format.
-    """
-    raise NotImplementedError
-    # check umonna/preprocessing/cameratomatrix.py 
-    # __align and __hexagon_save
-    """
-    def to_simple_and_shift(pixels_position_array):
-        # get pixels positions
-        x = pixels_position_array[0]
-        y = pixels_position_array[1]
-        # indices of x and y pixels position
-        i = np.arange(0, len(y))
-        # row values of the telescope
-        y_levels = np.sort(np.unique(y))
-        # image dimension
-        nrows = len(y_levels)
-        ncols = len(np.unique(x))//2 + 1
-        # new translated pixel positions
-        new_x_l = np.copy(x) # new pixels x positions left shift
-        new_x_r = np.copy(x) # new pixels x positions right shift
-        new_y = np.copy(y)
-        # shift odd rows
-        dx = 0
-        for level, y_value in enumerate(y_levels):
-            indices = i[y == y_value]
-            if dx == 0:
-                dx = np.diff(np.sort(x[indices])).min()/2
-            if level % 2 != 0:
-                new_x_l[indices] -= dx
-                new_x_r[indices] += dx
-        # round values
-        new_x_l = np.round(new_x_l, 3)
-        new_x_r = np.round(new_x_r, 3)
-        # max indices of image output
-        max_col_l = len(np.unique(new_x_l)) - 1
-        max_col_r = len(np.unique(new_x_r)) - 1
-        max_row = nrows - 1
-        # apply lineal transfomation
-        new_x_l = ((max_col_l/(new_x_l.max() - new_x_l.min())) * (new_x_l - new_x_l.min()))
-        new_x_l = np.round(new_x_l).astype(int)
-        new_x_r = ((max_col_r/(new_x_r.max() - new_x_r.min())) * (new_x_r - new_x_r.min()))
-        new_x_r = np.round(new_x_r).astype(int)
-        new_y = ((max_row/(new_y.max() - new_y.min())) * (new_y - new_y.min()))
-        new_y = np.round(new_y).astype(int)
-        # prepare output
-        simple = np.vstack((new_x_r, new_y))
-        simple_shift = np.vstack((new_x_l, new_x_r, new_y))
-        return simple, simple_shift
-    """
-    pass
-
 def aggregate_dataset(dataset, az=True, log10_mc_energy=True, hdf5_file=True):
     """
     Perform simple aggegation to targe columns.
@@ -156,8 +98,8 @@ Prepare input images, normalize and standarize values
 from images and features. 
 """
 
-def _simple(charge, peakpos, telescope_type, mask):
-    x, y = PIXELS_POSITION["simple"][telescope_type] #(x, y)
+def _simple(charge, peakpos, telescope_type, mask, version="ML1"):
+    x, y = PIXELS_POSITION[version]["simple"][telescope_type] #(x, y)
     image_size = IMAGES_SIZE[telescope_type]
     if mask:
         input_shape = INPUT_SHAPE["simple-mask"][telescope_type]
@@ -170,8 +112,8 @@ def _simple(charge, peakpos, telescope_type, mask):
         canvas[y, x, 2] = 1
     return canvas
 
-def _simple_shift(charge, peakpos, telescope_type, mask):
-    x_left, x_right, y = PIXELS_POSITION["simple_shift"][telescope_type] #(x_l, x_r, y)
+def _simple_shift(charge, peakpos, telescope_type, mask, version="ML1"):
+    x_left, x_right, y = PIXELS_POSITION[version]["simple_shift"][telescope_type] #(x_l, x_r, y)
     image_size = IMAGES_SIZE[telescope_type]
     if mask:
         input_shape = INPUT_SHAPE["simple-shift-mask"][telescope_type]
@@ -187,13 +129,13 @@ def _simple_shift(charge, peakpos, telescope_type, mask):
         canvas[1, y, x_right, 2] = 1
     return canvas
 
-def _time_split(charge, peakpos, telescope_type, mask):
+def _time_split(charge, peakpos, telescope_type, mask, version="ML1"):
     raise NotImplementedError
 
-def _time_split_shift(charge, peakpos, telescope_type, mask):
+def _time_split_shift(charge, peakpos, telescope_type, mask, version="ML1"):
     raise NotImplementedError
 
-def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True):
+def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True, version="ML1"):
     """
     Transform the charge and peakpos values into an rectangle image.
 
@@ -229,18 +171,20 @@ def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True):
         result_image
     """
     if mode == "simple":
-        result_image = _simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask, version)
     elif mode == "simple-shift":
-        result_image = _simple_shift(charge, peakpos, telescope_type, mask)
+        result_image = _simple_shift(charge, peakpos, telescope_type, mask, version)
+    
+    # TODO: delete these
     elif mode == "time-split":
-        result_image = _simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask, version)
     elif mode == "time-split-shift":
-        result_image = _simple(charge, peakpos, telescope_type, mask)
+        result_image = _simple(charge, peakpos, telescope_type, mask, version)
     else:
         raise ValueError(f"invalid 'mode': {mode}")
     return result_image
 
-def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True):
+def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True, version="ML1"):
     """
     Transform the charge and peakpos values into rectangle images.
 
@@ -268,6 +212,8 @@ def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True):
         This define the result_image. (default='simple')
     mask : `bool`, optional
         Add a mask channel to the result_image. (default=True)
+    version : `str`, optional
+        Prod3b ML version. (default='ML1')
     Returns
     -------
     `list` of `numpy.ndarray` or `list` of `tuple` of `numpy.ndarray`
@@ -275,7 +221,7 @@ def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True):
     """
     result_images = []
     for (charge, peakpos), telescope_type in zip(cameras, telescopes_type):
-        result_images.append(camera_to_image(charge, peakpos, telescope_type, mode, mask))
+        result_images.append(camera_to_image(charge, peakpos, telescope_type, mode, mask, version))
     return result_images
 
 

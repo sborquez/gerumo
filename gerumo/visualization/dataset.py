@@ -19,7 +19,7 @@ import ctaplot
 
 __all__ = [
   'show_input_sample', 'show_target_sample',
-  'plot_array', 'plot_telescope_geometry'
+  'plot_array', 'plot_telescope_geometry', 'plot_observation_scatter'
 ]
 
 def show_input_sample(input_image_sample, input_image_mode, input_features_sample, make_simple=False, ax=None):

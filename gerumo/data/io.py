@@ -424,8 +424,8 @@ def load_camera(source, folder, telescope_type, observation_indice, version="ML2
     telescope_alias = TELESCOPES_ALIAS[version][telescope_type]
     image = hdf5_file.root[telescope_alias][observation_indice]
     hdf5_file.close()
-    charge = image["charge"]
-    peakpos = image["peakpos"]
+    charge = image[_images_attributes[version]["charge"]]
+    peakpos = image[_images_attributes[version]["peakpos"]]
     return charge, peakpos
 
 def load_cameras(dataset, version="ML2"):
@@ -455,6 +455,6 @@ def load_cameras(dataset, version="ML2"):
             # load images and copy results
             images = hdf5_file.root[telescope_alias][observations_indices_selected]
             for i, img in zip(respond_indices_selected, images):
-                respond[i] = (img["charge"], img["peakpos"]) 
+                respond[i] = (img[_images_attributes[version]["charge"]], img[_images_attributes[version]["peakpos"]]) 
         hdf5_file.close()
     return respond
