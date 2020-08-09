@@ -38,9 +38,17 @@ if __name__ == "__main__":
 
     dataset = load_dataset(events_path, telescopes_path)
     
+    print("Dataset")
+    describe_dataset(dataset)
+    
     if split > 0:
         train_dataset, val_dataset = split_dataset(dataset, split)
 
         save_dataset(train_dataset, output, "train")
         save_dataset(val_dataset, output, "validation")
 
+        print("\ntrain_dataset:")
+        describe_dataset(train_dataset)
+        
+        print("\nval_dataset:")
+        describe_dataset(val_dataset)

@@ -148,7 +148,7 @@ def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True, v
     telescope_type : `str`
         Telescope type.
     mode : `str`, optional
-        Image transformation mode: ('simple', 'simple-shift', 'time-split', 'time-split-shift').
+        Image transformation mode: ('simple', 'simple-shift').
         This define the result_image. (default='simple')
     mask : `bool`, optional
         Add a mask channel to the result_image. (default=True)
@@ -191,7 +191,7 @@ def cameras_to_images(cameras, telescopes_type, mode="simple", mask=True, versio
     telescope_type : `list` of `str`
         List of telescope type for each observation.
     mode : `str`, optional
-        Image transformation mode: ('simple', 'simple-shift', 'split-time', 'split-time-shift').
+        Image transformation mode: ('simple', 'simple-shift').
         This define the result_image. (default='simple')
     mask : `bool`, optional
         Add a mask channel to the result_image. (default=True)

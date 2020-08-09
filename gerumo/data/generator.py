@@ -25,8 +25,8 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
                  targets,
                  target_mode,
                  target_mode_config,
-                 preprocess_input_pipes=[],
-                 preprocess_output_pipes=[],
+                 preprocess_input_pipes={},
+                 preprocess_output_pipes={},
                  include_event_id=False,
                  include_true_energy=False,
                  shuffle=False,
@@ -105,12 +105,20 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         # dataset contains only one telescope type
         telescope_types = [self.telescope_type]*len(batch_dataset)
         cameras = load_cameras(batch_dataset, version=self.version)
+        # PreProcessing Cameras
+        if "CameraPipe" in self.preprocess_input_pipes:
+            cameras = self.preprocess_input_pipes["CameraPipe"](cameras)
+        # Generate square images
         images = cameras_to_images(cameras, telescope_types, self.input_image_mode, self.input_image_mask, version=self.version)
+        # Build batch
         batch_images = np.array(images)                                   
         batch_telescope_features = batch_dataset[self.input_features].values
-        # TODO: Add preprocessing steps
+        # PreProcessing Telescope Features
+        if "TelescopeFeaturesPipe" in self.preprocess_input_pipes:
+            batch_telescope_features = self.preprocess_input_pipes["TelescopeFeaturesPipe"](batch_telescope_features)
         X = [batch_images, batch_telescope_features]
 
+        # Build Target
         if self.target_mode is not None:
             y = targets_to_matrix(targets_values=batch_dataset[self.targets].values, 
                               target_names=self.targets,
@@ -279,21 +287,31 @@ class AssemblerGenerator(keras.utils.Sequence):
         }
         """
         for event in batch_events:
+            # 
             event_dataset = self.dataset.get_group(event).sort_values(by="type")
-            # dataset contains only one telescope type
             telescope_types = list(event_dataset.type)
+
+            # Load cameras
             cameras = load_cameras(event_dataset, version=self.version)
+            # PreProcessing Cameras
+            if "MultiCameraPipe" in self.preprocess_input_pipes:
+                cameras = self.preprocess_input_pipes["MultiCameraPipe"](cameras, telescope_types)
+            # Generate square images
             event_images = cameras_to_images(cameras, telescope_types, 
                                    self.input_image_mode, self.input_image_mask, version=self.version)
 
+            # Telescop features
             event_telescopes_features = event_dataset[self.input_features].values
+            # Preprocessing Telescope Features
+            if "TelescopeFeaturesPipe" in self.preprocess_input_pipes:
+                event_telescopes_features = self.preprocess_input_pipes["TelescopeFeaturesPipe"](event_telescopes_features)
 
+            # Build Batch
             event_by_telescope = {}
             for telescope_type in self.telescope_types:
                 telescope_indices = [i for i, t in enumerate(telescope_types) if t == telescope_type]
                 event_images_by_telescope = np.array([event_images[t_i] for t_i in telescope_indices])
                 event_telescopes_features_by_telescope = np.array([event_telescopes_features[t_i] for t_i in telescope_indices])
-                # TODO: Add preprocessing steps
                 event_by_telescope[telescope_type] = [ 
                     event_images_by_telescope, event_telescopes_features_by_telescope
                 ]
