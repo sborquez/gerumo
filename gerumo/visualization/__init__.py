@@ -11,4 +11,4 @@ type of function can be used by `plot` to generate more elaborated figures.
 """
 
 from .metrics import *
-from .telescopes import *
+from .explore import *
