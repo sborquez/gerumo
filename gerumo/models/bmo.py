@@ -26,7 +26,7 @@ from .layers import HexConvLayer, softmax
 
 def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=800, dense_layer_blocks=5, dropout_rate=0.3):
+                latent_variables=800, dense_layer_blocks=6, dropout_rate=0.3):
     """Build BMO Unit Model
     Parameters
     ==========
@@ -56,7 +56,7 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
                        kernel_initializer="he_uniform",
                        padding = "valid",
                        activation="relu")(input_img)
-        front = MaxPooling2D(name=f"encoder_conv_layer_0", pool_size=(2, 2))(front)
+        front = MaxPooling2D(name=f"encoder_maxpool_layer_0", pool_size=(2, 2))(front)
     else:
         raise ValueError(f"Invalid image mode {image_mode}")
 
@@ -101,11 +101,11 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
     front = Flatten(name="encoder_flatten_to_latent")(front)
     
     # Skip Connection
-    skip_front = front
-    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2)(skip_front)
-    skip_front = Activation(name=f"logic_ReLU_shortcut", activation="relu")(skip_front)
-    skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
-    skip_front = Dropout(name=f"bayesian_Dropout_shortcut", rate=dropout_rate)(skip_front, training=True)
+    # skip_front = front
+    # skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2)(skip_front)
+    # skip_front = Activation(name=f"logic_ReLU_shortcut", activation="relu")(skip_front)
+    # skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
+    # skip_front = Dropout(name=f"bayesian_Dropout_shortcut", rate=dropout_rate)(skip_front, training=True)
 
     # Logic Block
     ## extra Telescope Features
@@ -120,27 +120,34 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
         front = Dropout(name=f"bayesian_Dropout_{dense_i}", rate=dropout_rate)(front, training=True)
 
     # Add Skip connection
-    front = Add()([front, skip_front])
-    front = Reshape((1, 1,  latent_variables//2), name="logic_reshape")(front)
+    # front = Add()([front, skip_front])
+    #front = Reshape((1, 1,  latent_variables//2), name="logic_reshape")(front)
 
-    front = Conv2D(name=f"logic_dense_last", kernel_size=1, 
-                   filters=latent_variables//2,
-                   kernel_initializer="he_uniform")(front)
-    front = Activation(activation="relu")(front)
-    front = BatchNormalization()(front)
-    front = Dropout(name=f"bayesian_Dropout_{dense_i+1}", rate=dropout_rate)(front, training=True)
+    # front = Conv2D(name=f"logic_dense_last", kernel_size=1, 
+    #                filters=latent_variables//2,
+    #                kernel_initializer="he_uniform")(front)
+    # front = Activation(activation="relu")(front)
+    # front = BatchNormalization()(front)
+    # front = Dropout(name=f"bayesian_Dropout_{dense_i+1}", rate=dropout_rate)(front, training=True)
     
-    # Outout block
-    front = Dense(units=64)(front)
-    front = Activation(activation="tanh")(front)
-    front = BatchNormalization()(front)
-    front = Dropout(name=f"bayesian_Dropout_{dense_i+2}", rate=dropout_rate)(front, training=True)
-    front = Dense(units=64)(front)
-    front = Activation(activation="tanh")(front)
-    front = BatchNormalization()(front)
-    front = Dropout(name=f"bayesian_Dropout_{dense_i+3}", rate=dropout_rate)(front, training=True)
-    output = Dense(len(targets), activation=None)(front)
+    # Output block
+    # front = Flatten()(front)
+    target_fronts = []
+    for target_i in range(len(targets)):
+        dense_i_t = dense_i + 1
+        target_front = Dense(units=64)(front)
+        target_front = Activation(activation="relu")(target_front)
+        target_front = BatchNormalization()(target_front)
+        target_front = Dropout(name=f"bayesian_Dropout_{dense_i_t+1}_{target_i}", rate=dropout_rate)(target_front, training=True)
+        
+        target_front = Dense(units=64)(target_front)
+        target_front = Activation(activation="relu")(target_front)
+        target_front = BatchNormalization()(target_front)
+        target_front = Dropout(name=f"bayesian_Dropout_{dense_i_t+2}_{target_i}", rate=dropout_rate)(target_front, training=True)
 
+        target_front = Dense(1)(target_front)
+        target_fronts.append(target_front)
+    output = Concatenate()(target_fronts)
     model_name = f"BMO_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
     return model
@@ -165,7 +172,7 @@ class BMO(ModelAssembler):
 
     @staticmethod
     def bayesian_estimation(model, x_i_telescope, sample_size, verbose, **kwargs):
-        y_predictions_points = np.array([model.predict(x_i_telescope, verbose=verbose, **kwargs).squeeze(axis=(1,2)) for _ in range(sample_size)])
+        y_predictions_points = np.array([model.predict(x_i_telescope, verbose=verbose, **kwargs) for _ in range(sample_size)])
         y_predictions_points = np.swapaxes(np.swapaxes(y_predictions_points, 0, 1), 1, 2)
         y_predictions_kde    = [st.gaussian_kde(y_predictions_point) for y_predictions_point in y_predictions_points]
         return y_predictions_kde, y_predictions_points
