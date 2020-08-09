@@ -34,6 +34,7 @@ def train_model(model_name, model_constructor, model_extra_params,
             optimizer = 'sgd',
             optimizer_parameters = {},
             learning_rate = 1e-1,
+            preprocessing_parameters = {},
             save_checkpoints = True,
             save_plot=False, plot_only=False, summary=False):
 
@@ -51,8 +52,18 @@ def train_model(model_name, model_constructor, model_extra_params,
     validation_dataset = filter_dataset(validation_dataset, telescope, min_observations, target_domains)
     
     # Preprocessing pipes
-    preprocess_input_pipes = []
-    preprocess_output_pipes = []
+    ## input preprocessing
+    preprocess_input_pipes = {}
+    if "CameraPipe" in preprocessing_parameters:
+        camera_parameters = preprocessing_parameters["CameraPipe"]
+        camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
+        preprocess_input_pipes['CameraPipe'] = camera_pipe
+    if "TelescopeFeaturesPipe" in preprocessing_parameters:
+        telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
+        telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope, version=version, **telescopefeatures_parameters)
+        preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
+    ## output preprocessing
+    preprocess_output_pipes = {}
 
     # Generators
     train_generator =   AssemblerUnitGenerator(
@@ -213,10 +224,15 @@ if __name__ == "__main__":
     learning_rate = config["optimizer"]["learning_rate"]
     optimizer_parameters = config["optimizer"]["extra_parameters"]
     optimizer_parameters = {} if optimizer_parameters is None else optimizer_parameters
-    save_checkpoints = config["save_checkpoints"]
 
-    # Debug
+    # Preprocessing
+    preprocessing_parameters = config.get("preprocessing", {})
+
+    # Result parameters
+    save_checkpoints = config["save_checkpoints"]
     save_plot = config["save_plot"]
+    
+    # Debug
     plot_only = config["plot_only"]
     summary = config["summary"]
 
@@ -238,7 +254,10 @@ if __name__ == "__main__":
         # Training paramters
         batch_size, epochs, 
         loss, 
-        optimizer, optimizer_parameters, learning_rate, 
+        optimizer, optimizer_parameters, learning_rate,
+        # Preprocessing parameters
+        preprocessing_parameters,
+        # Results paramerts
         save_checkpoints, save_plot, 
         # Debug parameters
         plot_only, summary 
