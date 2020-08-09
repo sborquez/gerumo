@@ -1,5 +1,5 @@
 {
-    "model_name": "BMO_UNIT_MST",
+    "model_name": "BMO_UNIT_SST",
     "model_constructor": "bmo_unit",
     "model_extra_params": {
         "latent_variables": 600,
@@ -19,7 +19,7 @@
     "validation_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
     "test_events_csv"    : null,
     "test_telescope_csv" : null,
-    "telescope" : "MST_FlashCam",
+    "telescope" : "SST1M_DigiCam",
     "min_observations" : 1,
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
@@ -47,9 +47,9 @@
     },
     "preprocessing": {
         "CameraPipe" : {
-            "charge_scaler_value" : 62.652400970459,
-            "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
-            "tailcuts_clean_params": {"boundary_thresh": 6, "picture_thresh": 14}
+            "charge_scaler_value" : 39.223409118652356,
+            "peak_scaler_path" : "ML1_SST1M_DigiCam_peak_scaler",
+            "tailcuts_clean_params": {"boundary_thresh": 2, "picture_thresh": 4}
         },
         "TelescopeFeaturesPipe": {
             "array_scaler_path": "ML1_array-scaler"

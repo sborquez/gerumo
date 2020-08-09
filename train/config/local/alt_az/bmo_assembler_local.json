@@ -2,7 +2,7 @@
     "model_name": "BMO_ALT_AZ",
     "assembler_constructor": "bmo",
     "version" : "ML1",
-    "output_folder" : "D:/sebas/Google Drive/Projects/gerumo/train/output",
+    "output_folder" : "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output",
     "evaluation": {
         "seed": 1312,
         "Assembler": {
@@ -34,14 +34,14 @@
             "predictions_raw":    "sample"
         }
     },
-    "replace_folder_test" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1",
-    "test_events_csv"    : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/validation_events.csv",
-    "test_telescope_csv" : "D:/sebas/Google Drive/Projects/gerumo/dataset/ML1/validation_telescopes.csv",
+    "replace_folder_test" : null,
+    "test_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
+    "test_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
     "telescopes" : {
-        "MST_FlashCam": "D:/sebas/Desktop/umonna/BMO/BMO_UNIT_MST_ML_MST_FlashCam_mse_e003_0.0096.h5"
+        "LST_LSTCam": "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output/BMO_UNIT_LST_LST_LSTCam_mae_e069_0.5078.h5"
     },
     "min_observations" : [0,0,0],
-    "input_image_mode" : "simple-shift",
+    "input_image_mode" : "simple",
     "input_image_mask" : true,
     "input_features" : ["x", "y"],
     "targets" : ["alt", "az"],
@@ -52,5 +52,27 @@
         "az": [-0.52, 0.52], 
         "log10_mc_energy": [-2.351, 2.47]
     },
-    "target_sigmas" : null
+    "target_sigmas" : null,
+    "preprocessing": {
+            "MultiCameraPipe" : {
+                "SST1M_DigiCam": {
+                    "charge_scaler_value" : 39.223409118652356,
+                    "peak_scaler_path" : "ML1_SST1M_DigiCam_peak_scaler",
+                    "tailcuts_clean_params": {"boundary_thresh": 2, "picture_thresh": 4}
+                },
+                "MST_FlashCam": {
+                    "charge_scaler_value" : 62.652400970459,
+                    "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
+                    "tailcuts_clean_params": {"boundary_thresh": 6, "picture_thresh": 14}
+                },
+                "LST_LSTCam": {
+                    "charge_scaler_value" : 36.852122955322265,
+                    "peak_scaler_path" : "ML1_LST_LSTCam_peak_scaler",
+                    "tailcuts_clean_params": {"boundary_thresh": 3, "picture_thresh": 5}
+                }
+            },
+            "TelescopeFeaturesPipe": {
+                "array_scaler_path": "ML1_array-scaler"
+            }
+    }
 }
