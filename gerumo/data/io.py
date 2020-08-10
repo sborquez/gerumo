@@ -437,7 +437,7 @@ def load_cameras(dataset, version="ML2"):
         A list with the charge and peakpos values for each camera observations.
     """
     # avaliable files and telescopes 
-    hdf5_filepaths = dataset["hdf5_filepath"].unique()
+    hdf5_filepaths = (dataset["folder"] + "/" + dataset["source"]).unique()
     telescopes = dataset["type"].unique()
     # build list with loaded images
     respond = [None] * len(dataset)
@@ -449,7 +449,7 @@ def load_cameras(dataset, version="ML2"):
         for telescope_type in telescopes:
             telescope_alias = TELESCOPES_ALIAS[version][telescope_type]
             # select indices for this file and telescope
-            selector = (dataset["hdf5_filepath"] == hdf5_filepath) & (dataset["type"] == telescope_type)
+            selector = (dataset["folder"] + "/" + dataset["source"] == hdf5_filepath) & (dataset["type"] == telescope_type)
             observations_indices_selected = dataset[selector]["observation_indice"].to_numpy()
             respond_indices_selected = indices[selector]
             # load images and copy results
@@ -458,3 +458,23 @@ def load_cameras(dataset, version="ML2"):
                 respond[i] = (img[_images_attributes[version]["charge"]], img[_images_attributes[version]["peakpos"]]) 
         hdf5_file.close()
     return respond
+
+
+def load_array_direction(hdf5_filepath: str):
+    hdf5_file = tables.open_file(hdf5_filepath, "r")
+    version = "ML1"
+    array_directions = dict()
+    for telescope in hdf5_file.root[_array_info_table[version]]:
+        telescope_id = telescope[_array_attributes[version]["telescope_id"]]
+        telescope_type = telescope[_array_attributes[version]["type"]]
+        telescope_type = telescope_type.decode("utf-8") if isinstance(telescope_type, bytes) else telescope_type
+        if telescope_type not in array_directions:
+            array_directions[telescope_type] = {}
+        if telescope_id in array_directions[telescope_type].keys():
+            print("D:")
+        for arr_dir in array_directions[telescope_type].values():
+            if np.all(telescope["run_array_direction"] != arr_dir):
+                print(telescope["run_array_direction"])
+        array_directions[telescope_type][telescope_id] = telescope["run_array_direction"]
+    hdf5_file.close()
+    return array_directions
