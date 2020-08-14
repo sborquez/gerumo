@@ -5,8 +5,8 @@
 #SBATCH --mail-type=ALL
 #SBATCH -o output_gerumo_train_lst_%j.log
 #SBATCH -e error_gerumo_train_lst_%j.log
-#SBATCH --gres=gpu:1
-
+#SBATCH --gres=gpu:2
+#SBATCH --time=7-0
 
 # ----------------MÃ³dulos-----------------------------
 cd $SLURM_SUBMIT_DIR
@@ -24,4 +24,4 @@ cd /user/s/sborquez/gerumo/train
 #python train_model.py --config ./config/cctval/alt_az/umonna_lst_hpc_onecell.json
 #python train_model.py --config ./config/cctval/alt_az_energy/umonna_lst_hpc_onecell.json
 #python train_model.py --config ./config/cctval/alt_az/umonna_lst_hpc_all.json
-python train_model.py --config ./config/cctval/alt_az/umonna_lst_hpc_hd_all.json
+python train_model.py --config ./config/cctval/alt_az/inf578/umonna_lst.json --quiet -G
