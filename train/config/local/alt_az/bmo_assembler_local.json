@@ -38,18 +38,18 @@
     "test_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
     "test_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
     "telescopes" : {
-        "LST_LSTCam": "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output/BMO_UNIT_LST_LST_LSTCam_mae_e069_0.5078.h5"
+        "MST_FlashCam": "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output/BMO_UNIT_MST_MST_FlashCam_mae_e020_0.0746.h5"
     },
     "min_observations" : [0,0,0],
-    "input_image_mode" : "simple",
+    "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
     "input_features" : ["x", "y"],
     "targets" : ["alt", "az"],
     "target_mode" : "lineal",
     "target_shapes" : null,
     "target_domains" : {
-        "alt": [1.05, 1.382], 
-        "az": [-0.52, 0.52], 
+        "alt": [1.15, 1.3], 
+        "az": [-0.25, 0.25], 
         "log10_mc_energy": [-2.351, 2.47]
     },
     "target_sigmas" : null,

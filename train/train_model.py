@@ -36,7 +36,7 @@ def train_model(model_name, model_constructor, model_extra_params,
             learning_rate = 1e-1,
             preprocessing_parameters = {},
             save_checkpoints = True,
-            save_plot=False, plot_only=False, summary=False):
+            save_plot=False, plot_only=False, summary=False, quiet=False):
 
     target_domains_list = target_mode_config["target_domains"]
     target_domains = {target: target_domain for target, target_domain in zip(targets, target_domains_list)}
@@ -143,7 +143,7 @@ def train_model(model_name, model_constructor, model_extra_params,
     history = model.fit(
         train_generator,
         epochs = epochs,
-        verbose = 1,
+        verbose = 2 if quiet else 1,
         validation_data = validation_generator,
         validation_steps = len(validation_generator),
         callbacks = callbacks,
@@ -164,8 +164,10 @@ if __name__ == "__main__":
 
     ap = argparse.ArgumentParser(description="Train a model.")
     ap.add_argument("-c", "--config", type=str, required=True, help="Configuration file for model/experiment.")
+    ap.add_argument("-q", "--quiet", action='store_true', dest='quiet')
     args = vars(ap.parse_args()) 
     config_file = args["config"]
+    quiet = args["quiet"]
     
     print(f"Loading config from: {config_file}")
     with open(config_file) as cfg_file:
@@ -260,5 +262,5 @@ if __name__ == "__main__":
         # Results paramerts
         save_checkpoints, save_plot, 
         # Debug parameters
-        plot_only, summary 
+        plot_only, summary, quiet 
     )
