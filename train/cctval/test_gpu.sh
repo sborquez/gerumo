@@ -1,10 +1,14 @@
 #!/bin/bash
-#PBS -q gpuk
-#PBS -N test
-#PBS -l walltime=168:00:00
+#SBATCH -p gpuk
+#SBATCH -J gerumo_debug
+#SBATCH --mail-user=sebastian.borquez@sansano.usm.cl
+#SBATCH --mail-type=ALL
+#SBATCH -o output_gerumo_debug_%j.log
+#SBATCH -e error_gerumo_debug_%j.log 
+#SBATCH --gres=gpu:1
 
 # ----------------MÃ³dulos-----------------------------
-cd $PBS_O_WORKDIR
+cd $SLURM_SUBMIT_DIR
 source /opt/software/anaconda3/2019.03/setup.sh
 # ----------------Comandos--------------------------
 

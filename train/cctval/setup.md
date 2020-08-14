@@ -17,6 +17,8 @@ conda create --prefix ./envs/gerumo python=3.7
 conda activate /user/s/sborquez/envs/gerumo
 conda install tensorflow-gpu numpy scipy matplotlib pillow pandas scikit-learn scikit-image astropy pytables seaborn pydot
 conda install -c conda-forge colour tqdm
+conda install -c cta-observatory  ctapipe
+pip install ctaplot
 ```
 ## Running Scripts
 
@@ -27,23 +29,43 @@ Add this generated script at the begining of the sh file.
 ```bash
 #!/bin/bash
 # ----------------SLURM Parameters----------------
-#!/bin/bash
-#PBS -q gpuk
-#PBS -N test
-#PBS -l walltime=168:00:00
+#SBATCH -p gpuk <you can use gpum too, but it`s slower>
+#SBATCH -J <job name here>
+#SBATCH --mail-user=<your email here>
+#SBATCH --mail-type=ALL
+#SBATCH -o output_<your log name>_%j.log
+#SBATCH -e error_<your log name>_%j.log
+#SBATCH --gres=gpu:1
 
-# ----------------MÃ³dulos-----------------------------
-cd $PBS_O_WORKDIR
+# ----------------M�~C³dulos-----------------------------
+cd $SLURM_SUBMIT_DIR
 source /opt/software/anaconda3/2019.03/setup.sh
 # ----------------Comandos--------------------------
 
-source activate /user/s/sborquez/envs/gerumo
+source activate <path to the enviroment>/envs/gerumo
 ```
 
 Send jobs to queue with
 
 ```
-qsub <job>.sh
+sbatch <job>.sh
 ```
 
 *Note*: never send a job with an enviroment activated!
+
+
+List jobs
+
+```
+squeue
+```
+
+List nodes
+
+```
+sinfo
+```
+
+
+
+
