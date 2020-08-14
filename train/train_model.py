@@ -9,6 +9,7 @@ import time
 from os import path
 
 import numpy as np
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.utils import plot_model
 
@@ -36,7 +37,8 @@ def train_model(model_name, model_constructor, model_extra_params,
             learning_rate = 1e-1,
             preprocessing_parameters = {},
             save_checkpoints = True,
-            save_plot=False, plot_only=False, summary=False, quiet=False):
+            save_plot=False, plot_only=False, summary=False, quiet=False,
+            multi_gpu=False):
 
     target_domains_list = target_mode_config["target_domains"]
     target_domains = {target: target_domain for target, target_domain in zip(targets, target_domains_list)}
@@ -104,10 +106,58 @@ def train_model(model_name, model_constructor, model_extra_params,
     input_img_shape = INPUT_SHAPE[f"{input_image_mode}-mask" if input_image_mask else input_image_mode][telescope]
     input_features_shape = (len(input_features),)
     target_shapes = target_mode_config["target_shapes"]
-    model = model_constructor(telescope, input_image_mode, input_image_mask, 
+    
+    # Multi GPU
+    if multi_gpu:
+        # Create a MirroredStrategy.
+        strategy = tf.distribute.MirroredStrategy()
+        print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
+        with strategy.scope():
+            model = model_constructor(telescope, input_image_mode, input_image_mask,
+                        input_img_shape, input_features_shape,
+                        targets, target_mode, target_shapes,
+                        **model_extra_params)
+            ## Loss function
+            loss = loss if loss.split('_')[-1] == 'loss' else f'{loss}_loss'
+            if loss == "crossentropy":
+                loss_ = LOSS[loss](dimensions=len(targets))
+            elif loss == "distance":
+                loss_ = mean_distance_loss(target_shapes)
+            else:
+                loss_ = LOSS[loss]()
+            ## Optimizer
+            optimizer_ = OPTIMIZERS[optimizer](
+                learning_rate=learning_rate,
+                **optimizer_parameters
+            )
+            model.compile(
+                optimizer=optimizer_,
+                loss=loss_
+            )
+
+    else: 
+        model = model_constructor(telescope, input_image_mode, input_image_mask, 
                     input_img_shape, input_features_shape,
                     targets, target_mode, target_shapes, 
                     **model_extra_params)
+        ## Loss function
+        loss = loss if loss.split('_')[-1] == 'loss' else f'{loss}_loss'
+        if loss == "crossentropy":
+            loss_ = LOSS[loss](dimensions=len(targets))
+        elif loss == "distance":
+            loss_ = mean_distance_loss(target_shapes)
+        else:
+            loss_ = LOSS[loss]()
+        ## Optimizer
+        optimizer_ = OPTIMIZERS[optimizer](
+            learning_rate=learning_rate,
+            **optimizer_parameters
+        )
+        model.compile(
+            optimizer=optimizer_,
+            loss=loss_
+        )
+    
     # Debug
     if summary:
         model.summary()
@@ -117,27 +167,8 @@ def train_model(model_name, model_constructor, model_extra_params,
         plot_model(model, to_file="model_simple.png", show_shapes=False)
         if plot_only:
             exit(0)
-
-    ## Loss function
-    loss = loss if loss.split('_')[-1] == 'loss' else f'{loss}_loss'
-    if loss == "crossentropy":
-        loss_ = LOSS[loss](dimensions=len(targets))
-    elif loss == "distance":
-        loss_ = mean_distance_loss(target_shapes)
-    else:
-        loss_ = LOSS[loss]()
-
-    ## Optimizer
-    optimizer_ = OPTIMIZERS[optimizer](
-        learning_rate=learning_rate,
-        **optimizer_parameters
-    )
-
+    
     ## fit
-    model.compile(
-        optimizer=optimizer_,
-        loss=loss_
-    )
 
     start_time = time.time()
     history = model.fit(
@@ -165,9 +196,11 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Train a model.")
     ap.add_argument("-c", "--config", type=str, required=True, help="Configuration file for model/experiment.")
     ap.add_argument("-q", "--quiet", action='store_true', dest='quiet')
+    ap.add_argument("-G", "--multi-gpu", action='store_true', dest='multi_gpu')
     args = vars(ap.parse_args()) 
     config_file = args["config"]
     quiet = args["quiet"]
+    multi_gpu = args["multi_gpu"]
     
     print(f"Loading config from: {config_file}")
     with open(config_file) as cfg_file:
@@ -198,7 +231,7 @@ if __name__ == "__main__":
     target_mode = config["target_mode"]
     target_shapes = config["target_shapes"]
     target_domains = config["target_domains"]
-    if config["model_constructor"] == 'umonna':
+    if config["model_constructor"] == 'umonna_unit':
         target_resolutions = get_resolution(targets, target_domains, target_shapes)
     
         # Prepare Generator target_mode_config 
@@ -262,5 +295,7 @@ if __name__ == "__main__":
         # Results paramerts
         save_checkpoints, save_plot, 
         # Debug parameters
-        plot_only, summary, quiet 
+        plot_only, summary, quiet,
+        # HPC
+        multi_gpu
     )
