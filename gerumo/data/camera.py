@@ -96,6 +96,28 @@ from images and features.
 """
 
 def _simple(charge, peakpos, telescope_type, mask, version="ML1"):
+    """
+    Transform charge and peak positions from raw format to square matrix.
+        
+    Parameters
+    ----------
+    charge : `numpy.ndarray`
+        'charge' pixel values from the observation.
+    peakpos : `numpy.ndarray`
+        'peakpos' pixel values from the observation.
+    telescope_type : `str`
+        Telescope type.
+    mask : `bool`, optional
+        Add a mask channel to the result_image. (default=True)
+    version : `str`, optional
+        Prod3b version: ('ML1', 'ML2').
+        This define the h5 structure and pixpos. (default='ML1')
+
+    Returns
+    =======
+        `np.ndarray`
+        Charge and peakpos values in square matrix form.
+    """
     x, y = PIXELS_POSITION[version]["simple"][telescope_type] #(x, y)
     image_size = IMAGES_SIZE[telescope_type]
     if mask:
@@ -110,6 +132,28 @@ def _simple(charge, peakpos, telescope_type, mask, version="ML1"):
     return canvas
 
 def _simple_shift(charge, peakpos, telescope_type, mask, version="ML1"):
+    """
+    Transform charge and peak positions from raw format to two square matrices (left-right shifted).
+        
+    Parameters
+    ----------
+    charge : `numpy.ndarray`
+        'charge' pixel values from the observation.
+    peakpos : `numpy.ndarray`
+        'peakpos' pixel values from the observation.
+    telescope_type : `str`
+        Telescope type.
+    mask : `bool`, optional
+        Add a mask channel to the result_image. (default=True)
+    version : `str`, optional
+        Prod3b version: ('ML1', 'ML2').
+        This define the h5 structure and pixpos. (default='ML1')
+
+    Returns
+    =======
+        `np.ndarray`
+        Charge and peakpos values in square matrix form.
+    """
     x_left, x_right, y = PIXELS_POSITION[version]["simple_shift"][telescope_type] #(x_l, x_r, y)
     image_size = IMAGES_SIZE[telescope_type]
     if mask:
@@ -125,6 +169,75 @@ def _simple_shift(charge, peakpos, telescope_type, mask, version="ML1"):
         canvas[0, y, x_left, 2] = 1
         canvas[1, y, x_right, 2] = 1
     return canvas
+
+def _time(peakpos, telescope_type, mask, version="ML1"):
+    """
+    Transform only peak positions from raw format to one square matrix.
+    
+    Parameters
+    ----------
+    peakpos : `numpy.ndarray`
+        'peakpos' pixel values from the observation.
+    telescope_type : `str`
+        Telescope type.
+    mask : `bool`, optional
+        Add a mask channel to the result_image. (default=True)
+    version : `str`, optional
+        Prod3b version: ('ML1', 'ML2').
+        This define the h5 structure and pixpos. (default='ML1')
+
+    Returns
+    =======
+        `np.ndarray`
+        Peakpos values in square matrix form.
+    """
+    x, y = PIXELS_POSITION[version]["time"][telescope_type] #(x, y)
+    image_size = IMAGES_SIZE[telescope_type]
+    if mask:
+        input_shape = INPUT_SHAPE["time-mask"][telescope_type]
+    else:
+        input_shape = INPUT_SHAPE["time"][telescope_type]
+    canvas = np.zeros(input_shape, dtype="float32")
+    canvas[y, x, 0] = peakpos
+    if mask:
+        canvas[y, x, 1] = 1
+    return canvas
+
+def _time_shift(peakpos, telescope_type, mask, version="ML1"):
+    """
+    Transform only peak positions from raw format to two square matrices (left-right shifted).
+        
+    Parameters
+    ----------
+    peakpos : `numpy.ndarray`
+        'peakpos' pixel values from the observation.
+    telescope_type : `str`
+        Telescope type.
+    mask : `bool`, optional
+        Add a mask channel to the result_image. (default=True)
+    version : `str`, optional
+        Prod3b version: ('ML1', 'ML2').
+        This define the h5 structure and pixpos. (default='ML1')
+
+    Returns
+    =======
+        `np.ndarray`
+        Peakpos values in square matrix form.
+    """
+    x_left, x_right, y = PIXELS_POSITION[version]["time_shift"][telescope_type] #(x_l, x_r, y)
+    image_size = IMAGES_SIZE[telescope_type]
+    if mask:
+        input_shape = INPUT_SHAPE["time-shift-mask"][telescope_type]
+    else:
+        input_shape = INPUT_SHAPE["time-shift"][telescope_type]
+    canvas = np.zeros(input_shape, dtype="float32")
+    canvas[0, y, x_left, 0] = peakpos
+    canvas[1, y, x_right, 0] = peakpos
+    if mask:
+        canvas[0, y, x_left, 1] = 1
+        canvas[1, y, x_right, 1] = 1
+    return canvas
+
 
 def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True, version="ML1"):
     """
@@ -161,6 +274,10 @@ def camera_to_image(charge, peakpos, telescope_type, mode="simple", mask=True, v
         result_image = _simple(charge, peakpos, telescope_type, mask, version)
     elif mode == "simple-shift":
         result_image = _simple_shift(charge, peakpos, telescope_type, mask, version)
+    elif mode == "time":
+        result_image = _time(peakpos, telescope_type, mask, version)
+    elif mode == "time-shift":
+        result_image = _time_shift(peakpos, telescope_type, mask, version)
     elif mode == "raw":
         result_image = np.vstack((charge, peakpos))
     else:
