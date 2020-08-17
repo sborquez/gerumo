@@ -206,7 +206,7 @@ def show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_v
 
 def plot_prediction(prediction, prediction_point, targets, target_domains,
                               target_resolutions=None,  title=None, targets_values=None,
-                              save_to=None, ):
+                              save_to=None):
     """
     Display the assembled prediction of a event, the probability and the predicted point.
     If targets_values is not None, the target point is included in the figure.

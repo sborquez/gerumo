@@ -41,6 +41,10 @@ def mse_loss():
     """Return the Mean Square loss function for multidimension probability map."""
     return keras.losses.mean_squared_error
 
+def mae_loss():
+    """Return the Mean Absolute loss function for multidimension probability map."""
+    return keras.losses.mae
+
 def mean_distance_loss(shape):
     """Return the Mean Distances Weighted loss function for multidimension distance map."""
     c_inv = 1/reduce(lambda a,b: a*b, shape)

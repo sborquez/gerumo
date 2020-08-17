@@ -17,6 +17,7 @@ from tensorflow.keras.layers import (
     Dense, Flatten, Concatenate, Reshape,
     Activation, BatchNormalization, Dropout
 )
+from tensorflow.keras.regularizers import l2
 from . import CUSTOM_OBJECTS
 from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
@@ -33,7 +34,7 @@ def calculate_deconv_parameters(target_shapes=(81, 81, 81), max_deconv=8, max_ke
         for i, target_i in enumerate(target_shapes):
             kernel_size_i = target_i / (3 ** (deconv_blocks_size - 2))
             candidates[i] = kernel_size_i.is_integer() and (1 < kernel_size_i <= max_kernel_size)
-            first_deconv[i] = int(kernel_size_i)
+            first_deconv[i] = int(kernel_size_i) 
         if all(candidates):
             return deconv_blocks_size, first_deconv
     raise ValueError("""target_shapes doesn't have a valid combination. Try a target_shapes from this expresion:
@@ -136,7 +137,8 @@ def upsampling_block(front, targets, deconv_blocks, first_deconv, latent_variabl
 
 def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=800, dense_layer_blocks=5, deconv_blocks=None, first_deconv=None):
+                latent_variables=800, dense_layer_blocks=5, deconv_blocks=None, first_deconv=None,
+                activity_regularizer_l2=None):
     """Build Umonna Unit Model
     Parameters
     ==========
@@ -211,8 +213,9 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
     front = Flatten(name="encoder_flatten_to_latent")(front)
     
     # Skip Connection
+    l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
     skip_front = front
-    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2)(skip_front)
+    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2, kernel_regularizer=l2_(activity_regularizer_l2))(skip_front)
     skip_front = Activation(name=f"logic_ReLU_layer_shortcut", activation="relu")(skip_front)
     skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
 
@@ -223,7 +226,7 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
 
     ## dense blocks
     for dense_i in range(dense_layer_blocks):
-        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2)(front)
+        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2,  kernel_regularizer=l2_(activity_regularizer_l2))(front)
         front = Activation(name=f"logic_ReLU_layer_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
         front = Dropout(name=f"logic_Dropout_layer_{dense_i}", rate=0.25)(front)
