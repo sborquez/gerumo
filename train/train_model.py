@@ -9,6 +9,7 @@ import time
 from os import path
 
 import numpy as np
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.utils import plot_model
 
@@ -136,8 +137,8 @@ def train_model(model_name, model_constructor, model_extra_params,
         validation_data = validation_generator,
         validation_steps = len(validation_generator),
         callbacks = callbacks,
-        use_multiprocessing = False,
-        workers = 5,
+        #use_multiprocessing = True,
+        #workers = 2,
         max_queue_size = 20,
     )
     training_time = (time.time() - start_time)/60.0
@@ -159,7 +160,7 @@ if __name__ == "__main__":
     print(f"Loading config from: {config_file}")
     with open(config_file) as cfg_file:
         config = json.load(cfg_file)
-
+    
     # Model
     model_name = config["model_name"]
     model_constructor = MODELS[config["model_constructor"]]

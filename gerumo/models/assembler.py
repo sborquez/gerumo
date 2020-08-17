@@ -134,7 +134,8 @@ class ModelAssembler():
                 true_energy.extend(meta["true_energy"])
 
                 if return_event_predictions is not None:
-                    for prediction_i, prediction_point_i, target_point_i, event_i in zip(predictions_batch_j, point_predictions_batch_j, y_batch_j, meta["event_id"]):
+                    for prediction_i, prediction_point_i, target_point_i, event_i in zip(predictions_batch_j, \
+                                                                                         point_predictions_batch_j, y_batch_j, meta["event_id"]):
                         if event_i in return_event_predictions:
                                 y_predictions.append((prediction_i, prediction_point_i, target_point_i, event_i))
                 y_predictions_points.extend(point_predictions_batch_j)

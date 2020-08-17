@@ -64,11 +64,13 @@ Models and Assemblers
 from .umonna import umonna_unit, Umonna
 from .pumonna import pumonna_unit, ParametricUmonna
 from .bmo import bmo_unit, BMO
+from .bmo_det import bmo_det_unit, BMO_DET
 
 MODELS = {
     "umonna_unit": umonna_unit,
     "pumonna_unit": pumonna_unit,
     "bmo_unit": bmo_unit,
+    "bmo_det_unit": bmo_det_unit,
 }
 
 from .assembler import ModelAssembler
@@ -76,6 +78,7 @@ ASSEMBLERS = {
     "umonna": Umonna,
     "pumonna": ParametricUmonna,
     "bmo": BMO,
+    "bmo_det": BMO_DET,
 }
 
 

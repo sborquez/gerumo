@@ -134,7 +134,8 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
             predictions_points.extend(p_points)
 
             # Save raw predictions
-            for prediction, prediction_point, target, event_id, telescope_id in zip(p, p_points, t, meta["event_id"], meta["telescope_id"]):
+            for prediction, prediction_point, target, event_id, telescope_id in zip(p, p_points, t, \
+                                                                                    meta["event_id"], meta["telescope_id"]):
                 # Save raw predictions
                 if predictions_raw == "sample" and event_id in sample_events:
                     # Predictions raw folder

@@ -1,7 +1,7 @@
 """
 BMO: Bayesian Multi Observer
 ======
-Bayesian Neural Network for ,ono and multi-stereo event reconstruction
+Bayesian Neural Network for mono and multi-stereo event reconstruction
 """
 
 import numpy as np
@@ -165,7 +165,8 @@ class BMO(ModelAssembler):
 
     @staticmethod
     def bayesian_estimation(model, x_i_telescope, sample_size, verbose, **kwargs):
-        y_predictions_points = np.array([model.predict(x_i_telescope, verbose=verbose, **kwargs).squeeze(axis=(1,2)) for _ in range(sample_size)])
+        y_predictions_points = np.array([model.predict(x_i_telescope, verbose=verbose, **kwargs).squeeze(axis=(1,2)) \
+                                         for _ in range(sample_size)])
         y_predictions_points = np.swapaxes(np.swapaxes(y_predictions_points, 0, 1), 1, 2)
         y_predictions_kde    = [st.gaussian_kde(y_predictions_point) for y_predictions_point in y_predictions_points]
         return y_predictions_kde, y_predictions_points
