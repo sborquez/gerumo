@@ -460,9 +460,11 @@ def load_cameras(dataset, version="ML2"):
     return respond
 
 
-def load_array_direction(hdf5_filepath: str):
+def load_array_direction(hdf5_filepath: str, version="ML1"):
+    if version != "ML1":
+        raise NotImplementedError(f"Dataset version {version} is not yet supported")
+
     hdf5_file = tables.open_file(hdf5_filepath, "r")
-    version = "ML1"
     array_directions = dict()
     for telescope in hdf5_file.root[_array_info_table[version]]:
         telescope_id = telescope[_array_attributes[version]["telescope_id"]]
@@ -470,11 +472,6 @@ def load_array_direction(hdf5_filepath: str):
         telescope_type = telescope_type.decode("utf-8") if isinstance(telescope_type, bytes) else telescope_type
         if telescope_type not in array_directions:
             array_directions[telescope_type] = {}
-        if telescope_id in array_directions[telescope_type].keys():
-            print("D:")
-        for arr_dir in array_directions[telescope_type].values():
-            if np.all(telescope["run_array_direction"] != arr_dir):
-                print(telescope["run_array_direction"])
         array_directions[telescope_type][telescope_id] = telescope["run_array_direction"]
     hdf5_file.close()
     return array_directions
