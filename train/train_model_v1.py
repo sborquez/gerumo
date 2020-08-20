@@ -35,7 +35,8 @@ def train_model(model_name, model_constructor, model_extra_params,
             optimizer = 'sgd',
             optimizer_parameters = {},
             learning_rate = 1e-1,
-            save_checkpoints = True,
+            preprocessing_parameters = {},
+            save_checkpoints = True,    
             save_plot=False, plot_only=False, summary=False):
 
     target_domains_list = target_mode_config["target_domains"]
@@ -50,11 +51,21 @@ def train_model(model_name, model_constructor, model_extra_params,
     
     validation_dataset = aggregate_dataset(validation_dataset, az=True, log10_mc_energy=True, hdf5_file=True)
     validation_dataset = filter_dataset(validation_dataset, telescope, min_observations, target_domains)
-    
-    # Preprocessing pipes
-    preprocess_input_pipes = []
-    preprocess_output_pipes = []
 
+    # Preprocessing pipes
+    ## input preprocessing
+    preprocess_input_pipes = {}
+    if "CameraPipe" in preprocessing_parameters:
+        camera_parameters = preprocessing_parameters["CameraPipe"]
+        camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
+        preprocess_input_pipes['CameraPipe'] = camera_pipe
+    if "TelescopeFeaturesPipe" in preprocessing_parameters:
+        telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
+        telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope, version=version, **telescopefeatures_parameters)
+        preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
+    ## output preprocessing
+    preprocess_output_pipes = {}
+    
     # Generators
     train_generator =   AssemblerUnitGenerator(
                             train_dataset, batch_size, 
@@ -186,7 +197,7 @@ if __name__ == "__main__":
     target_mode = config["target_mode"]
     target_shapes = config["target_shapes"]
     target_domains = config["target_domains"]
-    if config["model_constructor"] == 'umonna':
+    if config["model_constructor"] == 'umonna_unit':
         target_resolutions = get_resolution(targets, target_domains, target_shapes)
     
         # Prepare Generator target_mode_config 
@@ -216,6 +227,9 @@ if __name__ == "__main__":
     optimizer_parameters = {} if optimizer_parameters is None else optimizer_parameters
     save_checkpoints = config["save_checkpoints"]
 
+    # Preprocessing
+    preprocessing_parameters = config.get("preprocessing", {})
+    
     # Debug
     save_plot = config["save_plot"]
     plot_only = config["plot_only"]
@@ -239,7 +253,9 @@ if __name__ == "__main__":
         # Training paramters
         batch_size, epochs, 
         loss, 
-        optimizer, optimizer_parameters, learning_rate, 
+        optimizer, optimizer_parameters, learning_rate,
+        # Preprocessing parameters
+        preprocessing_parameters,
         save_checkpoints, save_plot, 
         # Debug parameters
         plot_only, summary 

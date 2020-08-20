@@ -21,7 +21,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
              test_events_csv, test_telescope_csv, version, replace_folder_test, 
              output_folder, min_observations,
              input_image_mode, input_image_mask, input_features,
-             target_mode, targets, target_mode_config, target_domains):
+             target_mode, targets, target_mode_config, target_domains, preprocessing_parameters):
     
     # Generate new result folder
     model_folder = path.join(output_folder, model_name)
@@ -32,32 +32,31 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
     test_dataset = aggregate_dataset(test_dataset, az=True, log10_mc_energy=True)
     test_dataset = filter_dataset(test_dataset, telescopes, min_observations, target_domains)
 
-    
-    
     # Preprocessing pipes
-    preprocess_input_pipes = []
-    preprocess_output_pipes = []
-
+    preprocess_input_pipes = {}
+    ## output preprocessing
+    preprocess_output_pipes = {}
+    
     # Generators
     batch_size = 16
     telescope_types = [t for t in telescopes.keys() if telescopes[t] is not None]
     
     # Test generators
-    test_generator =    AssemblerGenerator(
-                            test_dataset, telescope_types,
-                            batch_size, 
-                            input_image_mode=input_image_mode, 
-                            input_image_mask=input_image_mask, 
-                            input_features=input_features,
-                            targets=targets,
-                            target_mode=target_mode, 
-                            target_mode_config=target_mode_config,
-                            preprocess_input_pipes=preprocess_input_pipes,
-                            preprocess_output_pipes=preprocess_output_pipes,
-                            include_event_id=True,
-                            include_true_energy=True,
-                            version=version
-    )
+    #test_generator =    AssemblerGenerator(
+    #                        test_dataset, telescope_types,
+    #                        batch_size, 
+    #                        input_image_mode=input_image_mode, 
+    #                        input_image_mask=input_image_mask, 
+    #                        input_features=input_features,
+    #                        targets=targets,
+    #                        target_mode=target_mode, 
+    #                        target_mode_config=target_mode_config,
+    #                       preprocess_input_pipes=preprocess_input_pipes,
+    #                        preprocess_output_pipes=preprocess_output_pipes,
+    #                        include_event_id=True,
+    #                        include_true_energy=True,
+    #                        version=version
+    #)
 
     # Sample Generator
     small_size = 256
@@ -80,8 +79,8 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
                 target_shapes=target_mode_config["target_shapes"],
                 target_domains=target_mode_config["target_domains"],
                 target_resolutions=target_mode_config["target_resolutions"],
-                assembler_mode = "resample",  
-                #assembler_mode="normalized_product",
+                #assembler_mode = "resample",  
+                assembler_mode="normalized_product",
                 point_estimation_mode="expected_value"
     )
 
@@ -117,6 +116,15 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
        
         #data generation, telescope_generator elements are batches of inputs
         #the class AssemblerUnitGenerator is defined in data/generator.py
+        if "CameraPipe" in preprocessing_parameters:
+            camera_parameters = preprocessing_parameters["CameraPipe"]
+            camera_pipe = CameraPipe(telescope_type=telescope_i, version=version, **camera_parameters)
+            preprocess_input_pipes['CameraPipe'] = camera_pipe
+        if "TelescopeFeaturesPipe" in preprocessing_parameters:
+            telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
+            telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope_i, version=version, **telescopefeatures_parameters)
+            preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
+        
         telescope_generator =   AssemblerUnitGenerator(
                                     test_dataset_telescope, 
                                     batch_size=bs, 
@@ -150,8 +158,11 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
             #print(x[1].shape)
 
             #save the first 10 inputs
-            if mse_con == -1:
+            if mse_con == 0:
 
+                print(x[0].shape)
+                print(x[1].shape)
+            
                 for con_plot in range(10):
                     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
                     ax1.set_title("Charge")
@@ -170,10 +181,15 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
                     plt.close()
                 
             #x[0] = np.random.random_sample((16, 2, 84, 29, 3))
-            
-            batch_pred = assembler.model_estimation(x, telescope_i, 0)
 
-            pred_array = np.array(batch_pred)
+            #bmo_det
+            batch_pred = assembler.model_estimation(x, telescope_i, 0)
+            #pred_array = np.array(batch_pred)
+            
+            #umonna requires point_estimation
+            point_estimation = assembler.point_estimation(batch_pred)
+            pred_array = np.array(point_estimation)
+            
             target_array = np.array(target_array)
 
             pred[mse_con*batch_size:(mse_con+1)*batch_size,:] = pred_array
@@ -191,16 +207,16 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
         print("average loss: ", mse_sum/mse_con)
 
         #target-pred scatter plot
-        #plt.scatter(target, pred, s=10, color='blue', alpha=0.5)
-        #plt.title('Evaluation of BMO_DET predictions on validation set')
-        #plt.xlabel('target az')
-        #plt.ylabel('predicted az')
-        #plt.xlim(-0.52,0.52)
-        #plt.ylim(-0.52,0.52)
-        #plt.savefig(f"{local_path}/scatter_az_simple.png")
+        plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
+        plt.title('Evaluation of Umonna predictions on validation set')
+        plt.xlabel('target az')
+        plt.ylabel('predicted az')
+        plt.xlim(-0.52,0.52)
+        plt.ylim(-0.52,0.52)
+        plt.savefig(f"{local_path}/scatter_az_simple.png")
 
-        plt.scatter(target, pred, s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of BMO_DET predictions on validation set')
+        plt.scatter(target[:,0], pred[:,0], s=10, color='blue', alpha=0.5)
+        plt.title('Evaluation of Umonna predictions on validation set')
         plt.xlabel('target alt')
         plt.ylabel('predicted alt')
         plt.xlim(1.05, 1.382)
@@ -269,11 +285,13 @@ if __name__ == "__main__":
 
     # Evaluation Parameters
     evaluation_config = config["evaluation"]
-
+    # Preprocessing
+    preprocessing_parameters = config.get("preprocessing", {})
+    
     evaluate(
         model_name, assembler_constructor, telescopes, evaluation_config,
         test_events_csv, test_telescope_csv, version, replace_folder_test, 
         output_folder, min_observations,
         input_image_mode, input_image_mask, input_features,
-        target_mode, targets, target_mode_config, target_domains
+        target_mode, targets, target_mode_config, target_domains, preprocessing_parameters
     )   

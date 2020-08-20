@@ -1,0 +1,74 @@
+{
+    "model_name": "UMONNA_ALT_AZ",
+    "assembler_constructor": "umonna",
+    "output_folder" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/train_output_models/",
+    "version": "ML1",
+    "evaluation": {
+        "seed": 1312,
+        "Assembler": {
+            "skip":               false,
+            "metrics_plot" :      true,
+            "predictions_points": true,
+            "probability_plot":   "sample",
+            "predictions_raw":    "sample"
+        },
+        "LST_LSTCam": {
+            "skip":               false,
+            "metrics_plot" :      true,
+            "predictions_points": true,
+            "probability_plot":   "sample",
+            "predictions_raw":    "sample"
+        },
+        "MST_FlashCam": {
+            "skip":               false,
+            "metrics_plot" :      true,
+            "predictions_points": true,
+            "probability_plot":   "sample",
+            "predictions_raw":    "sample"
+        },
+        "SST1M_DigiCam": {
+            "skip":               false,
+            "metrics_plot" :      true,
+            "predictions_points": true,
+            "probability_plot":   "sample",
+            "predictions_raw":    "sample"
+        }
+    },
+    "preprocessing": {
+        "CameraPipe" : {
+            "charge_scaler_value" : 62.652400970459,
+            "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
+            "tailcuts_clean_params": {"boundary_thresh": 6, "picture_thresh": 14}
+        },
+        "TelescopeFeaturesPipe": {
+            "array_scaler_path": "ML1_array-scaler"
+        }
+    },
+    "replace_folder_test" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/raw_data_generation_list/",
+    "test_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/validation_events.csv",
+    "test_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/validation_telescopes.csv",
+    "telescopes" : {
+        "MST_FlashCam": "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/train_output_models/UMONNA_UNIT_MST_V2_MST_FlashCam_crossentropy_e007_57.7089.h5"
+    },
+    "min_observations" : [0,0,0],
+    "input_image_mode" : "simple-shift",
+    "input_image_mask" : true,
+    "input_features" : ["x", "y"],
+    "targets" : ["alt", "az"],
+    "target_mode" : "one_cell",
+    "target_shapes" : {
+        "alt": 81, 
+        "az": 81, 
+        "log10_mc_energy": 81
+    },
+    "target_domains" : {
+        "alt": [1.05, 1.382], 
+        "az": [-0.52, 0.52], 
+        "log10_mc_energy": [-2.351, 2.47]
+    },
+    "target_sigmas" : {
+        "alt": 0.002, 
+        "az":  0.002, 
+        "log10_mc_energy": 0.002
+    }
+}
