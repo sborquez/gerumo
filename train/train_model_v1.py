@@ -59,6 +59,7 @@ def train_model(model_name, model_constructor, model_extra_params,
         camera_parameters = preprocessing_parameters["CameraPipe"]
         camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
         preprocess_input_pipes['CameraPipe'] = camera_pipe
+        
     if "TelescopeFeaturesPipe" in preprocessing_parameters:
         telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
         telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope, version=version, **telescopefeatures_parameters)
@@ -105,6 +106,7 @@ def train_model(model_name, model_constructor, model_extra_params,
     input_img_shape = INPUT_SHAPE[f"{input_image_mode}-mask" if input_image_mask else input_image_mode][telescope]
     input_features_shape = (len(input_features),)
     target_shapes = target_mode_config["target_shapes"]
+    
     model = model_constructor(telescope, input_image_mode, input_image_mask, 
                     input_img_shape, input_features_shape,
                     targets, target_mode, target_shapes, 
@@ -197,6 +199,7 @@ if __name__ == "__main__":
     target_mode = config["target_mode"]
     target_shapes = config["target_shapes"]
     target_domains = config["target_domains"]
+    
     if config["model_constructor"] == 'umonna_unit':
         target_resolutions = get_resolution(targets, target_domains, target_shapes)
     

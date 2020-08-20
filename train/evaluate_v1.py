@@ -41,23 +41,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
     batch_size = 16
     telescope_types = [t for t in telescopes.keys() if telescopes[t] is not None]
     
-    # Test generators
-    #test_generator =    AssemblerGenerator(
-    #                        test_dataset, telescope_types,
-    #                        batch_size, 
-    #                        input_image_mode=input_image_mode, 
-    #                        input_image_mask=input_image_mask, 
-    #                        input_features=input_features,
-    #                        targets=targets,
-    #                        target_mode=target_mode, 
-    #                        target_mode_config=target_mode_config,
-    #                       preprocess_input_pipes=preprocess_input_pipes,
-    #                        preprocess_output_pipes=preprocess_output_pipes,
-    #                        include_event_id=True,
-    #                        include_true_energy=True,
-    #                        version=version
-    #)
-
+   
     # Sample Generator
     small_size = 256
     np.random.seed(evaluation_config["seed"]) 
@@ -120,6 +104,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
             camera_parameters = preprocessing_parameters["CameraPipe"]
             camera_pipe = CameraPipe(telescope_type=telescope_i, version=version, **camera_parameters)
             preprocess_input_pipes['CameraPipe'] = camera_pipe
+            
         if "TelescopeFeaturesPipe" in preprocessing_parameters:
             telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
             telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope_i, version=version, **telescopefeatures_parameters)
@@ -182,13 +167,19 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
                 
             #x[0] = np.random.random_sample((16, 2, 84, 29, 3))
 
+            ###########################
+            #Prediction part
+            ###########################
+            
             #bmo_det
             batch_pred = assembler.model_estimation(x, telescope_i, 0)
-            #pred_array = np.array(batch_pred)
+            pred_array = np.array(batch_pred)
             
-            #umonna requires point_estimation
-            point_estimation = assembler.point_estimation(batch_pred)
-            pred_array = np.array(point_estimation)
+            #umonna requires point_estimation to get one float prediction instead of a region
+            #point_estimation = assembler.point_estimation(batch_pred)
+            #pred_array = np.array(point_estimation)
+
+            ###########################
             
             target_array = np.array(target_array)
 
@@ -206,22 +197,32 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
 
         print("average loss: ", mse_sum/mse_con)
 
-        #target-pred scatter plot
-        plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of Umonna predictions on validation set')
+        #BMO_DET PLOTS
+        plt.scatter(target[:,0], pred[:,0], s=10, color='blue', alpha=0.5)
+        plt.title('Evaluation of CNN-DET predictions on validation set')
         plt.xlabel('target az')
         plt.ylabel('predicted az')
         plt.xlim(-0.52,0.52)
         plt.ylim(-0.52,0.52)
-        plt.savefig(f"{local_path}/scatter_az_simple.png")
+        plt.savefig(f"{local_path}/scatter_az_simple_det.png")
 
-        plt.scatter(target[:,0], pred[:,0], s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of Umonna predictions on validation set')
-        plt.xlabel('target alt')
-        plt.ylabel('predicted alt')
-        plt.xlim(1.05, 1.382)
-        plt.ylim(1.05, 1.382)
-        plt.savefig(f"{local_path}/scatter_alt_simple.png")
+        #UMONNA PLOTS
+        #target-pred scatter plot
+        #plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
+        #plt.title('Evaluation of Umonna predictions on validation set')
+        #plt.xlabel('target az')
+        #plt.ylabel('predicted az')
+        #plt.xlim(-0.52,0.52)
+        #plt.ylim(-0.52,0.52)
+        #plt.savefig(f"{local_path}/scatter_az_simple.png")
+
+        #plt.scatter(target[:,0], pred[:,0], s=10, color='blue', alpha=0.5)
+        #plt.title('Evaluation of Umonna predictions on validation set')
+        #plt.xlabel('target alt')
+        #plt.ylabel('predicted alt')
+        #plt.xlim(1.05, 1.382)
+        #plt.ylim(1.05, 1.382)
+        #plt.savefig(f"{local_path}/scatter_alt_simple.png")
         
         
 if __name__ == "__main__":

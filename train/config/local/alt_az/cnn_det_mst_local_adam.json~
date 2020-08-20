@@ -1,6 +1,6 @@
 {
-    "model_name": "BMO_DET_UNIT_MST_AZ",
-    "model_constructor": "bmo_det_unit",
+    "model_name": "CNN_DET_UNIT_MST_AZ",
+    "model_constructor": "cnn_det_unit",
     "model_extra_params": {
         "latent_variables": 600,
         "dropout_rate": 0.0
