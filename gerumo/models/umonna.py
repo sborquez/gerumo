@@ -202,6 +202,7 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
         kernel_size = (5, 1)
     elif telescope == "SST1M_DigiCam":
         kernel_size = (4, 1)
+        
     front = Conv2D(name=f"encoder_conv_layer_compress",
                    filters=filters, kernel_size=kernel_size,
                    kernel_initializer="he_uniform",
@@ -217,7 +218,8 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
     # Skip Connection
     l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
     skip_front = front
-    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2, kernel_regularizer=l2_(activity_regularizer_l2))(skip_front)
+    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2, \
+                       kernel_regularizer=l2_(activity_regularizer_l2))(skip_front)
     skip_front = Activation(name=f"logic_ReLU_layer_shortcut", activation="relu")(skip_front)
     skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
 
@@ -228,7 +230,8 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
 
     ## dense blocks
     for dense_i in range(dense_layer_blocks):
-        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2,  kernel_regularizer=l2_(activity_regularizer_l2))(front)
+        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2,  \
+                      kernel_regularizer=l2_(activity_regularizer_l2))(front)
         front = Activation(name=f"logic_ReLU_layer_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
         front = Dropout(name=f"logic_Dropout_layer_{dense_i}", rate=0.25)(front)
