@@ -32,7 +32,9 @@ def calculate_deconv_parameters(target_shapes=(81, 81, 81), max_deconv=8, max_ke
         first_deconv = [None] * len(target_shapes)
         candidates = [False] * len(target_shapes)
         for i, target_i in enumerate(target_shapes):
+            #print(target_i, deconv_blocks_size)
             kernel_size_i = target_i / (3 ** (deconv_blocks_size - 2))
+            #print(kernel_size_i)
             candidates[i] = kernel_size_i.is_integer() and (1 < kernel_size_i <= max_kernel_size)
             first_deconv[i] = int(kernel_size_i) 
         if all(candidates):
@@ -242,6 +244,7 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
             raise ValueError("target_shape, deconv_blocks and first_deconv can be None at the same time.")
         target_shapes = calculate_target_shapes(deconv_blocks, first_deconv)
     else:
+        #print(target_shapes)
         deconv_blocks, first_deconv = calculate_deconv_parameters(target_shapes)
 
     front = Conv2D(name=f"logic_dense_last", kernel_size=1, 
