@@ -107,7 +107,8 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
             
         if "TelescopeFeaturesPipe" in preprocessing_parameters:
             telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
-            telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope_i, version=version, **telescopefeatures_parameters)
+            telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope_i, version=version, \
+                                                            **telescopefeatures_parameters)
             preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
         
         telescope_generator =   AssemblerUnitGenerator(
@@ -204,7 +205,15 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
         plt.ylabel('predicted az')
         plt.xlim(-0.52,0.52)
         plt.ylim(-0.52,0.52)
-        plt.savefig(f"{local_path}/scatter_az_simple_det.png")
+        plt.savefig(f"{local_path}/scatter_az_cnn_det_adam.png")
+
+        plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
+        plt.title('Evaluation of CNN-DET predictions on validation set')
+        plt.xlabel('target alt')
+        plt.ylabel('predicted alt')
+        plt.xlim(1.05, 1.382)
+        plt.ylim(1.05, 1.382)
+        plt.savefig(f"{local_path}/scatter_alt_cnn_det_adam.png")
 
         #UMONNA PLOTS
         #target-pred scatter plot

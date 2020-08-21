@@ -1,5 +1,5 @@
 {
-    "model_name": "CNN_DET_UNIT_MST_AZ",
+    "model_name": "CNN_DET_UNIT_MST_AZ_ALT",
     "model_constructor": "cnn_det_unit",
     "model_extra_params": {
         "latent_variables": 600,
@@ -34,7 +34,7 @@
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
     "input_features" : ["x", "y"],
-    "targets" : ["az"],
+    "targets" : ["az","alt"],
     "target_mode" : "lineal",
     "target_shapes" : null,
     "target_domains" : {
