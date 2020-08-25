@@ -44,16 +44,16 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
     ======
         keras.Model 
     """
-    # Soport lineal only
+    # Support linear target mode only
     if target_mode != 'lineal':
         raise ValueError(f"Invalid target_mode: '{target_mode}'" )
 
     # Image Encoding Block
     ## HexConvLayer
     input_img = Input(name="image_input", shape=input_img_shape)
-    if image_mode == "simple-shift":
+    if image_mode in ("simple-shift", "time-shift"):
         front = HexConvLayer(filters=32, kernel_size=(3,3), name="encoder_hex_conv_layer")(input_img)
-    elif image_mode == "simple":
+    elif image_mode in ("simple", "time"):
         front = Conv2D(name="encoder_conv_layer_0",
                        filters=32, kernel_size=(3,3),
                        kernel_initializer="he_uniform",
@@ -91,6 +91,7 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
         kernel_size = (5, 1)
     elif telescope == "SST1M_DigiCam":
         kernel_size = (4, 1)
+        
     front = Conv2D(name=f"encoder_conv_layer_compress",
                    filters=filters, kernel_size=kernel_size,
                    kernel_initializer="he_uniform",
@@ -103,57 +104,33 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
                    activation="relu")(front)
     front = Flatten(name="encoder_flatten_to_latent")(front)
     
-    # Skip Connection
-    l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
-    skip_front = front
-    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2, kernel_regularizer=l2_(activity_regularizer_l2))(skip_front)
-    skip_front = Activation(name=f"logic_ReLU_shortcut", activation="relu")(skip_front)
-    skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
-    skip_front = Dropout(name=f"bayesian_Dropout_shortcut", rate=dropout_rate)(skip_front, training=True)
-
     # Logic Block
     ## extra Telescope Features
     input_params = Input(name="feature_input", shape=input_features_shape)
     front = Concatenate()([input_params, front])
 
     ## dense blocks
+    l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
     for dense_i in range(dense_layer_blocks):
         front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2, kernel_regularizer=l2_(activity_regularizer_l2))(front)
         front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
         front = Dropout(name=f"bayesian_Dropout_{dense_i}", rate=dropout_rate)(front, training=True)
 
-    # Add Skip connection
-    front = Add()([front, skip_front])
-    front = Reshape((1, 1,  latent_variables//2), name="logic_reshape")(front)
-
-    front = Conv2D(name=f"logic_dense_last", kernel_size=1, 
-                    filters=latent_variables//2,
-                    kernel_initializer="he_uniform")(front)
-    front = Activation(activation="relu")(front)
-    front = front if activity_regularizer_l2 is None else ActivityRegularization(l2=activity_regularizer_l2)(front)
-    front = BatchNormalization()(front)
-    front = Dropout(name=f"bayesian_Dropout_{dense_i+1}", rate=dropout_rate)(front, training=True)
     
     # Output block
-    front = Flatten()(front)
-    target_fronts = []
-    for target_i in range(len(targets)):
-        dense_i_t = dense_i + 1
-        target_front = Dense(units=64, kernel_regularizer=l2_(activity_regularizer_l2))(front)
-        target_front = Activation(activation="relu")(target_front)
-        target_front = BatchNormalization()(target_front)
-        target_front = Dropout(name=f"bayesian_Dropout_{dense_i_t+1}_{target_i}", rate=dropout_rate)(target_front, training=True)
-        
-        target_front = Dense(units=64, kernel_regularizer=l2_(activity_regularizer_l2))(target_front)
-        target_front = Activation(activation="relu")(target_front)
-        target_front = BatchNormalization()(target_front)
-        target_front = Dropout(name=f"bayesian_Dropout_{dense_i_t+2}_{target_i}", rate=dropout_rate)(target_front, training=True)
-
-        target_front = Dense(1)(target_front)
-        target_fronts.append(target_front)
-
-    output = Concatenate()(target_fronts)
+    dense_i += 1
+    front = Dense(units=128, name=f"logic_dense_{dense_i}")(front)
+    front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
+    front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
+    front = Dropout(name=f"bayesian_Dropout_{dense_i}", rate=dropout_rate)(front, training=True)
+    dense_i += 1
+    front = Dense(units=64, name=f"logic_dense_{dense_i}")(front)
+    front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
+    front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
+    front = Dropout(name=f"bayesian_Dropout_{dense_i}", rate=dropout_rate)(front, training=True)
+    
+    output = Dense(len(targets), activation="linear")(front)
     model_name = f"BMO_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
     return model

@@ -21,6 +21,7 @@ from tensorflow.keras.layers import (
     Dense, Flatten, Concatenate, Reshape,
     Activation, BatchNormalization, Dropout
 )
+from tensorflow.keras.regularizers import l2
 from . import CUSTOM_OBJECTS
 from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
@@ -28,7 +29,8 @@ from .layers import HexConvLayer, softmax
 
 def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=800, dense_layer_blocks=5):
+                latent_variables=800, dense_layer_blocks=5,
+                activity_regularizer_l2=None):
     """Build Pumonna Unit Model
     Parameters
     ==========
@@ -43,18 +45,22 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     ======
         keras.Model 
     """
+    # Support linear target mode only
+    if target_mode != 'lineal':
+        raise ValueError(f"Invalid target_mode: '{target_mode}'" )
+
     # Image Encoding Block
     ## HexConvLayer
     input_img = Input(name="image_input", shape=input_img_shape)
-    if image_mode == "simple-shift":
+    if image_mode in ("simple-shift", "time-shift"):
         front = HexConvLayer(filters=32, kernel_size=(3,3), name="encoder_hex_conv_layer")(input_img)
-    elif image_mode == "simple":
+    elif image_mode in ("simple", "time"):
         front = Conv2D(name="encoder_conv_layer_0",
                        filters=32, kernel_size=(3,3),
                        kernel_initializer="he_uniform",
                        padding = "valid",
                        activation="relu")(input_img)
-        front = MaxPooling2D(name=f"encoder_conv_layer_0", pool_size=(2, 2))(front)
+        front = MaxPooling2D(name=f"encoder_maxpool_layer_0", pool_size=(2, 2))(front)
     else:
         raise ValueError(f"Invalid image mode {image_mode}")
 
@@ -67,13 +73,13 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
                        filters=filters, kernel_size=kernel_size,
                        kernel_initializer="he_uniform",
                        padding = "same")(front)
-        front = Activation(name=f"encoder_ReLU_layer_{i}_a", activation="relu")(front)
+        front = Activation(name=f"encoder_ReLU_{i}_a", activation="relu")(front)
         front = BatchNormalization(name=f"encoder_batchnorm_{i}_a")(front)
         front = Conv2D(name=f"encoder_conv_layer_{i}_b",
                        filters=filters, kernel_size=kernel_size,
                        kernel_initializer="he_uniform",
                        padding = "same")(front)
-        front = Activation(name=f"encoder_ReLU_layer_{i}_b", activation="relu")(front)
+        front = Activation(name=f"encoder_ReLU_{i}_b", activation="relu")(front)
         front = BatchNormalization(name=f"encoder_batchnorm_{i}_b")(front)
         front = MaxPooling2D(name=f"encoder_maxpool_layer_{i}", pool_size=(2,2))(front)
         filters *= 2
@@ -86,6 +92,7 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
         kernel_size = (5, 1)
     elif telescope == "SST1M_DigiCam":
         kernel_size = (4, 1)
+        
     front = Conv2D(name=f"encoder_conv_layer_compress",
                    filters=filters, kernel_size=kernel_size,
                    kernel_initializer="he_uniform",
@@ -97,12 +104,6 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
                    padding = "valid",
                    activation="relu")(front)
     front = Flatten(name="encoder_flatten_to_latent")(front)
-    
-    # Skip Connection
-    skip_front = front
-    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2)(skip_front)
-    skip_front = Activation(name=f"logic_ReLU_layer_shortcut", activation="relu")(skip_front)
-    skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
 
     # Logic Block
     ## extra Telescope Features
@@ -110,33 +111,24 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     front = Concatenate()([input_params, front])
 
     ## dense blocks
+    l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
     for dense_i in range(dense_layer_blocks):
-        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2)(front)
-        front = Activation(name=f"logic_ReLU_layer_{dense_i}", activation="relu")(front)
+        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2, kernel_regularizer=l2_(activity_regularizer_l2))(front)
+        front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
-        front = Dropout(name=f"logic_Dropout_layer_{dense_i}", rate=0.25)(front)
 
-    # Add Skip connection
-    front = Add()([front, skip_front])
-    front = Reshape((1, 1,  latent_variables//2), name="logic_reshape")(front)
-
-    front = Conv2D(name=f"logic_dense_last", kernel_size=1, 
-                   filters=latent_variables//2,
-                   kernel_initializer="he_uniform")(front)
-    front = Activation(activation="relu")(front)
-    front = BatchNormalization()(front)
-
-    if target_mode == "lineal":
-        front = Dense(units=64)(front)
-        front = Activation(activation="tanh")(front)
-        front = BatchNormalization()(front)
-        front = Dense(units=64)(front)
-        front = Activation(activation="tanh")(front)
-        front = BatchNormalization()(front)
-        front = Dense(tfp.layers.MultivariateNormalTriL.params_size(len(targets)), activation=None)(front)
-        output = tfp.layers.MultivariateNormalTriL(len(targets), name='pdf')(front)
-    else:
-        raise ValueError(f"Invalid target_mode: '{target_mode}'" )
+    # Output block
+    dense_i += 1
+    front = Dense(units=64, name=f"logic_dense_{dense_i}")(front)
+    front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
+    front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
+    dense_i += 1
+    front = Dense(units=64, name=f"logic_dense_{dense_i}")(front)
+    front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
+    front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
+    dense_i += 1
+    front = Dense(tfp.layers.MultivariateNormalTriL.params_size(len(targets), name=f"output_parameters"), name=f"logic_dense_{dense_i}")(front)
+    output = tfp.layers.MultivariateNormalTriL(len(targets), name='pdf')(front)
 
     model_name = f"Pumonna_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
