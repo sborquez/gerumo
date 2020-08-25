@@ -1,0 +1,53 @@
+{
+    "model_name": "UMONNA V2 Assembler",
+    "assembler_constructor": "umonna",
+    "telescopes" : {
+        "LST_LSTCam": "/mnt/e/projects/gerumo-results/alt_az/INF575/run_1/bmo_lst_2821/BMO_UNIT_LST_LST_LSTCam_mse_e270_0.0036.h5",
+        "MST_FlashCam": "/mnt/e/projects/gerumo-results/alt_az/INF575/run_1/bmo_mst_2820/BMO_UNIT_MST_MST_FlashCam_mse_e037_0.0066.h5",
+        "SST1M_DigiCam": "/mnt/e/projects/gerumo-results/alt_az/INF575/run_1/bmo_sst_2822/BMO_UNIT_SST_SST1M_DigiCam_mse_e102_0.0082.h5"
+    },
+    "output_folder" : "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output",
+    
+    "version" : "ML1",
+    "test_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
+    "test_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
+    "replace_folder_test" : null,
+    
+    "input_image_mode" : "simple-shift",
+    "input_image_mask" : true,
+    "min_observations" : [0,0,0],
+    "input_features" : ["x", "y"],
+    
+    "targets" : ["alt", "az"],
+    "target_mode" : "lineal",
+    "target_shapes" : null,
+    "target_domains" : {
+        "alt": [1.15, 1.3], 
+        "az": [-0.25, 0.25], 
+        "log10_mc_energy": [-2.351, 2.47]
+    },
+    "target_sigmas" : null,
+    
+    "preprocessing": {
+        "MultiCameraPipe" : {
+            "SST1M_DigiCam": {
+                "charge_scaler_value" : 39.223409118652356,
+                "peak_scaler_path" : "ML1_SST1M_DigiCam_peak_scaler",
+                "tailcuts_clean_params": {"boundary_thresh": 2, "picture_thresh": 4}
+            },
+            "MST_FlashCam": {
+                "charge_scaler_value" : 62.652400970459,
+                "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
+                "tailcuts_clean_params": {"boundary_thresh": 6, "picture_thresh": 14}
+            },
+            "LST_LSTCam": {
+                "charge_scaler_value" : 36.852122955322265,
+                "peak_scaler_path" : "ML1_LST_LSTCam_peak_scaler",
+                "tailcuts_clean_params": {"boundary_thresh": 3, "picture_thresh": 5}
+            }
+        },
+        "TelescopeFeaturesPipe": {
+            "array_scaler_path": "ML1_array-scaler"
+        }
+    }
+}
