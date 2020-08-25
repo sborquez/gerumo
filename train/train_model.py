@@ -6,8 +6,10 @@ from gerumo import *
 
 import logging
 import time
+import os
 from os import path
 
+import uuid
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -96,8 +98,11 @@ def train_model(model_name, model_constructor, model_extra_params,
     callbacks = []
     if save_checkpoints:
         # Checkpoint parameters
+        checkpoint_folder = path.join(output_folder, 'checkpoints')
+        os.makedirs(checkpoint_folder, exist_ok=False)
+        
         checkpoint_filepath = "%s_%s_%s_e{epoch:03d}_{val_loss:.4f}.h5"%(model_name, telescope, loss)
-        checkpoint_filepath = path.join(output_folder, checkpoint_filepath)
+        checkpoint_filepath = path.join(checkpoint_folder, checkpoint_filepath)
         callbacks.append(
             keras.callbacks.ModelCheckpoint(checkpoint_filepath, monitor='val_loss', 
                  verbose=1, save_weights_only=False, mode='min', save_best_only=True))
@@ -270,6 +275,16 @@ if __name__ == "__main__":
     # Debug
     plot_only = config["plot_only"]
     summary = config["summary"]
+
+    # Setup Experiment Folder
+    experiment_run = uuid.uuid4().hex[:20]
+    output_folder = path.join(output_folder, f"{model_name}_{experiment_run}")
+    os.makedirs(output_folder, exist_ok=False)
+    print("Experiment Folder:", path.abspath(output_folder))
+    experiment_config_file = path.join(output_folder, path.basename(config_file))
+    print("Experiment Config file:", experiment_config_file)
+    with open(experiment_config_file,  "w") as cfg_file:
+        json.dump(config, cfg_file)
 
     model = train_model(
         # Model parameters
