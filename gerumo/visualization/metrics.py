@@ -87,7 +87,7 @@ def plot_model_validation_regressions(evaluation_results, targets, save_to=None)
     # Save or Show
     if save_to is not None:
         fig.savefig(save_to)
-	plt.close(fig)
+        plt.close(fig)
     else:
         plt.show()
 

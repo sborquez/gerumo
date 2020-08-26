@@ -223,7 +223,7 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
         os.makedirs(predictions_folder, exist_ok=False)
 
         r = np.random.RandomState(42)
-        sample_events = r.choice(validation_dataset["event_unique_id"].unique(), size=2, replace=False)
+        sample_events = r.choice(validation_dataset["event_unique_id"].unique(), size=5, replace=False)
         sample_dataset = validation_dataset[validation_dataset["event_unique_id"].isin(sample_events)]
         sample_generator =  AssemblerUnitGenerator(
                 sample_dataset, len(sample_dataset), 
