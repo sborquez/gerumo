@@ -49,7 +49,7 @@
         }
     },
 
-    "batch_size" : 64,
+    "batch_size" : 16,
     "epochs" : 50,
     "loss" : "crossentropy",
     "optimizer": {

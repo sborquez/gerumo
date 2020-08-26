@@ -109,8 +109,7 @@ def plot_input_sample(input_image_sample, input_image_mode, input_features_sampl
     # Save or Show
     if save_to is not None:
         fig.savefig(save_to)
-        plt.close()
-
+        plt.close(fig)
     else:
         plt.show()
 

@@ -86,7 +86,8 @@ def plot_model_validation_regressions(evaluation_results, targets, save_to=None)
 
     # Save or Show
     if save_to is not None:
-        plt.savefig(save_to)
+        fig.savefig(save_to)
+	plt.close(fig)
     else:
         plt.show()
 
@@ -283,6 +284,7 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
+        plt.close()
     else:
         plt.show()
 
@@ -463,6 +465,7 @@ def plot_regression_evaluation(evaluation_results, targets, scores, save_to=None
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
+        plt.close()
     else:
         plt.show()
 
@@ -564,6 +567,7 @@ def plot_error_and_energy_resolution(evaluation_results, bins=80, include_requir
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
+        plt.close()
     else:
         plt.show()
 
@@ -595,6 +599,7 @@ def plot_energy_resolution_comparison(evaluation_results_dict, include_requireme
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
+        plt.close()
     else:
         plt.show()
     
@@ -673,6 +678,7 @@ def plot_error_and_angular_resolution(evaluation_results, bins=80, include_requi
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
+        plt.close()
     else:
         plt.show()
 
@@ -718,5 +724,6 @@ def plot_angular_resolution_comparison(evaluation_results_dict, include_requirem
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
+        plt.close()
     else:
         plt.show()
