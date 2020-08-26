@@ -1,0 +1,28 @@
+name: gerumo
+channels:
+  - cta-observatory
+  - defaults
+dependencies:
+  - python=3.7
+  - pip
+  - ctapipe=0.8.0=py_0
+  - ctapipe-extra=0.3.0=0
+  - tensorflow-gpu=2.1.0
+  - tensorflow-probability=0.8.0
+  - astropy
+  - h5py
+  - pandas
+  - xlrd
+  - matplotlib
+  - seaborn
+  - scipy
+  - numpy
+  - jupyter
+  - scikit-learn
+  - scikit-image
+  - jupyter
+  - pytables
+  - tqdm
+  - pip:
+    - ctaplot==0.5.3
+    - pydot==1.4.1
