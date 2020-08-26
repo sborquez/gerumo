@@ -7,7 +7,7 @@ dependencies:
   - pip
   - ctapipe=0.8.0=py_0
   - ctapipe-extra=0.3.0=0
-  - tensorflow-gpu=2.1.0
+  - tensorflow-mkl=2.1.0
   - tensorflow-probability=0.8.0
   - astropy
   - h5py
