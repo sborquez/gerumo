@@ -149,7 +149,7 @@ def two_outputs_one_cell(target_values, target_names, target_to_output, target_s
 
 def targets_to_matrix(targets_values, 
                       target_names=["alt", "az", "log10_mc_energy"], 
-                      target_mode="probability_map",
+                      target_mode="one_cell",
                       target_mode_config={"target_shapes": (81, 81, 81),
                                           "target_domains": [(1.04, 1.39), (-0.52, 0.52), (-2.351, 2.47)],
                                           "target_resolutions": (0.034999999999, 0.10400000000000001, 0.418),

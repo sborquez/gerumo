@@ -1,6 +1,7 @@
 {
     "model_name": "UMONNA_UNIT_LST_V2",
     "model_constructor": "umonna_unit",
+    "assembler_constructor": "umonna",
     "model_extra_params": {
         "latent_variables": 600
     },
@@ -8,8 +9,8 @@
     "output_folder" : "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output",
     
     "version": "ML1",
-    "train_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/train_events.csv",
-    "train_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/train_telescopes.csv", 
+    "train_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
+    "train_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv", 
     "replace_folder_train" : null,
     "validation_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
     "validation_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
@@ -60,8 +61,10 @@
         }
     },
     "save_checkpoints" : true,
+    "save_predictions" : true,
+    "save_regressions" : true,
+    "save_plot" : false,
     
     "summary" : false,
-    "plot_only" : false,
-    "save_plot" : false
+    "plot_only" : false
 }

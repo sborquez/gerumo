@@ -16,10 +16,11 @@ from scipy.stats import norm, multivariate_normal, rv_continuous, gaussian_kde
 import numpy as np
 import pandas as pd
 import ctaplot
+from sklearn.metrics import r2_score
 
 
 __all__ = [
-    'plot_model_training_history', 
+    'plot_model_training_history', 'plot_model_validation_regressions',
     'plot_prediction', 'show_prediction_1d', 'show_prediction_2d', 'show_prediction_3d',
     'plot_regression_evaluation', 'show_regression_identity', 'show_residual_error', 'show_residual_error_distribution',
     'plot_energy_resolution_comparison', 'plot_error_and_energy_resolution', 'show_energy_resolution', 'show_absolute_error_energy', 
@@ -33,7 +34,7 @@ Training Metrics
 
 def plot_model_training_history(history, training_time, model_name, epochs, save_to=None):
     """
-    Generate plot for training and validation Loss from a models history.
+    Display training loss and validation loss vs epochs.
     """
     fig = plt.figure(figsize=(12,6))
     epochs = [i for i in range(1, epochs+1)]
@@ -52,6 +53,40 @@ def plot_model_training_history(history, training_time, model_name, epochs, save
     if save_to is not None:
         fig.savefig(join(save_to, f'{model_name} - Training Loss.png'))
         plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_model_validation_regressions(evaluation_results, targets, save_to=None):
+    """
+    Display regression metrics for a model's predictions.
+    """
+    n_targets = len(targets)
+    # Create Figure and axis
+    fig, axs = plt.subplots(n_targets, 3, figsize=(19, n_targets*6))
+    
+    # Style
+    fig.suptitle("Targets Regression")
+
+    # For each target, generate two plots
+    for i, target in enumerate(targets):
+        # Target and prediction values
+        prediction_points = evaluation_results[f"pred_{target}"]
+        targets_points = evaluation_results[f"true_{target}"]
+        score = r2_score(prediction_points, targets_points)
+        # Show regression
+        ax_r = axs[i][0] if n_targets > 1 else axs[0]
+        show_regression_identity(prediction_points, targets_points, score, target, flip=True, axis=ax_r)
+        # Show error
+        ax_e = axs[i][1] if n_targets > 1 else axs[1]
+        show_residual_error(prediction_points, targets_points, score, target,  axis=ax_e)
+        # Show error distribution
+        ax_d = axs[i][2] if n_targets > 1 else axs[2]
+        show_residual_error_distribution(prediction_points, targets_points, score, target, vertical=True, axis=ax_d)
+
+    # Save or Show
+    if save_to is not None:
+        plt.savefig(save_to)
     else:
         plt.show()
 
@@ -212,7 +247,6 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
     If targets_values is not None, the target point is included in the figure.
     """
     #TODO: change function name
-    #TODO: remove target resolution
 
     # Create new Figure
     plt.figure(figsize=(8,8))
@@ -253,28 +287,36 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
         plt.show()
 
 
-def show_regression_identity(prediction_points, targets_points, score, target, axis=None):
+def show_regression_identity(prediction_points, targets_points, score, target, flip=False, axis=None):
     """
     Show a comparation between true values and predicted values, it uses a scatter plot
     for a small set or a hexbin plot for a set bigger than 500 samples.
 
     A nice fit means that points are distributed close to the identity diagonal
     """
+    if flip:
+        ylabel = "Predicted Values"
+        y = prediction_points.values
+        xlabel = "True Values"
+        x = targets_points.values
+    else:
+        ylabel = "True Values"
+        y = targets_points.values
+        xlabel = "Predicted Values"
+        x = prediction_points.values
 
     # Create new figure
     if axis is None:
         plt.figure(figsize=(6,6))
         axis = plt.gca()
 
-    vmin = min(prediction_points.min(), targets_points.min())
-    vmax = max(prediction_points.max(), targets_points.max()) 
+    vmin = min(x.min(), y.min())
+    vmax = max(x.max(), y.max()) 
     if len(targets_points) < 500:
-        axis.scatter(x=prediction_points, y=targets_points, alpha=0.6)
+        axis.scatter(x=x, y=y, alpha=0.6)
         # Add identity line
         axis.plot([vmin, vmax], [vmin, vmax], "r--", label="identity", linewidth=3)
     else:
-        x = prediction_points.values
-        y = targets_points.values
         x = np.append(x, vmin)
         x = np.append(x, vmax)
         y = np.append(y, vmin)
@@ -286,8 +328,8 @@ def show_regression_identity(prediction_points, targets_points, score, target, a
     # Style
     title = _label_formater(target)
     axis.set_title(f"Regression on {title}")
-    axis.set_ylabel("True Values")
-    axis.set_xlabel("Predicted Values")
+    axis.set_ylabel(ylabel)
+    axis.set_xlabel(xlabel)
     axis.grid(True)
     axis.set_aspect("equal")
 
@@ -410,10 +452,10 @@ def plot_regression_evaluation(evaluation_results, targets, scores, save_to=None
         targets_points = evaluation_results[f"true_{target}"]
         # Show regression
         ax_r = axs[i][0] if n_targets > 1 else axs[0]
-        show_regression_identity(prediction_points, targets_points, score, target, ax_r)
+        show_regression_identity(prediction_points, targets_points, score, target, axis=ax_r)
         # Show error
         ax_e = axs[i][1] if n_targets > 1 else axs[1]
-        show_residual_error(prediction_points, targets_points, score, target, ax_e)
+        show_residual_error(prediction_points, targets_points, score, target, axis=ax_e)
         # Show error distribution
         ax_d = axs[i][2] if n_targets > 1 else axs[2]
         show_residual_error_distribution(prediction_points, targets_points, score, target, vertical=True, axis=ax_d)

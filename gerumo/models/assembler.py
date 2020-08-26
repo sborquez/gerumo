@@ -16,7 +16,7 @@ import pandas as pd
 class ModelAssembler():
     def __init__(self, sst1m_model_or_path=None, mst_model_or_path=None, lst_model_or_path=None,
                     targets=[], target_domains={}, target_shapes=(), custom_objects=CUSTOM_OBJECTS):
-        assert not ((sst1m_model_or_path is None) and (mst_model_or_path is None) and (lst_model_or_path is None)), "No models given" 
+        #assert not ((sst1m_model_or_path is None) and (mst_model_or_path is None) and (lst_model_or_path is None)), "No models given" 
         self.models = {}
         self.telescopes = []
 
@@ -155,7 +155,12 @@ class ModelAssembler():
             return results, y_predictions
         else:
             return results
-
+    def exec_model_estimation(self, x_i_telescope, model, verbose, **kwargs):
+        self.models["dummy"] = model
+        prediction = self.model_estimation(x_i_telescope, "dummy",  verbose, **kwargs)
+        del self.models["dummy"]
+        return prediction
+        
     def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
         raise NotImplementedError
 
