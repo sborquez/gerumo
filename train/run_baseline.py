@@ -1,8 +1,8 @@
-import argparse
-
-import sys
 #FIX: this. re structuring the project
+import sys
 sys.path.insert(1, '..')
+
+import argparse
 
 from gerumo.baseline.reconstructor import Reconstructor
 

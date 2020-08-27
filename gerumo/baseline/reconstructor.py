@@ -1,17 +1,20 @@
 from typing import Union, Tuple, List
 
+from tqdm import tqdm
+from pandas import DataFrame
+
+import numpy as np
 import astropy.units as u
 import matplotlib.pyplot as plt
-import numpy as np
+
 from astropy.coordinates import SkyCoord
+
 from ctapipe.image import hillas_parameters, timing_parameters, \
     tailcuts_clean, number_of_islands, largest_island
 from ctapipe.instrument import CameraGeometry
 from ctapipe.reco import HillasReconstructor
 from ctapipe.utils import CutFlow
-from ctapipe.visualization import CameraDisplay, ArrayDisplay
-from pandas import DataFrame
-from tqdm import tqdm
+from ctapipe.visualization import CameraDisplay
 
 from gerumo import load_dataset, load_cameras, TELESCOPES_ALIAS
 from gerumo.baseline.cutflow import generate_observation_cutflow, CFO_MIN_PIXEL, CFO_MIN_CHARGE, CFO_POOR_MOMENTS, \
@@ -21,6 +24,9 @@ from gerumo.baseline.mapper import get_camera_geometry, split_tel_type, generate
     get_telescope_description
 from gerumo.data.io import load_array_direction
 
+__all__ = ["get_camera_radius", "Reconstructor", "cleaning_level", "clean_charge"]
+
+
 cleaning_level = {
     'ASTRICam': (5, 7, 2),
     'LSTCam': (3, 15, 2),
@@ -28,21 +34,21 @@ cleaning_level = {
     'DigiCam': (3, 5, 2)
 }
 
+average_camera_radii_deg = {
+    "ASTRICam": 4.67,
+    "CHEC": 3.93,
+    "DigiCam": 4.56,
+    "FlashCam": 3.95,
+    "NectarCam": 4.05,
+    "LSTCam": 2.31
+}
+
 
 def camera_radius(camid_to_efl, cam_id="all"):
-    average_camera_radii_deg = {
-        "ASTRICam": 4.67,
-        "CHEC": 3.93,
-        "DigiCam": 4.56,
-        "FlashCam": 3.95,
-        "NectarCam": 4.05,
-        "LSTCam": 2.31
-    }
-
     if cam_id in camid_to_efl.keys():
         foclen_meters = camid_to_efl[cam_id]
         average_camera_radius_meters = (
-            np.math.tan(np.math.radians(average_camera_radii_deg[cam_id])) * foclen_meters
+                np.math.tan(np.math.radians(average_camera_radii_deg[cam_id])) * foclen_meters
         )
     elif cam_id == "all":
         average_camera_radius_meters = 0
@@ -87,6 +93,16 @@ def clean_charge(charge: np.array, cam_name: str,
     new_charge = np.copy(charge)
     new_charge[~mask] = 0
     return new_charge, mask
+
+
+def get_camera_radius(dataset):
+    tel_types: List[str] = dataset["type"].unique()
+    cam_and_foclens = {}
+    for t in tel_types:
+        optics_name, camera_name = split_tel_type(t)
+        desc = get_telescope_description(optics_name, camera_name)
+        cam_and_foclens[camera_name] = desc.optics.equivalent_focal_length.value
+    return {cam_name: camera_radius(cam_and_foclens, cam_name) for cam_name in cam_and_foclens.keys()}
 
 
 def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, cutflow: CutFlow,
@@ -192,13 +208,7 @@ class Reconstructor:
 
     @property
     def camera_radius(self):
-        tel_types: List[str] = self.dataset["type"].unique()
-        cam_and_foclens = {}
-        for t in tel_types:
-            optics_name, camera_name = split_tel_type(t)
-            desc = get_telescope_description(optics_name, camera_name)
-            cam_and_foclens[camera_name] = desc.optics.equivalent_focal_length.value
-        return {cam_name: camera_radius(cam_and_foclens, cam_name) for cam_name in cam_and_foclens.keys()}
+        return get_camera_radius(self.dataset)
 
     @property
     def mc_values(self):
@@ -218,7 +228,8 @@ class Reconstructor:
         return values
 
     def reconstruct_event(self, event_id: str, event_cutflow: CutFlow, obs_cutflow: CutFlow,
-                          plot: bool = False) -> Union[None, dict]:
+                          energy_regressor = None,
+                          plot: bool = False) -> Union[None, dict, Tuple[dict, dict]]:
         hillas_containers = dict()
         time_gradients = dict()
 
@@ -251,8 +262,19 @@ class Reconstructor:
         )
         reco = self.reconstructor.predict(hillas_containers, subarray, array_pointing)
         mc = self.mc_values
+
+        if energy_regressor is None:
+            energy = None
+        else:
+            pred_energy = np.zeros(len(hillas_containers))
+            weights = np.zeros(len(hillas_containers))
+            for idx, moments in enumerate(hillas_containers.values()):
+                pred_energy[idx] = energy_regressor
+                weights[idx] = moments.intensity
+            energy = np.sum(pred_energy * weights) / np.sum(weights)
+
         return dict(
-            pred_az=2*np.pi*u.rad + reco.az,
+            pred_az=2 * np.pi * u.rad + reco.az,
             pred_alt=reco.alt,
             pred_core_x=reco.core_x,
             pred_core_y=reco.core_y,
@@ -261,6 +283,7 @@ class Reconstructor:
             core_x=mc[event_id]["core_x"],
             core_y=mc[event_id]["core_y"],
             mc_energy=mc[event_id]["mc_energy"],
+            energy=energy,
             event_id=event_id
         )
 
@@ -274,6 +297,7 @@ class Reconstructor:
 
     def reconstruct_all(self, max_events=None,
                         min_valid_observations=2,
+                        energy_regressor = None,
                         npix_bounds: Tuple[float, float] = None,
                         charge_bounds: Tuple[float, float] = None,
                         ellipticity_bounds: Tuple[float, float] = None,
@@ -290,7 +314,8 @@ class Reconstructor:
 
         reconstructions = {}
         for event_id in tqdm(event_ids):
-            reco = self.reconstruct_event(event_id, event_cutflow, obs_cutflow, plot=plot)
+            reco = self.reconstruct_event(event_id, event_cutflow, obs_cutflow, plot=plot,
+                                          energy_regressor=energy_regressor)
             if reco is None:
                 continue
             reconstructions[event_id] = reco
