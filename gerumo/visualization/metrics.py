@@ -120,6 +120,8 @@ def show_prediction_1d(prediction, prediction_point, targets, target_domains,
     if axis is None:
         #plt.figure(figsize=(8,8))
         axis = plt.gca()
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
 
     # Draw probability map
     x=np.linspace(target_domains[0][0], target_domains[0][1], len(prediction))
@@ -161,6 +163,9 @@ def show_prediction_2d(prediction, prediction_point, targets, target_domains,
         plt.figure(figsize=(8,8))
         axis = plt.gca()
 
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
+
     # Draw probability map
     ## Probability map in Log scale
     epsilon = 2e-10
@@ -193,6 +198,9 @@ def show_prediction_3d(prediction, prediction_point, targets, target_domains,
     """
     Display prediction for a 3 dimensional models output.
     """
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
+
     raise NotImplementedError
 
 def show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_values=None, axis=None):
@@ -204,6 +212,8 @@ def show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_v
     if axis is None:
         plt.figure(figsize=(8,8))
         axis = plt.gca()
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
 
     # Draw probability
     if isinstance(prediction, rv_continuous):
@@ -253,6 +263,9 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
     plt.figure(figsize=(8,8))
     ax = plt.gca()
     
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
+
     # Style
     if isinstance(title, str):
         title = f"Prediction for event {title}"

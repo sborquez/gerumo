@@ -155,7 +155,7 @@ class ModelAssembler():
             return results, y_predictions
         else:
             return results
-    def exec_model_estimation(self, x_i_telescope, model, verbose, **kwargs):
+    def exec_model_estimation(self, x_i_telescope, model, verbose=0, **kwargs):
         self.models["dummy"] = model
         prediction = self.model_estimation(x_i_telescope, "dummy",  verbose, **kwargs)
         del self.models["dummy"]
