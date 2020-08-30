@@ -10,9 +10,9 @@
     "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
     
     "version" : "ML1",
-    "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
-    "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
-    "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/ML1",
+    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
+    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
+    "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/ML1",
     
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
