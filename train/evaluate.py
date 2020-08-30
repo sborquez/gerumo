@@ -365,6 +365,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
 
     ## Model
     model_name = config["model_name"]
+    model_name = model_name.replace(' ', '_')
     assembler_constructor = ASSEMBLERS[config["assembler_constructor"]]
     telescopes = config["telescopes"] 
     output_folder = config["output_folder"] if output_folder is None else output_folder
@@ -584,7 +585,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
         if save_all_unit_evaluations:
             all_results[model_name] = results
             plot_energy_resolution_comparison(all_results, ylim=[0, 2], save_to=path.join(output_folder, "energy_resolution_comparason.png"))
-            
+
     if save_predictions:
         return results, predictions
     return results
