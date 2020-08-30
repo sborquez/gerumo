@@ -1,48 +1,19 @@
 {
-    "model_name": "BMO_ALT_AZ",
+    "assembler_name": "BMO_BP",
     "assembler_constructor": "bmo",
-    "version" : "ML1",
-    "output_folder" : "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output",
-    "evaluation": {
-        "seed": 1312,
-        "Assembler": {
-            "skip":               false,
-            "metrics_plot" :      true,
-            "predictions_points": true,
-            "probability_plot":   "sample",
-            "predictions_raw":    "sample"
-        },
-        "LST_LSTCam": {
-            "skip":               false,
-            "metrics_plot" :      true,
-            "predictions_points": true,
-            "probability_plot":   "sample",
-            "predictions_raw":    "sample"
-        },
-        "MST_FlashCam": {
-            "skip":               false,
-            "metrics_plot" :      true,
-            "predictions_points": true,
-            "probability_plot":   "sample",
-            "predictions_raw":    "sample"
-        },
-        "SST1M_DigiCam": {
-            "skip":               false,
-            "metrics_plot" :      true,
-            "predictions_points": true,
-            "probability_plot":   "sample",
-            "predictions_raw":    "sample"
-        }
+    "model_constructor": "bmo_unit",
+    "telescopes" : {
+        "MST_FlashCam": "/mnt/d/sebas/Desktop/GERUMO/experiments/Experiments folders/BMO_UNIT_MST_BP_4897c5"
     },
+    "output_folder" : "/mnt/d/sebas/Desktop/GERUMO/experiments/Experiments folders/",
+    "version" : "ML1",
+    
     "replace_folder_test" : null,
     "test_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
     "test_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
-    "telescopes" : {
-        "MST_FlashCam": "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output/BMO_UNIT_MST_MST_FlashCam_mae_e020_0.0746.h5"
-    },
-    "min_observations" : [0,0,0],
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
+    "min_observations" : [0,0,0],
     "input_features" : ["x", "y"],
     "targets" : ["alt", "az"],
     "target_mode" : "lineal",

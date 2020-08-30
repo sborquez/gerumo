@@ -23,7 +23,7 @@
     "test_telescope_csv" : null,
     "telescope" : "MST_FlashCam",
     "min_observations" : 1,
-    "input_image_mode" : "simple-shift",
+    "input_image_mode" : "time",
     "input_image_mask" : true,
     "input_features" : ["x", "y"],
     "targets" : ["alt", "az"],
@@ -38,7 +38,7 @@
     "batch_size" : 16,
     "epochs" : 250,
     "save_checkpoints" : true,
-    "loss" : "mae",
+    "loss" : "mse",
     "optimizer": {
         "learning_rate": 1e-4,
         "name": "adam",

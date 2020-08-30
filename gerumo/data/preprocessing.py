@@ -51,18 +51,18 @@ class CameraPipe():
 
 
 class MultiCameraPipe():
-    def __init__(self, sst1m_camerapipe_or_parameters=None, mst_camerapipe_or_parameters=None, lst_camerapipe_or_parameters=None, version="ML1"):
-        assert not ((sst1m_camerapipe_or_parameters is None) and (mst_camerapipe_or_parameters is None) and (lst_camerapipe_or_parameters is None)), "No Pipes given" 
+    def __init__(self, SST1M_DigiCam=None, MST_FlashCam=None, LST_LSTCam=None, version="ML1"):
+        assert not ((SST1M_DigiCam is None) and (MST_FlashCam is None) and (LST_LSTCam is None)), "No Pipes given" 
         # Camera Pipes and telescope type supported
         self.camera_pipes = {}
         self.telescopes = []
 
         # Load SST1M CameraPipe
-        self.load_camera_pipe("SST1M_DigiCam", sst1m_camerapipe_or_parameters, version)
+        self.load_camera_pipe("SST1M_DigiCam", SST1M_DigiCam, version)
         # Load MST CameraPipe
-        self.load_camera_pipe("MST_FlashCam", mst_camerapipe_or_parameters, version)
+        self.load_camera_pipe("MST_FlashCam", MST_FlashCam, version)
         # Load LST CameraPipe
-        self.load_camera_pipe("LST_LSTCam", lst_camerapipe_or_parameters, version)
+        self.load_camera_pipe("LST_LSTCam", LST_LSTCam, version)
         
         # Dataset Version        
         self.version = version
