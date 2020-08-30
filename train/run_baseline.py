@@ -14,8 +14,9 @@ if __name__ == "__main__":
     ap.add_argument("-t", "--telescopes_path", type=str, default="../dataset/telescopes.csv",
                     help="Telescopes folder")
     ap.add_argument("-p", "--plot", action="store_true", help="Plot charges images")
-    ap.add_argument("-c", "--csv", type=str, default=None)
+    ap.add_argument("-o", "--output", type=str, default=None)
+    ap.add_argument("-c", "--hillas_csv", type=str, default=None)
     args = ap.parse_args()
 
     reco = Reconstructor(args.events_path, args.telescopes_path)
-    reco.plot_metrics(max_events=args.n_events, min_valid_observations=2, plot_charges=args.plot, save_to=args.csv)
+    reco.plot_metrics(max_events=args.n_events, min_valid_observations=2, plot_charges=args.plot, save_to=args.output, save_hillas=args.hillas_csv)
