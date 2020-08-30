@@ -16,9 +16,9 @@
     "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
     "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
     "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/ML1",
-    "test_events_csv"    : null,
-    "test_telescope_csv" : null,
-    "replace_folder_test" : null,
+    "test_events_csv": "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
+    "test_telescope_csv": "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
+    "replace_folder_test": null,
     
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,

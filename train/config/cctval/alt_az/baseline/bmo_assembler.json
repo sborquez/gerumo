@@ -1,17 +1,18 @@
 {
     "model_name": "BMO BP Assembler",
     "assembler_constructor": "bmo",
+    "model_constructor": "bmo_unit",
     "telescopes" : {
-        "LST_LSTCam": "/mnt/e/projects/gerumo-results/alt_az/INF575/run_1/bmo_lst_2821/BMO_UNIT_LST_LST_LSTCam_mse_e270_0.0036.h5",
-        "MST_FlashCam": "/mnt/e/projects/gerumo-results/alt_az/INF575/run_1/bmo_mst_2820/BMO_UNIT_MST_MST_FlashCam_mse_e037_0.0066.h5",
-        "SST1M_DigiCam": "/mnt/e/projects/gerumo-results/alt_az/INF575/run_1/bmo_sst_2822/BMO_UNIT_SST_SST1M_DigiCam_mse_e102_0.0082.h5"
+        "LST_LSTCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/BMO_UNIT_LST_BP_189aa1",
+        "MST_FlashCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/BMO_UNIT_MST_BP_4897c5",
+        "SST1M_DigiCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/BMO_UNIT_SST_BP_53e2c7"
     },
-    "output_folder" : "/home/sborquez/output",
+    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
     
     "version" : "ML1",
-    "test_events_csv"    : "/home/sborquez/data/ml1_small/validation_events.csv",
-    "test_telescope_csv" : "/home/sborquez/data/ml1_small/validation_telescopes.csv",
-    "replace_folder_test" : "/home/sborquez/data/ml1_small",
+    "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
+    "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
+    "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/ML1",
     
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,

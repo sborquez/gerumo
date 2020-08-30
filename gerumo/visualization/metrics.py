@@ -5,7 +5,7 @@ Metrics Visualizations
 Generate plot for different metrics of models.
 
 Here you can find training metrics, single model evaluation
-and models comparations.
+and models comparison.
 """
 
 from os.path import join
@@ -24,7 +24,7 @@ __all__ = [
     'plot_prediction', 'show_prediction_1d', 'show_prediction_2d', 'show_prediction_3d',
     'plot_regression_evaluation', 'show_regression_identity', 'show_residual_error', 'show_residual_error_distribution',
     'plot_energy_resolution_comparison', 'plot_error_and_energy_resolution', 'show_energy_resolution', 'show_absolute_error_energy', 
-    'plot_error_and_angular_resolution', 'plot_angular_resolution_comparison', 'show_angular_resolution', 'show_absolute_error_angular'
+    'plot_angular_resolution_comparison', 'plot_error_and_angular_resolution',  'show_angular_resolution', 'show_absolute_error_angular'
 ]
 
 """
@@ -592,7 +592,7 @@ def plot_energy_resolution_comparison(evaluation_results_dict, include_requireme
     """
 
     # Create Figure and axis
-    plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
 
     plt.title("Energy Resolution Comparison")
@@ -612,7 +612,7 @@ def plot_energy_resolution_comparison(evaluation_results_dict, include_requireme
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
-        plt.close()
+        plt.close(fig)
     else:
         plt.show()
     
@@ -703,20 +703,11 @@ def plot_angular_resolution_comparison(evaluation_results_dict, include_requirem
     """
     
     # Create Figure and axis
-    plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
 
     plt.title("Angular Resolution Comparison")
     for label, results in evaluation_results_dict.items():
-
-        results = df_ = pd.DataFrame({
-              "true_alt": results["targets"][:,0].flatten(),
-              "true_az":  results["targets"][:,1].flatten(),
-              "pred_alt": results["predictions"][:,0].flatten(),
-              "pred_az": results["predictions"][:,1].flatten(),
-              "true_mc_energy": results["true_energy"].flatten(),
-        })
-
         predicted_alt = results["pred_alt"]
         predicted_az = results["pred_az"]
 
@@ -737,6 +728,6 @@ def plot_angular_resolution_comparison(evaluation_results_dict, include_requirem
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
-        plt.close()
+        plt.close(fig)
     else:
         plt.show()

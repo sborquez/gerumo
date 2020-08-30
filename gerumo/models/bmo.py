@@ -160,7 +160,7 @@ class BMO(ModelAssembler):
         y_predictions_kde    = [st.gaussian_kde(y_predictions_point) for y_predictions_point in y_predictions_points]
         return y_predictions_kde, y_predictions_points
     
-    def model_estimation(self, x_i_telescope, telescope, verbose, **kwargs):
+    def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
         model_telescope = self.models[telescope]
         y_predictions, _ = BMO.bayesian_estimation(model_telescope, x_i_telescope, self.sample_size, verbose, **kwargs)
         return y_predictions
