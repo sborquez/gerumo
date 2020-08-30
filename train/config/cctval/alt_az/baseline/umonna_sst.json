@@ -50,10 +50,10 @@
     },
     
     "batch_size" : 16,
-    "epochs" : 50,
+    "epochs" : 75,
     "loss" : "crossentropy",
     "optimizer": {
-        "learning_rate": 1e-3,
+        "learning_rate": 1e-4,
         "name": "sgd",
         "extra_parameters": {
             "momentum": 0.01,

@@ -166,7 +166,7 @@ class ParametricUmonna(ModelAssembler):
             return tfp.layers.MultivariateNormalTriL(event_size, name=name, trainable=trainable, dtype=dtype, convert_to_tensor_fn=convert_to_tensor_fn)
         return load_MultivariateNormalTriL
     
-    def model_estimation(self, x_i_telescope, telescope, verbose, **kwargs):
+    def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
         model_telescope = self.models[telescope]
         y_predictions_batch = model_telescope(x_i_telescope)
         
@@ -202,23 +202,22 @@ class ParametricUmonna(ModelAssembler):
 
     def gaussian_barycenter_W2(self, y_i):
         raise NotImplementedError
-        return None
-        # Parameters
-        n = len(y_i)
-        mus =    y_i[:, 0]
-        sigmas = y_i[:, 1:]
-        dim = len(self.targets)
+        # # Parameters
+        # n = len(y_i)
+        # mus =    y_i[:, 0]
+        # sigmas = y_i[:, 1:]
+        # dim = len(self.targets)
         
-        # Sigma
-        barycenter_sigma = np.eye(dim,dim)
-        sqrtm = np.vectorize(sp.linalg.sqrtm, signature="(n,n)->(n,n)")
-        for _ in range(barycenter_fixpoint_iterations):
-            barycenter_sigma_sqrt = sp.linalg.sqrtm(barycenter_sigma)
-            barycenter_sigma  = sqrtm(barycenter_sigma_sqrt@sigmas@barycenter_sigma_sqrt).mean(axis=0)
-        # Mu
-        barycenter_mu = mus.mean(axis=0, keepdims=True)
-        compressed = np.vstack((barycenter_mu, barycenter_sigma))
-        return compressed
+        # # Sigma
+        # barycenter_sigma = np.eye(dim,dim)
+        # sqrtm = np.vectorize(sp.linalg.sqrtm, signature="(n,n)->(n,n)")
+        # for _ in range(barycenter_fixpoint_iterations):
+        #     barycenter_sigma_sqrt = sp.linalg.sqrtm(barycenter_sigma)
+        #     barycenter_sigma  = sqrtm(barycenter_sigma_sqrt@sigmas@barycenter_sigma_sqrt).mean(axis=0)
+        # # Mu
+        # barycenter_mu = mus.mean(axis=0, keepdims=True)
+        # compressed = np.vstack((barycenter_mu, barycenter_sigma))
+        # return compressed
 
 class normalized_product_gen(st.rv_continuous):
     "Product of Gaussian distributions"

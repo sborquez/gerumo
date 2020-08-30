@@ -276,7 +276,7 @@ class Umonna(ModelAssembler):
         self.point_estimation_mode = point_estimation_mode
         self.target_resolutions = target_resolutions
 
-    def model_estimation(self, x_i_telescope, telescope, verbose, **kwargs):
+    def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
         model_telescope = self.models[telescope]
         return model_telescope.predict(x_i_telescope, verbose=verbose, **kwargs)
 
