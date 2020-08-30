@@ -8,12 +8,10 @@ import argparse
 ap = argparse.ArgumentParser(description="Create videos from experiments folder.")
 ap.add_argument("-i", "--experiment", required=False, help="Path to experiment folder.", default='../alt_az/UMONNA_UNIT_LST_V2_437e0b', type=str)
 ap.add_argument("-o", "--output", required=False, help="Output folder", default="./.", type=str)
-ap.add_argument('--all', dest='all', action='store_true')
 args = vars(ap.parse_args())
 experiment_folder = args["experiment"]
 experiment_name = basename(experiment_folder)
 output_folder = args["output"]
-show_all = args["all"]
 
 # Train plot
 train_loss_filepath = glob.glob(f'{experiment_folder}/*Training Loss.png') 

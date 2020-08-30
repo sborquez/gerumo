@@ -335,9 +335,31 @@ def evaluate_unit(model_or_path, config_file, output_folder,
     return results
 
 def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_evaluations=True, save_results=True, save_predictions=True, save_samples=True, seed=None):
-    # Load configuration file
+    """
+    Evaluate assembler from a configuration file.
+    
+    Parameters
+    ==========
+    assembler_config_file :  `str`
+        Path to configuration file.
+    output_folder : `str`, optional
+        Path to folder where plots and results will be saved (default: use the output from configuration file) 
+    save_all_unit_evaluations : `bool`
+        Evaluate each telescope.
+    save_results : `bool`, optional
+        Save predictions points and targets into csv file.
+    save_predictions : `bool`, optional
+        Save raw predictions.
+    save_samples : `bool`, optional
+        Save predictions plots from a small events sampleset .
+    seed : `int`, optional
+        Seed for random states.
+    Returns
+    -------
+    `pd.DataFrame`
+        Evaluation results.
+    """
     # Load configuration
-    #assembler_config_file = "/mnt/d/sebas/Google Drive/Projects/gerumo/train/config/cctval/alt_az/baseline/umonna_assembler.json"
     with open(assembler_config_file) as cfg_file:
         config = json.load(cfg_file)
 
@@ -416,6 +438,9 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
             point_estimation_mode="expected_value"
     )
 
+    if save_all_unit_evaluations:
+        all_results = {}
+
     # Telescope Models 
     for telescope, experiment_or_model_path in telescopes.items():
         model_path = assembler.load_model(telescope, experiment_or_model_path)
@@ -424,11 +449,14 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
             model_output_folder = path.join(output_folder, 'telescopes', telescope)
             print(f"Saving {telescope} evaluation in:", model_output_folder)
             os.makedirs(model_output_folder, exist_ok=True)
-            evaluate_unit(model_path, assembler_config_file, model_output_folder,
+            unit_evaluation = evaluate_unit(model_path, assembler_config_file, model_output_folder,
                  assembler=assembler, telescope=telescope,
                  save_results=save_results, save_predictions=save_predictions, save_samples=save_samples, 
                  model_name=model_name, seed=seed)
-    
+            if save_predictions:
+                all_results[telescope] = unit_evaluation[0]
+            else:    
+                all_results[telescope] = unit_evaluation
 
     # Evaluate assembler
     ## Preprocessing
@@ -543,14 +571,20 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
         print("Angular Reconstruction")
         ## 3. Calculate resolution (angular)
         plot_error_and_angular_resolution(results, save_to=path.join(output_folder, "angular_resolution.png"))
-        plot_angular_resolution_comparison({telescope: results}, ylim=[0, 2], save_to=path.join(output_folder, "angular_resolution_comparable.png"))
+        plot_angular_resolution_comparison({model_name: results}, ylim=[0, 2], save_to=path.join(output_folder, "angular_resolution_comparable.png"))
+        if save_all_unit_evaluations:
+            all_results[model_name] = results
+            plot_angular_resolution_comparison(all_results, ylim=[0, 2], save_to=path.join(output_folder, "angular_resolution_comparason.png"))
 
     if reconstruction_mode in ("energy reconstruction", "complete reconstruction"):
         print("Energy resolution")
         ## 3. Calculate resolution (energy)
         plot_error_and_energy_resolution(results, save_to=path.join(output_folder, "energy_resolution.png"))
-        plot_energy_resolution_comparison({telescope: results}, ylim=[0, 2], save_to=path.join(output_folder, "energy_resolution_comparable.png"))
-
+        plot_energy_resolution_comparison({model_name: results}, ylim=[0, 2], save_to=path.join(output_folder, "energy_resolution_comparable.png"))
+        if save_all_unit_evaluations:
+            all_results[model_name] = results
+            plot_energy_resolution_comparison(all_results, ylim=[0, 2], save_to=path.join(output_folder, "energy_resolution_comparason.png"))
+            
     if save_predictions:
         return results, predictions
     return results
