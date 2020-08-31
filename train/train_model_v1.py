@@ -106,12 +106,18 @@ def train_model(model_name, model_constructor, model_extra_params,
     input_img_shape = INPUT_SHAPE[f"{input_image_mode}-mask" if input_image_mask else input_image_mode][telescope]
     input_features_shape = (len(input_features),)
     target_shapes = target_mode_config["target_shapes"]
-    
+
+    #Model definition
     model = model_constructor(telescope, input_image_mode, input_image_mask, 
                     input_img_shape, input_features_shape,
                     targets, target_mode, target_shapes, 
                     **model_extra_params)
     # Debug
+    #summary = True
+    #save_plot = True
+
+    #print("model details")
+    
     if summary:
         model.summary()
     if save_plot:
@@ -120,7 +126,7 @@ def train_model(model_name, model_constructor, model_extra_params,
         plot_model(model, to_file="model_simple.png", show_shapes=False)
         if plot_only:
             exit(0)
-
+            
     ## Loss function
     loss = loss if loss.split('_')[-1] == 'loss' else f'{loss}_loss'
     if loss == "crossentropy":

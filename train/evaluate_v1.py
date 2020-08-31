@@ -200,20 +200,20 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
 
         #BMO_DET PLOTS
         plt.scatter(target[:,0], pred[:,0], s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of CNN-DET predictions on validation set')
+        plt.title('Evaluation of CNN-BMO predictions on validation set')
         plt.xlabel('target az')
         plt.ylabel('predicted az')
         plt.xlim(-0.52,0.52)
         plt.ylim(-0.52,0.52)
-        plt.savefig(f"{local_path}/scatter_az_cnn_det_adam.png")
+        plt.savefig(f"{local_path}/scatter_az_cnn_bmo_adam.png")
 
         plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of CNN-DET predictions on validation set')
+        plt.title('Evaluation of CNN-BMO predictions on validation set')
         plt.xlabel('target alt')
         plt.ylabel('predicted alt')
         plt.xlim(1.05, 1.382)
         plt.ylim(1.05, 1.382)
-        plt.savefig(f"{local_path}/scatter_alt_cnn_det_adam.png")
+        plt.savefig(f"{local_path}/scatter_alt_cnn_bmo_adam.png")
 
         #UMONNA PLOTS
         #target-pred scatter plot
