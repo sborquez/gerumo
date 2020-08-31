@@ -15,7 +15,7 @@ from time import time
 import uuid
 from os.path import abspath, basename, splitext, isdir, join
 from glob import glob
-from os import remove
+from os import remove, makedirs
 import argparse
 
 import logging
@@ -97,7 +97,7 @@ def save_plot_model(experiment_or_model_path, output_folder, include_shape=False
         model_path = experiment_or_model_path
     else:
         raise ValueError("Invalid experiment_or_model_path", experiment_or_model_path)
-    os.makedirs(output_folder, exist_ok=True)
+    makedirs(output_folder, exist_ok=True)
 
     model = load_model(model_path, custom_objects=CUSTOM_OBJECTS) if isinstance(model_path, str) else model_path
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     # option b
     ap.add_argument("--save", dest="save", action="store_true", help="Check if model can be saved")
     # option c
-    ap.add_argument("--plot", type=str, default=None, help="Path to model checkpoint or experimnet path.")
+    ap.add_argument("--plot", type=str, default=None, help="Path to model checkpoint or experiment path.")
     ap.add_argument("--include_shape", action="store_true", help="Include shape in model plot.")
     ap.add_argument("-o", "--output", type=str, default=".", help="Output folder path")
     args = vars(ap.parse_args())
@@ -130,11 +130,11 @@ if __name__ == "__main__":
     if save:
         test_saving()
     
-    plot_model = args["plot"]
-    if plot_model is not None:
+    model = args["plot"]
+    if model is not None:
         print("Saving model plot.")
         output_folder = args["output"]
         include_shape = args["include_shape"]
-        save_plot_model(plot_model, output_folder, include_shape=include_shape)
+        save_plot_model(model, output_folder, include_shape=include_shape)
 
     print("Done")
