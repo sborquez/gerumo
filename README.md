@@ -7,17 +7,17 @@
 Tensorflow with GPU.
 
 ```
-conda env create -f environment.yml --prefix ./ENV
+conda env create -f environment.yml --name gerumo
 ```
 
 or with CPU only.
 
 ```
-conda env create -f environment.yml --prefix ./ENV
+conda env create -f environment_cpu.yml --name gerumo
 ```
 
 ## Activate 
 
 ```
-conda activate ./ENV
+conda activate gerumo
 ```
