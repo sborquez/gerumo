@@ -25,13 +25,23 @@ conda activate gerumo
 
 ## Setup Dataset
 
+
+* from folder with h5 files
 ```
-(gerumo)$ python prepare_dataset.py -o  ./dataset -i /Prod3b_ML1_gamma -s 0.2 
+(gerumo)$ python prepare_dataset.py --split 0.2 --output  ./dataset --folder ./Prod3b_ML1_gamma
 ```
+
+* from list of h5 files
+```
+(gerumo)$ python prepare_dataset.py --split 0.2 --output  ./dataset --files ./Prod3b_ML1_gamma/file_1.h5 ./Prod3b_ML1_gamma/file_2.h5 ...
+``
+
+* split: split in train/validation datasets.
+* version: prod3b version (default ML1).
 
 ## Train a model
 
-Training uses `train dataset` and `validation dataset` definen in configuration files.
+Training uses `train dataset` and `validation dataset` defined in configuration files.
 
 ```
 (gerumo)$ python --config ./config/local/alt_az/umonna_sst.json [--quiet] [-G]
