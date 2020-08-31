@@ -34,7 +34,7 @@ conda activate gerumo
 * from list of h5 files
 ```
 (gerumo)$ python prepare_dataset.py --split 0.2 --output  ./dataset --files ./Prod3b_ML1_gamma/file_1.h5 ./Prod3b_ML1_gamma/file_2.h5 ...
-``
+```
 
 * split: split in train/validation datasets.
 * version: prod3b version (default ML1).
@@ -46,10 +46,12 @@ Training uses `train dataset` and `validation dataset` defined in configuration 
 ```
 (gerumo)$ python --config ./config/local/alt_az/umonna_sst.json [--quiet] [-G]
 ```
+
 * G: Use multigpu training strategy.
 * quiet: Training verbosity 0.
 
 ### Config files
+
 ```
 umonna_sst.json
 {
