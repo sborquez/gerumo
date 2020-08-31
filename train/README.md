@@ -31,6 +31,8 @@ conda activate gerumo
 
 ## Train a model
 
+Training uses `train dataset` and `validation dataset` definen in configuration files.
+
 ```
 (gerumo)$ python --config ./config/local/alt_az/umonna_sst.json [--quiet] [-G]
 ```
@@ -119,6 +121,8 @@ umonna_sst.json
 ## Evaluate
 
 How to evaluate your trained model and assemble results.
+
+Evaluate uses `test dataset` definen in configuration files, if model configuration doesn`t have `test dataset`, uses `validation dataset`.
 
 ### Evaluate single model
 
