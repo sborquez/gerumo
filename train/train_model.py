@@ -146,8 +146,7 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
             learning_rate = 1e-1,
             preprocessing_parameters = {},
             save_checkpoints = True, save_predictions=True, save_regressions = True,
-            save_plot=False, plot_only=False, summary=False, quiet=False,
-            multi_gpu=False):
+            quiet=False, multi_gpu=False):
     # Assembler
     assembler = assembler_constructor(targets=targets, 
                                       target_shapes=target_mode_config["target_shapes"],
@@ -306,18 +305,7 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
             loss=loss_
         )
     
-    # Debug
-    if summary:
-        model.summary()
-    if save_plot:
-        # TODO: Move this to debug
-        plot_model(model, to_file="model.png", show_shapes=True)
-        plot_model(model, to_file="model_simple.png", show_shapes=False)
-        if plot_only:
-            exit(0)
-    
     ## fit
-
     start_time = time.time()
     history = model.fit(
         train_generator,
@@ -416,11 +404,6 @@ if __name__ == "__main__":
     save_checkpoints = config.get("save_checkpoints", True)
     save_predictions = config.get("save_predictions", True)
     save_regressions = config.get("save_regressions", True)
-    save_plot = config.get("save_plot", False)
-    
-    # Debug
-    plot_only = config["plot_only"]
-    summary = config["summary"]
 
     # Setup Experiment Folder
     experiment_run = uuid.uuid4().hex[:6]
@@ -460,10 +443,7 @@ if __name__ == "__main__":
         save_checkpoints = save_checkpoints,
         save_predictions = save_predictions,
         save_regressions = save_regressions,
-        save_plot = save_plot, 
-        # Debug parameters
-        plot_only=plot_only, 
-        summary=summary, 
+        # Extra parameters
         quiet=quiet,
         # HPC
         multi_gpu=multi_gpu

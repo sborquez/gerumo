@@ -170,7 +170,7 @@ def evaluate_unit(model_or_path, config_file, output_folder,
     test_dataset = load_dataset(test_events_csv, test_telescope_csv, replace_folder_test)
     test_dataset = aggregate_dataset(test_dataset, az=True, log10_mc_energy=True)
     print("Test dataset")
-    describe_dataset(test_dataset)
+    describe_dataset(test_dataset, save_to=path.join(output_folder, "test_description.txt"))
     if save_samples:
         # events with observations of every type of telescopes
         sample_events = [e for e, df in test_dataset.groupby("event_unique_id") if df["type"].nunique() == len(TELESCOPES)]
@@ -181,7 +181,7 @@ def evaluate_unit(model_or_path, config_file, output_folder,
         sample_dataset = filter_dataset(sample_dataset, telescope, [0], target_domains)
 
         print("Sample dataset")
-        describe_dataset(sample_dataset)
+        describe_dataset(sample_dataset, save_to=path.join(output_folder, "sample_description.txt"))
     else:
         sample_dataset = None
         sample_generator = None
@@ -372,6 +372,8 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
     output_folder = path.join(output_folder, f"{model_name}_evaluation")
     print("Saving assembelr evaluation in:", output_folder)
     os.makedirs(output_folder, exist_ok=True)
+    with open(path.join(output_folder, f"{model_name}.json"),  "w") as cfg_file:
+        json.dump(config, cfg_file)
     
     # Prepare datasets
     version = config["version"]
@@ -413,7 +415,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
     test_dataset = load_dataset(test_events_csv, test_telescope_csv, replace_folder_test)
     test_dataset = aggregate_dataset(test_dataset, az=True, log10_mc_energy=True)
     print("Test dataset")
-    describe_dataset(test_dataset)
+    describe_dataset(test_dataset, save_to=path.join(output_folder, "test_description.txt"))
     if save_samples:
         # events with observations of every type of telescopes
         sample_events = [e for e, df in test_dataset.groupby("event_unique_id") if df["type"].nunique() == len(TELESCOPES)]
@@ -424,7 +426,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
         sample_dataset = filter_dataset(sample_dataset, telescopes.keys(), min_observations, target_domains)
 
         print("Sample dataset")
-        describe_dataset(sample_dataset)
+        describe_dataset(sample_dataset, save_to=path.join(output_folder, "sample_description.txt"))
     else:
         sample_dataset = None
         sample_generator = None

@@ -64,5 +64,10 @@ def mean_distance_loss(shape):
 
 def negloglike_loss(dimensions):
     def loss(y_true, y_params_pred):
+        return -y_params_pred.log_prob(y_true)*tf.linalg.norm(y_params_pred.mean() - y_true, axis=-1) 
+    return loss
+
+def mve_loss(dimensions):
+    def loss(y_true, y_params_pred):
         return -y_params_pred.log_prob(y_true)*tf.linalg.norm(y_params_pred.loc - y_true, axis=-1)  + tf.linalg.trace(y_params_pred.covariance()) 
     return loss

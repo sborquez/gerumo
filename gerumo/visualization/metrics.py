@@ -20,11 +20,24 @@ from sklearn.metrics import r2_score
 
 
 __all__ = [
-    'plot_model_training_history', 'plot_model_validation_regressions',
-    'plot_prediction', 'show_prediction_1d', 'show_prediction_2d', 'show_prediction_3d',
-    'plot_regression_evaluation', 'show_regression_identity', 'show_residual_error', 'show_residual_error_distribution',
-    'plot_energy_resolution_comparison', 'plot_error_and_energy_resolution', 'show_energy_resolution', 'show_absolute_error_energy', 
-    'plot_angular_resolution_comparison', 'plot_error_and_angular_resolution',  'show_angular_resolution', 'show_absolute_error_angular'
+    'plot_model_training_history', 
+    'plot_prediction', 
+        'show_points_2d',
+        'show_pdf_2d',
+        'show_pmf_1d', 'show_pmf_2d', 'show_pmf_3d', 
+    'plot_model_validation_regressions',
+    'plot_regression_evaluation', 
+        'show_regression_identity', 
+        'show_residual_error',
+        'show_residual_error_distribution',
+    'plot_energy_resolution_comparison', 
+    'plot_error_and_energy_resolution', 
+        'show_energy_resolution', 
+        'show_absolute_error_energy', 
+    'plot_angular_resolution_comparison', 
+    'plot_error_and_angular_resolution',  
+        'show_angular_resolution', 
+        'show_absolute_error_angular'
 ]
 
 """
@@ -91,12 +104,11 @@ def plot_model_validation_regressions(evaluation_results, targets, save_to=None)
     else:
         plt.show()
 
-"""
-Regression Metrics
-==================
-"""
 
-
+"""
+Predictions
+----------
+"""
 def _label_formater(target, use_degrees=False, only_units=False):
     units = {
         "az" : "[deg]" if use_degrees else "[rad]",
@@ -110,79 +122,101 @@ def _label_formater(target, use_degrees=False, only_units=False):
         return f"{target} {units[target]}"
 
 
-def show_prediction_1d(prediction, prediction_point, targets, target_domains, 
-                       target_resolutions, targets_values=None, axis=None):
+def plot_prediction(prediction, prediction_point, targets, target_domains,
+                              target_resolutions=None,  title=None, targets_values=None,
+                              save_to=None):
     """
-    Display prediction for a 1 dimensional models output.
+    Display the assembled prediction of a event, the probability and the predicted point.
+    If targets_values is not None, the target point is included in the figure.
     """
+    #TODO: change function name
 
-    # Create new figure
-    if axis is None:
-        #plt.figure(figsize=(8,8))
-        axis = plt.gca()
+    # Create new Figure
+    plt.figure(figsize=(8,8))
+    ax = plt.gca()
+    
     if isinstance(target_domains, dict):
         target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
 
-    # Draw probability map
-    x=np.linspace(target_domains[0][0], target_domains[0][1], len(prediction))
-    axis.plot(x, prediction, "-",color="blue", alpha=0.9)
-    def rainbow_fill(X,Y, axis, cmap=plt.get_cmap("jet")):
-        axis.plot(X,Y, lw=0)  # Plot so the axes scale correctly
-        dx = (X[1]-X[0])
-        N  = float(X.size)
-        y_max = Y.max()
-        for x,y in zip(X,Y):
-            polygon = plt.Rectangle((x,0),dx,y,color=cmap(y/y_max), alpha=0.9)
-            axis.add_patch(polygon)
-    rainbow_fill(x, prediction, axis)
-
-    # Add predicted point
-    axis.axvline(x=prediction_point[0], c="white", linestyle="--", linewidth=3,
-                 label=f"prediction=({prediction_point[0]:.4f})", alpha=0.9)
-    # Add target point
-    if targets_values is not None:
-      axis.axvline(x=targets_values[0], linestyle="--", c="black", linewidth=3,
-                   label=f"target=({targets_values[0]:.4f})", alpha=0.9)
-
     # Style
-    axis.set_facecolor('lightgrey')
-    axis.set_xlim(target_domains[0])
-    axis.set_xlabel(_label_formater(targets[0]))
-    axis.legend()
-    return axis
+    if isinstance(title, str):
+        title = f"Prediction for event {title}"
+    elif isinstance(title, tuple):
+        title = f"Prediction for event {title[0]}\ntelescope id {title[1]}"
+    else:
+        title = f"Prediction for a event"
+    plt.title(title)
+
+    # point estimator
+    if np.array_equal(prediction, prediction_point):
+        if len(targets) == 1:
+            raise NotImplementedError
+        elif len(targets) == 2:
+            ax = show_points_2d(prediction, prediction_point, targets, target_domains, targets_values, ax)
+        elif len(targets) == 3:
+            raise NotImplementedError
+    # probability density function estimator
+    elif np.any(np.array(target_resolutions) == np.inf) :
+        # Show prediction according to targets dim 
+        if len(targets) == 1:
+            raise NotImplementedError
+        elif len(targets) == 2:
+            ax = show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_values, ax)
+        elif len(targets) == 3:
+            raise NotImplementedError
+    # probability mass function estimator
+    else:
+        # Show prediction according to targets dim 
+        if len(targets) == 1:
+            ax = show_pmf_1d(prediction, prediction_point, targets, target_domains, 
+                        target_resolutions, targets_values, ax)
+        elif len(targets) == 2:
+            ax = show_pmf_2d(prediction, prediction_point, targets, target_domains, 
+                        target_resolutions, targets_values, ax)
+        elif len(targets) == 3:
+            raise NotImplementedError
+
+    # Save or Show
+    if save_to is not None:
+        plt.savefig(save_to)
+        plt.close()
+    else:
+        plt.show()
+
+"""
+POINT predictions
+----------------
+"""
 
 
-def show_prediction_2d(prediction, prediction_point, targets, target_domains, 
-                       target_resolutions, targets_values=None, axis=None):
+def show_points_2d(prediction, prediction_point, targets, target_domains, targets_values=None, axis=None):
     """
-    Display prediction for a 2 dimensional models output.
+    Show predicted point in a 2d target domain.
     """
-
     # Create new figure
     if axis is None:
         plt.figure(figsize=(8,8))
         axis = plt.gca()
-
     if isinstance(target_domains, dict):
         target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
 
-    # Draw probability map
-    ## Probability map in Log scale
-    epsilon = 2e-10
-    extend = target_domains[1][0], target_domains[1][1], target_domains[0][0], target_domains[0][1]
-    vmin = prediction.min()
-    if vmin <= 0:
-      vmin = epsilon
-      prediction += epsilon
-    vmax = prediction.max()  
-    im = axis.imshow(prediction, origin="lower", cmap="jet", extent=extend, 
-                     aspect=3,  norm=LogNorm(vmin=vmin, vmax=vmax))
+    ## Probability map 
+    xx, yy = np.mgrid[target_domains[0][0]:target_domains[0][1]:.005,  target_domains[1][0]:target_domains[1][1]:.005]
+    im = axis.contourf(yy.T, xx.T, np.zeros_like(xx.T), cmap='jet') #, norm=LogNorm(vmin=pdf.min(), vmax=pdf.max()))
+    axis.set_xlim(( target_domains[1][0], target_domains[1][1]))
+    axis.set_ylim((target_domains[0][0], target_domains[0][1]))
+
     ## Add color bar
     plt.colorbar(im, ax=axis, extend='max')
+    # Add prediction points
+    if len(prediction.shape) == 1:
+        prediction = np.array([prediction])
+
+    axis.scatter(x=prediction[:, 1], y=prediction[:, 0], c="red", alpha=0.4)
 
     # Add predicted point
     axis.scatter(x=[prediction_point[1]], y=[prediction_point[0]], c="w", marker="*", 
-                 label=f"prediction=({prediction_point[0]:.4f}, {prediction_point[1]:.4f})", alpha=0.9)
+                 label=f"prediction=({prediction_point[0]:.4f}, {prediction_point[1]:.4f})", alpha=1)
     # Add target point
     if targets_values is not None:
       axis.scatter(x=[targets_values[1]], y=[targets_values[0]], c="black",marker="o", 
@@ -193,19 +227,15 @@ def show_prediction_2d(prediction, prediction_point, targets, target_domains,
     axis.legend()
     return axis
 
-def show_prediction_3d(prediction, prediction_point, targets, target_domains, 
-                       target_resolutions, targets_values=None, axis=None):
-    """
-    Display prediction for a 3 dimensional models output.
-    """
-    if isinstance(target_domains, dict):
-        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
 
-    raise NotImplementedError
+"""
+PDF predictions
+================
+"""
 
 def show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_values=None, axis=None):
     """
-    Display pdf distribution for a 2 dimensional models output.
+    Show predicted pdf in a 2d target domain.
     """
 
     # Create new figure
@@ -250,57 +280,107 @@ def show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_v
     axis.legend()
     return axis
 
-def plot_prediction(prediction, prediction_point, targets, target_domains,
-                              target_resolutions=None,  title=None, targets_values=None,
-                              save_to=None):
-    """
-    Display the assembled prediction of a event, the probability and the predicted point.
-    If targets_values is not None, the target point is included in the figure.
-    """
-    #TODO: change function name
+"""
+PMF predictions
+--------------
+"""
 
-    # Create new Figure
-    plt.figure(figsize=(8,8))
-    ax = plt.gca()
-    
+def show_pmf_1d(prediction, prediction_point, targets, target_domains, 
+                       target_resolutions, targets_values=None, axis=None):
+    """
+    Show predicted pmf in a 1d target domain.
+    """
+
+    # Create new figure
+    if axis is None:
+        #plt.figure(figsize=(8,8))
+        axis = plt.gca()
     if isinstance(target_domains, dict):
         target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
 
+    # Draw probability map
+    x=np.linspace(target_domains[0][0], target_domains[0][1], len(prediction))
+    axis.plot(x, prediction, "-",color="blue", alpha=0.9)
+    def rainbow_fill(X,Y, axis, cmap=plt.get_cmap("jet")):
+        axis.plot(X,Y, lw=0)  # Plot so the axes scale correctly
+        dx = (X[1]-X[0])
+        N  = float(X.size)
+        y_max = Y.max()
+        for x,y in zip(X,Y):
+            polygon = plt.Rectangle((x,0),dx,y,color=cmap(y/y_max), alpha=0.9)
+            axis.add_patch(polygon)
+    rainbow_fill(x, prediction, axis)
+
+    # Add predicted point
+    axis.axvline(x=prediction_point[0], c="white", linestyle="--", linewidth=3,
+                 label=f"prediction=({prediction_point[0]:.4f})", alpha=0.9)
+    # Add target point
+    if targets_values is not None:
+      axis.axvline(x=targets_values[0], linestyle="--", c="black", linewidth=3,
+                   label=f"target=({targets_values[0]:.4f})", alpha=0.9)
+
     # Style
-    if isinstance(title, str):
-        title = f"Prediction for event {title}"
-    elif isinstance(title, tuple):
-        title = f"Prediction for event {title[0]}\ntelescope id {title[1]}"
-    else:
-        title = f"Prediction for a event"
-    plt.title(title)
+    axis.set_facecolor('lightgrey')
+    axis.set_xlim(target_domains[0])
+    axis.set_xlabel(_label_formater(targets[0]))
+    axis.legend()
+    return axis
 
-    if np.any(np.array(target_resolutions) == np.inf) :
-        # Show prediction according to targets dim 
-        if len(targets) == 1:
-            pass
-        elif len(targets) == 2:
-            ax = show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_values, ax)
-        elif len(targets) == 3:
-            pass
-    else:
-        # Show prediction according to targets dim 
-        if len(targets) == 1:
-            ax = show_prediction_1d(prediction, prediction_point, targets, target_domains, 
-                        target_resolutions, targets_values, ax)
-        elif len(targets) == 2:
-            ax = show_prediction_2d(prediction, prediction_point, targets, target_domains, 
-                        target_resolutions, targets_values, ax)
-        elif len(targets) == 3:
-            pass
+def show_pmf_2d(prediction, prediction_point, targets, target_domains, 
+                       target_resolutions, targets_values=None, axis=None):
+    """
+    Show predicted pmf in a 2d target domain.
+    """
 
-    # Save or Show
-    if save_to is not None:
-        plt.savefig(save_to)
-        plt.close()
-    else:
-        plt.show()
+    # Create new figure
+    if axis is None:
+        plt.figure(figsize=(8,8))
+        axis = plt.gca()
 
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
+
+    # Draw probability map
+    ## Probability map in Log scale
+    epsilon = 2e-10
+    extend = target_domains[1][0], target_domains[1][1], target_domains[0][0], target_domains[0][1]
+    vmin = prediction.min()
+    if vmin <= 0:
+      vmin = epsilon
+      prediction += epsilon
+    vmax = prediction.max()  
+    im = axis.imshow(prediction, origin="lower", cmap="jet", extent=extend, 
+                     aspect=3,  norm=LogNorm(vmin=vmin, vmax=vmax))
+    ## Add color bar
+    plt.colorbar(im, ax=axis, extend='max')
+
+    # Add predicted point
+    axis.scatter(x=[prediction_point[1]], y=[prediction_point[0]], c="w", marker="*", 
+                 label=f"prediction=({prediction_point[0]:.4f}, {prediction_point[1]:.4f})", alpha=0.9)
+    # Add target point
+    if targets_values is not None:
+      axis.scatter(x=[targets_values[1]], y=[targets_values[0]], c="black",marker="o", 
+                   label=f"target=({targets_values[0]:.4f}, {targets_values[1]:.4f})", alpha=0.9)
+    # Style
+    axis.set_ylabel(_label_formater(targets[0]))
+    axis.set_xlabel(_label_formater(targets[1]))
+    axis.legend()
+    return axis
+
+def show_pmf_3d(prediction, prediction_point, targets, target_domains, 
+                       target_resolutions, targets_values=None, axis=None):
+    """
+    Show predicted pmf in a 3d target domain.
+    """
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
+
+    raise NotImplementedError
+
+"""
+Regression Metrics
+==================
+"""
 
 def show_regression_identity(prediction_points, targets_points, score, target, flip=False, axis=None):
     """

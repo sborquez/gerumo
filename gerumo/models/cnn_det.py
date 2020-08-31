@@ -1,9 +1,7 @@
 """
-parametric UMoNNA
+CNN DET: Bayesian Multi Observer in Deterministic mode
 ======
-
-Uncertain Multi Observer Neural Network Assembler 
-with parametric distributions models
+Convolutional Neural Network for mono and multi-stereo event reconstruction
 """
 
 import numpy as np
@@ -27,11 +25,10 @@ from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
 
 
-def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
+def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=800, dense_layer_blocks=5,
-                activity_regularizer_l2=None):
-    """Build Pumonna Unit Model
+                latent_variables=200, dense_layer_blocks=5, activity_regularizer_l2=None):
+    """Build Deterministic CNN Unit Model
     Parameters
     ==========
         telescope
@@ -45,22 +42,22 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     ======
         keras.Model 
     """
-    # Support linear target mode only
+    # Soport lineal only
     if target_mode != 'lineal':
         raise ValueError(f"Invalid target_mode: '{target_mode}'" )
 
     # Image Encoding Block
     ## HexConvLayer
     input_img = Input(name="image_input", shape=input_img_shape)
-    if image_mode in ("simple-shift", "time-shift"):
+    if image_mode == "simple-shift":
         front = HexConvLayer(filters=32, kernel_size=(3,3), name="encoder_hex_conv_layer")(input_img)
-    elif image_mode in ("simple", "time"):
+    elif image_mode == "simple":
         front = Conv2D(name="encoder_conv_layer_0",
                        filters=32, kernel_size=(3,3),
                        kernel_initializer="he_uniform",
                        padding = "valid",
                        activation="relu")(input_img)
-        front = MaxPooling2D(name=f"encoder_maxpool_layer_0", pool_size=(2, 2))(front)
+        front = MaxPooling2D(name=f"encoder_max_poolin_layer_0", pool_size=(2, 2))(front)
     else:
         raise ValueError(f"Invalid image mode {image_mode}")
 
@@ -104,7 +101,7 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
                    padding = "valid",
                    activation="relu")(front)
     front = Flatten(name="encoder_flatten_to_latent")(front)
-
+    
     # Logic Block
     ## extra Telescope Features
     input_params = Input(name="feature_input", shape=input_features_shape)
@@ -117,115 +114,51 @@ def pumonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
         front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
 
-    # Output block
+    # Outpout block
     dense_i += 1
-    front = Dense(units=64, name=f"logic_dense_{dense_i}")(front)
+    front = Dense(units=128, name=f"logic_dense_{dense_i}")(front)
     front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
     front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
     dense_i += 1
     front = Dense(units=64, name=f"logic_dense_{dense_i}")(front)
     front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
     front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
-    dense_i += 1
-    front = Dense(tfp.layers.MultivariateNormalTriL.params_size(len(targets), name=f"output_parameters"), name=f"logic_dense_{dense_i}")(front)
-    output = tfp.layers.MultivariateNormalTriL(len(targets), name='pdf')(front)
+    output = Dense(len(targets), activation="linear")(front)
 
-    model_name = f"Pumonna_Unit_{telescope}"
+    model_name = f"CNN_DET_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
     return model
 
-
-class ParametricUmonna(ModelAssembler):
+#the class BMO_DET inherits the structure of ModelAssembler class, which is defined in assembler.py
+class CNN_DET(ModelAssembler):
     def __init__(self, sst1m_model_or_path=None, mst_model_or_path=None, lst_model_or_path=None,
                  targets=[], target_domains=tuple(), target_resolutions=tuple(), target_shapes=(),
-                 assembler_mode="normalized_product", point_estimation_mode="expected_value", custom_objects=CUSTOM_OBJECTS):
-        
+                 assembler_mode="mean", point_estimation_mode=None, custom_objects=CUSTOM_OBJECTS):
 
-        # add tensorflow probability layers
-        copy_custom_objects = dict(custom_objects)
-        copy_custom_objects['MultivariateNormalTriL'] = ParametricUmonna.MultivariateNormalTriL_loader(len(targets))
+        super().__init__(sst1m_model_or_path=sst1m_model_or_path, mst_model_or_path=mst_model_or_path, \
+                         lst_model_or_path=lst_model_or_path,
+                         targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=CUSTOM_OBJECTS)
         
-        super().__init__(sst1m_model_or_path=sst1m_model_or_path, mst_model_or_path=mst_model_or_path, lst_model_or_path=lst_model_or_path,
-                         targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=copy_custom_objects)
-        if assembler_mode not in ['normalized_product']:
+        if assembler_mode not in ['mean']:
             raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
-        self.assemble_mode = assembler_mode
-        
-        if point_estimation_mode not in ["expected_value"]:
-            raise ValueError(f"Invalid point_estimation_mode: {point_estimation_mode}")
-        self.point_estimation_mode = point_estimation_mode
-        self.barycenter_fixpoint_iterations = 25
-        self.target_resolutions = target_resolutions
 
-    @staticmethod
-    def MultivariateNormalTriL_loader(event_size):
-        """
-        helper function to loading model from checkpoint 
-        """
-        def load_MultivariateNormalTriL(name, trainable, dtype, function, function_type, module, output_shape, output_shape_type, output_shape_module, arguments, make_distribution_fn, convert_to_tensor_fn):
-            return tfp.layers.MultivariateNormalTriL(event_size, name=name, trainable=trainable, dtype=dtype, convert_to_tensor_fn=convert_to_tensor_fn)
-        return load_MultivariateNormalTriL
+        self.assemble_mode = assembler_mode
+        self.point_estimation_mode = point_estimation_mode
+        self.target_resolutions = target_resolutions
     
     def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
         model_telescope = self.models[telescope]
-        y_predictions_batch = model_telescope(x_i_telescope)
-        
-        #split batch in individuals distributions
-        locs = y_predictions_batch.loc.numpy().squeeze(axis=(1,2))
-        scales = y_predictions_batch.scale.to_dense().numpy().squeeze(axis=(1,2))
-        y_predictions = [tfp.distributions.MultivariateNormalTriL(loc, scale) for loc, scale in zip(locs, scales)]
-        return y_predictions
+        return model_telescope.predict(x_i_telescope, verbose=verbose, **kwargs)
 
     def point_estimation(self, y_predictions):
-        if self.point_estimation_mode == "expected_value":
-            y_point_estimations = self.expected_value(y_predictions)
-        return y_point_estimations
+        return y_predictions
 
-    def expected_value(self, y_predictions):
-        if isinstance(y_predictions[0], st.rv_continuous):
-            y_mus = np.array([y_i.mean() for y_i in y_predictions])
-            return y_mus
-        else:
-            y_mus = np.array([y_i.mean() for y_i in y_predictions])
-            return y_mus
-
+    #expected value using the assembling of several telescopes    
     def assemble(self, y_i_by_telescope):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
-        if self.assemble_mode == "normalized_product":
-            yi_assembled = self.normalized_product(y_i_all)
+        if self.assemble_mode == "mean":
+            yi_assembled = self.mean(y_i_all)
         return yi_assembled
 
-    def normalized_product(self, y_i):
-        return normalized_product_gen(y_i, self.target_domains)
-
-class normalized_product_gen(st.rv_continuous):
-    "Product of Gaussian distributions"
-    def __init__(self, distributions, integration_domain=[[-5,5],[-5,5]], **kwargs):
-        super().__init__(**kwargs)    
-        self.distributions = distributions
-        self.integration_domain = integration_domain
-        self.dim = distributions[0].event_shape[0]
-        if self.dim == 1:
-            xmin, xmax = integration_domain[0]
-            self.domain = np.arange(xmin, xmax, .05)
-        elif self.dim == 2:
-            xmin, xmax = integration_domain[0]
-            ymin, ymax = integration_domain[1]
-            self.domain = np.mgrid[xmin:xmax:(xmax-xmin)/10., ymin:ymax:(ymax-ymin)/10.]
-            #self.norm_const = np.sum(self._pdf(np.dstack((self.domain[0], self.domain[1]))))
-        elif self.dim == 3:
-            raise NotImplementedError
-
-    def _pdf(self, x):
-        return np.prod([Ni.prob(x) for Ni in self.distributions], axis=0)
-    
-    def prob(self, x):
-        return self._pdf(x)
-    
-    def mean(self):
-        if self.dim == 2:
-            pos = np.dstack((self.domain[0], self.domain[1]))
-        else:
-            raise NotImplementedError
-        prob = self.prob(pos)
-        return pos[np.unravel_index(np.argmax(prob, axis=None), prob.shape)]
+    def mean(self, y_i):
+        return np.mean(y_i, axis=0)
