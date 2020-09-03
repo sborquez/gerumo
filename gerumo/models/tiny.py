@@ -27,7 +27,7 @@ from .layers import HexConvLayer, softmax
 
 def tiny_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=64, conv_layers_blocks=2, dense_layer_blocks=3, activity_regularizer_l2=None):
+                latent_variables=64, conv_layers_blocks=2, dense_layer_blocks=3, ignore_telescopes=False, activity_regularizer_l2=None):
     """Build Deterministic CNN Unit Model
     Parameters
     ==========
@@ -85,6 +85,8 @@ def tiny_unit(telescope, image_mode, image_mask, input_img_shape, input_features
     # Logic Block
     ## extra Telescope Features
     input_params = Input(name="feature_input", shape=input_features_shape)
+    if ignore_telescopes:
+        input_params = Lambda(lambda x: x*0)(input_params)
     front = Concatenate()([input_params, front])
 
     ## dense blocks
