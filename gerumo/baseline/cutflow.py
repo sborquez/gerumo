@@ -40,6 +40,8 @@ def _cutflow_set_default(npix_bounds: Tuple[float, float] = None,
     return npix_bounds, charge_bounds, ellipticity_bounds, nominal_distance_bounds
 
 
+# TODO: Test without filters
+
 def generate_observation_cutflow(camera_radius,
                                  npix_bounds: Tuple[float, float] = None,
                                  charge_bounds: Tuple[float, float] = None,

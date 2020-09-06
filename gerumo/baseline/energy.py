@@ -1,83 +1,107 @@
-import pickle
+import _pickle as pickle
 
-import numpy as np
 import tqdm
+import numpy as np
 
 from pandas import DataFrame
 
 from sklearn.ensemble import AdaBoostRegressor
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor
 
 from ctapipe.utils import CutFlow
-# from ctapipe.reco import EnergyRegressor
 from ctapipe.containers import HillasParametersContainer
 
 from gerumo import load_camera
+from gerumo.baseline.io import load_hillas_dataset, aggregate_hillas_dataset
 from gerumo.baseline.mapper import split_tel_type
 from gerumo.baseline.cutflow import generate_observation_cutflow
-from gerumo.baseline.reconstructor import get_camera_radius, get_observation_parameters
-
-
-def fill_row_hillas_params(row, cutflow: CutFlow, version="ML1", loading_bar: tqdm.tqdm = None):
-    fields = ["source", "folder", "observation_indice", "type"]
-    source, folder, tel_id, tel_type = row[fields]
-    print(source, folder, tel_id, tel_type)
-    charge, peak = load_camera(source=source, folder=folder, telescope_type=tel_type, observation_indice=tel_id,
-                               version=version)
-
-    _, camera_name = split_tel_type(tel_type)
-
-    params = get_observation_parameters(charge, peak, camera_name, cutflow)
-    if params is None:
-        row["hillas_width"] = None
-        row["hillas_length"] = None
-        row["hillas_skewness"] = None
-        row["hillas_kurtosis"] = None
-        return row
-
-    moments, _, _, _ = params
-    moments: HillasParametersContainer
-
-    row["hillas_width"] = moments.width.value
-    row["hillas_length"] = moments.length.value
-    row["hillas_skewness"] = moments.skewness
-    row["hillas_kurtosis"] = moments.kurtosis
-
-    if loading_bar:
-        loading_bar.update()
-    return row
-
-
-def aggregate_dataset_hillas(dataset: DataFrame, version="ML1"):
-    camera_radius = get_camera_radius(dataset)
-    obs_cutflow = generate_observation_cutflow(camera_radius)
-
-    bar = tqdm.tqdm(total=len(dataset))
-    print(dataset.head())
-    dataset = dataset.apply(lambda row: fill_row_hillas_params(row=row, cutflow=obs_cutflow, version=version,
-                                                               loading_bar=bar), axis=1)
-    bar.close()
-    return dataset
-
-
-def filter_dataset_hillas(dataset: DataFrame):
-    pass
 
 
 class EnergyModel:
     def __init__(self):
-        self._model = AdaBoostRegressor(DecisionTreeRegressor(max_depth=None))
+        self._models = dict()
+        self._features = ["log10_intensity", "log10_impact", "width", "length", "h_max"]
 
     @staticmethod
-    def prepare_dataset(dataset):
-        return aggregate_dataset_hillas(dataset)
+    def prepare_dataset(events_csv: str, telescopes_csv: str, results_csv: str, hillas_csv: str, split: float = None):
+        dataset = load_hillas_dataset(events_csv, telescopes_csv, results_csv, hillas_csv)
+        event_ids = dataset["event_unique_id"].unique()
+        np.random.shuffle(event_ids)
 
-    def fit(self, train_dataset, validation_dataset):
-        pass
+        if split is None:
+            return aggregate_hillas_dataset(dataset)
+        
+        n_test = int(np.ceil(split * len(event_ids)))
+        test = dataset[dataset["event_unique_id"].isin(event_ids[:n_test])]
+        train = dataset[dataset["event_unique_id"].isin(event_ids[n_test:])]
 
-    def predict(self, width, length, skewness, kurtosis, h_max):
-        return self._model.predict([np.array(width, length, skewness, kurtosis, h_max)])
+        return aggregate_hillas_dataset(train), aggregate_hillas_dataset(test)
+
+    def fit(self, dataset):
+        grouped = dataset[["type", "mc_energy"] + self._features].groupby("type")
+        for t, group in grouped:
+            if t not in self._models:
+                self._models[t] = RandomForestRegressor(n_estimators=200, max_depth=None)
+            
+            x = group[self._features].values
+            y = group["mc_energy"].values
+            self._models[t].fit(x, y)
+
+    def predict_dataset(self, dataset):
+        grouped = dataset[["event_unique_id", "observation_indice", "type", "intensity", "mc_energy"] + self._features].groupby("event_unique_id")
+        
+        results = {}
+        for event_id, group in grouped:
+            energies = np.zeros(len(group))
+            weights = np.zeros(len(group))
+
+            count = 0
+            for _, row in group.set_index("observation_indice").iterrows():
+                x = row[self._features]
+                weights[count] = row["intensity"]
+                energies[count] = self._models[row["type"]].predict(x.values.reshape(1, -1))
+                count += 1
+
+            pred_energy = np.sum(weights * energies) / np.sum(weights)
+            mc_energy = group["mc_energy"].unique()[0]
+
+            results[event_id] = {
+                "pred": pred_energy,
+                "mc": mc_energy
+            }
+
+        return results
+
+    def predict_event(self, positions, types, hillas_containers, reconstruction):
+        n_obs = len(hillas_containers)
+        energies = np.zeros(n_obs)
+        weights = np.zeros(n_obs)
+
+        data = {tel_id: (hillas_containers[tel_id], positions[tel_id], types[tel_id]) for tel_id in positions}
+        for idx, (moments, position, t) in enumerate(data.values()):
+            x, y = position
+            impact = np.sqrt((reconstruction.core_x.value - x) ** 2 + (reconstruction.core_y.value - y) ** 2)
+            
+            X = np.array([[
+                np.log10(moments.intensity),
+                np.log10(impact),
+                moments.width.value,
+                moments.length.value,
+                reconstruction.h_max.value
+            ]])
+            weights[idx] = moments.intensity
+            energies[idx] = self._models[t].predict(X)
+
+        pred_energy = np.sum(weights * energies) / np.sum(weights)
+        return pred_energy
 
     def save(self, path: str):
-        with open(path, "w") as f:
-            pickle.dump(self._model, f)
+        dumped = pickle.dumps(self)
+        with open(path, "wb") as f:
+            f.write(dumped)
+
+    @staticmethod
+    def load(path: str):
+        with open(path, "rb") as f:
+            obj = pickle.load(f)
+        return obj

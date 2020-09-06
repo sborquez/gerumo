@@ -1,27 +1,33 @@
+import sys
+#FIX: this. re structuring the project
+sys.path.insert(1, '..')
+
+
 import os
+import json
 import argparse
 
-from gerumo import load_dataset
+from sklearn.model_selection import train_test_split
 from gerumo.baseline.energy import EnergyModel
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Train the baseline energy regressor.")
-    ap.add_argument("-e", "--train_events", type=str, help="Events CSV path used for training",
-                    default="../dataset/train_events.csv")
-    ap.add_argument("-t", "--train_telescopes", type=str, help="Telescopes CSV path used for training",
-                    default="../dataset/train_telescopes.csv")
-    ap.add_argument("-E", "--val_events", type=str, help="Events CSV path used for validation",
-                    default="../dataset/validation_events.csv")
-    ap.add_argument("-T", "--val_telescopes", type=str, help="Telescopes CSV path used for validation",
-                    default="../dataset/validation_telescopes.csv")
+    ap.add_argument("-e", "--events", type=str, help="Events CSV path used for training", required=True)
+    ap.add_argument("-t", "--telescopes", type=str, help="Telescopes CSV path used for training", required=True)
+    ap.add_argument("-r", "--results", type=str, help="Hillas reconstruction CSV", required=True)
+    ap.add_argument("-H", "--hillas", type=str, help="Hillas parameters CSV", required=True)
+    ap.add_argument("-o", "--output", type=str, help="File path where to save the regressor", required=True)
 
     args = ap.parse_args()
 
-    train_dataset = load_dataset(events_path=args.train_events, telescopes_path=args.train_telescopes)
-    val_dataset = load_dataset(events_path=args.val_events, telescopes_path=args.val_telescopes)
+    print("Preparing dataset...")
+    dataset = EnergyModel.prepare_dataset(args.events, args.telescopes, args.results, args.hillas)
 
-    train_dataset = EnergyModel.prepare_dataset(train_dataset)
-    # val_dataset = EnergyTrainer.prepare_dataset(val_dataset)
+    regressor = EnergyModel()
 
-    dirname = os.path.dirname(args.train_events)
-    train_dataset.to_csv(os.path.join(dirname, "agg_train.csv"))
+    print(f"Training regressor... ({len(dataset)})")
+    regressor.fit(dataset)
+
+    print("Saving regressor...")
+    regressor.save(args.output)

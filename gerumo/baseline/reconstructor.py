@@ -17,6 +17,7 @@ from ctapipe.utils import CutFlow
 from ctapipe.visualization import CameraDisplay
 
 from gerumo import load_dataset, load_cameras, load_camera, TELESCOPES_ALIAS
+from gerumo.baseline.energy import EnergyModel
 from gerumo.baseline.cutflow import generate_observation_cutflow, CFO_MIN_PIXEL, CFO_MIN_CHARGE, CFO_POOR_MOMENTS, \
     CFO_CLOSE_EDGE, \
     CFO_BAD_ELLIP, CFE_MIN_TELS_RECO, generate_event_cutflow, CFO_NEGATIVE_CHARGE
@@ -53,7 +54,7 @@ def camera_radius(camid_to_efl, cam_id="all"):
     elif cam_id == "all":
         average_camera_radius_meters = 0
     else:
-        raise ValueError("Unknown camid", cam_id)
+        raise ValueError("Unknown cam_id", cam_id)
     return average_camera_radius_meters
 
 
@@ -178,13 +179,15 @@ class Reconstructor:
 
         self.cameras_by_event = dict((event_id, []) for event_id in self.event_uids)
         self.n_tels_by_event = {}
-        for event_id, tel_type, tel_id, obs_id, folder, source in zip(
+        for event_id, tel_type, tel_id, obs_id, folder, source, x, y in zip(
                 self.dataset["event_unique_id"],
                 self.dataset["type"],
                 self.dataset["telescope_id"],
                 self.dataset["observation_indice"],
                 self.dataset["folder"],
-                self.dataset["source"]
+                self.dataset["source"],
+                self.dataset["x"],
+                self.dataset["y"]
         ):
             if event_id not in self.n_tels_by_event:
                 self.n_tels_by_event[event_id] = {}
@@ -192,7 +195,7 @@ class Reconstructor:
                 self.n_tels_by_event[event_id][tel_type] = 1
             else:
                 self.n_tels_by_event[event_id][tel_type] += 1
-            self.cameras_by_event[event_id].append((obs_id, tel_id, tel_type, folder, source))
+            self.cameras_by_event[event_id].append((obs_id, tel_id, tel_type, folder, source, x, y))
 
     @property
     def event_uids(self) -> list:
@@ -237,8 +240,11 @@ class Reconstructor:
         n_valid_tels = 0
 
         hillas_containers = dict()
+        hillas_by_obs = dict()
         time_gradients = dict()
-        for obs_id, tel_id, tel_type, folder, source in self.cameras_by_event[event_id]:
+        types = dict()
+        positions = dict()
+        for obs_id, tel_id, tel_type, folder, source, x, y in self.cameras_by_event[event_id]:
             _, camera_name = split_tel_type(tel_type)
 
             charge, peak = load_camera(source, folder, tel_type, obs_id, version=self.version)
@@ -247,7 +253,10 @@ class Reconstructor:
                 continue
             moments, _, _, time_gradient = params
             hillas_containers[tel_id] = moments
-            time_gradients[tel_id] = time_gradient
+            hillas_by_obs[(tel_type, obs_id)] = moments
+            positions[tel_id] = (x, y)
+            time_gradients[obs_id] = time_gradient
+            types[tel_id] = tel_type
 
             hdf5_file = self.get_event_hdf5_file(event_id, tel_id)
             telescope_alias = TELESCOPES_ALIAS[self.version][tel_type]
@@ -271,12 +280,7 @@ class Reconstructor:
         if energy_regressor is None:
             energy = None
         else:
-            pred_energy = np.zeros(len(hillas_containers))
-            weights = np.zeros(len(hillas_containers))
-            for idx, moments in enumerate(hillas_containers.values()):
-                pred_energy[idx] = energy_regressor
-                weights[idx] = moments.intensity
-            energy = np.sum(pred_energy * weights) / np.sum(weights)
+            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco)
 
         return dict(
             pred_az=2 * np.pi * u.rad + reco.az,
@@ -291,7 +295,7 @@ class Reconstructor:
             mc_energy=mc[event_id]["mc_energy"],
             energy=energy,
             event_id=event_id,
-            hillas=hillas_containers
+            hillas=hillas_by_obs
         )
 
     def get_event_cams_and_foclens(self, event_id: str):
@@ -329,26 +333,28 @@ class Reconstructor:
         print(f"N. Events Reconstructed: {len(reconstructions)}")
         return reconstructions
 
-    def plot_metrics(self, max_events: int = 100, min_valid_observations=2, plot_charges: bool = False,
-                     save_to: str = None, save_hillas: str = None):
+    def plot_metrics(self, max_events: int = 100, min_valid_observations=2, energy_regressor: EnergyModel = None, plot_charges: bool = False,
+                     save_to: str = None, save_hillas: str = None, save_plots: str = None):
         import ctaplot
 
-        reco = self.reconstruct_all(max_events, min_valid_observations=min_valid_observations, plot=plot_charges)
+        reco = self.reconstruct_all(max_events, min_valid_observations=min_valid_observations, plot=plot_charges, energy_regressor=energy_regressor)
         preds = list(reco.values())
 
-        reco_alt = np.array([pred['pred_alt'] / (1 * u.rad) for pred in preds])
-        reco_az = np.array([pred['pred_az'] / (1 * u.rad) for pred in preds])
+        if save_plots is not None:
+            reco_alt = np.array([pred['pred_alt'] / (1 * u.rad) for pred in preds])
+            reco_az = np.array([pred['pred_az'] / (1 * u.rad) for pred in preds])
 
-        alt = np.array([pred['alt'] / (1 * u.rad) for pred in preds])
-        az = np.array([pred['az'] / (1 * u.rad) for pred in preds])
-        energy = np.array([pred['mc_energy'] for pred in preds])
+            alt = np.array([pred['alt'] / (1 * u.rad) for pred in preds])
+            az = np.array([pred['az'] / (1 * u.rad) for pred in preds])
+            energy = np.array([pred['mc_energy'] for pred in preds])
+            
+            plt.subplots()
+            ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, energy)
+            plt.savefig(save_plots)
 
-        plt.subplots()
-        ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, energy)
-        plt.savefig("hillas_reconstruction.png")
         if save_to is not None:
             self.save_predictions(reco, save_to)
-        print(save_hillas)
+
         if save_hillas is not None:
             self.save_hillas_params(reco, save_hillas)
 
@@ -356,27 +362,28 @@ class Reconstructor:
     def save_predictions(reco: dict, path: str):
         reco = {
             event_id: dict(
-            pred_az=r["pred_az"].value,
-            pred_alt=r["pred_alt"].value,
-            pred_core_x=r["pred_core_x"].value,
-            pred_core_y=r["pred_core_y"].value,
-            alt=r["alt"].value,
-            az=r["az"].value,
-            core_x=r["core_x"],
-            core_y=r["core_y"],
-            mc_energy=r["mc_energy"],
-            energy=r["energy"],
-            h_max=r["h_max"].value
+                pred_az=r["pred_az"].value,
+                pred_alt=r["pred_alt"].value,
+                pred_core_x=r["pred_core_x"].value,
+                pred_core_y=r["pred_core_y"].value,
+                alt=r["alt"].value,
+                az=r["az"].value,
+                core_x=r["core_x"],
+                core_y=r["core_y"],
+                mc_energy=r["mc_energy"],
+                energy=r["energy"],
+                h_max=r["h_max"].value
             ) for event_id, r in reco.items()
         }
         df = DataFrame.from_dict(reco, orient="index")
-        df.to_csv(path, sep=',', index_label="event_id")
+        df.to_csv(path, sep=',', index_label="event_unique_id")
 
     @staticmethod
     def save_hillas_params(reco: dict, path: str):
         columns = [
-            "event_id",
-            "obs_id",
+            "event_unique_id",
+            "observation_indice",
+            "type",
             "intensity",
             "kurtosis",
             "length",
@@ -391,10 +398,11 @@ class Reconstructor:
         
         params = list()
         for event_id, r in reco.items():
-            for obs_id, moments in r["hillas"].items():
+            for (tel_type, obs_id), moments in r["hillas"].items():
                 obs_params = (
                     event_id,
                     obs_id,
+                    tel_type,
                     moments.intensity,
                     moments.kurtosis,
                     moments.length.value,
@@ -407,5 +415,5 @@ class Reconstructor:
                     moments.y.value
                 )
                 params.append(obs_params)
-        df = DataFrame(params, columns=columns)
+        df = DataFrame(params, columns=columns).set_index(columns[:3])
         df.to_csv(path, sep=',')
