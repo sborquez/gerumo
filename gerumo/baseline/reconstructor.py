@@ -346,10 +346,15 @@ class Reconstructor:
 
             alt = np.array([pred['alt'] / (1 * u.rad) for pred in preds])
             az = np.array([pred['az'] / (1 * u.rad) for pred in preds])
-            energy = np.array([pred['mc_energy'] for pred in preds])
+            if energy_regressor is not None:
+                energy = np.array([pred['energy'] for pred in preds])
+            mc_energy = np.array([pred['mc_energy'] for pred in preds])
             
-            plt.subplots()
-            ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, energy)
+            _, (ax1, ax2) = plt.subplots(1, 2)
+            ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, mc_energy, ax=ax1)
+            if energy_regressor is not None:
+                ctaplot.plot_energy_resolution(mc_energy, energy, ax=ax2)
+
             plt.savefig(save_plots)
 
         if save_to is not None:
