@@ -65,17 +65,15 @@ Models and Assemblers
 from .umonna import umonna_unit, Umonna
 from .pumonna import pumonna_unit, ParametricUmonna
 from .bmo import bmo_unit, BMO
-from .bmo_det import bmo_det_unit, BMO_DET
 from .cnn_det import cnn_det_unit, CNN_DET
-from .cnn_bmo import cnn_bmo_unit, CNN_BMO
+from .tiny import tiny_unit, TINY
 
 MODELS = {
     "umonna_unit": umonna_unit,
     "pumonna_unit": pumonna_unit,
     "bmo_unit": bmo_unit,
-    "bmo_det_unit": bmo_det_unit,
     "cnn_det_unit": cnn_det_unit,
-    "cnn_bmo_unit": cnn_bmo_unit,
+    "tiny_unit": tiny_unit
 }
 
 from .assembler import ModelAssembler
@@ -83,9 +81,8 @@ ASSEMBLERS = {
     "umonna": Umonna,
     "pumonna": ParametricUmonna,
     "bmo": BMO,
-    "bmo_det": BMO_DET,
     "cnn_det": CNN_DET,
-    "cnn_bmo": CNN_BMO,
+    "tiny": TINY
 }
 
 

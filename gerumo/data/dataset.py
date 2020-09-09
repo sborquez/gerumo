@@ -416,7 +416,7 @@ Utils Functions
 ===============
 """
 
-def describe_dataset(dataset):
+def describe_dataset(dataset, save_to=None):
     files = dataset.source.nunique()
     events = dataset.event_unique_id.nunique()
     obs = len(dataset)
@@ -426,6 +426,14 @@ def describe_dataset(dataset):
     print('observations', obs)
     print('obsevation by telescopes')
     print(by_telescope)
+
+    if save_to is not None:
+        with open(save_to, 'w') as save_file:
+            save_file.write(f'files: {files}\n')
+            save_file.write(f'events: {events}\n')
+            save_file.write(f'observations: {obs}\n')
+            save_file.write('obsevation by telescopes:\n')
+            save_file.write(by_telescope.to_string())
 
 
 def aggregate_dataset(dataset, az=True, log10_mc_energy=True, hdf5_file=True):

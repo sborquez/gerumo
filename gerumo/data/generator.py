@@ -8,6 +8,7 @@ models, with their defined input format.
 
 from tensorflow import keras
 import numpy as np
+from sklearn import utils
 from . import load_cameras, cameras_to_images, targets_to_matrix
 
 
@@ -29,7 +30,7 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
                  preprocess_output_pipes={},
                  include_event_id=False,
                  include_true_energy=False,
-                 shuffle=False,
+                 shuffle=True,
                  version="ML1"):
 
         # Dataset with one telescope type
@@ -55,9 +56,18 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         # Generator parameters
         self.batch_size = batch_size
         self.size = len(self.dataset)
-        self.shuffle = shuffle
         self.include_event_id = include_event_id
         self.include_true_energy = include_true_energy
+        
+        # Shuffle dataset
+        self.shuffle = shuffle
+        if shuffle:
+            self.datasets_by_file = { f: [] for f in self.dataset["hdf5_filepath"].unique()}
+            for i, (_, row) in enumerate(self.dataset.iterrows()):
+                file = row["hdf5_filepath"]
+                self.datasets_by_file[file].append(i)
+        else:
+            self.datasets_by_file = None
 
         # Dataset version
         self.version = version
@@ -86,10 +96,18 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
-        self.indexes = np.arange(self.size)
-        # TODO: Add shuffle but without mix hdf5 files
-        # if self.shuffle == True:
-        #     np.random.shuffle(self.indexes)
+        if self.shuffle:
+            self.indexes = np.empty(self.size, dtype=np.uint)
+            files = utils.shuffle(list(self.datasets_by_file.keys()))
+            start = 0
+            for f in files:
+                rows = utils.shuffle(self.datasets_by_file[f])
+                end = len(rows) + start
+                self.indexes[start:end] = rows
+                start = end
+        else:
+            self.indexes = np.arange(self.size)
+
 
     def __data_generation(self, list_indexes):
         'Generates data containing batch_size samples'
@@ -124,7 +142,6 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
                               target_names=self.targets,
                               target_mode=self.target_mode, 
                               target_mode_config=self.target_mode_config)
-            # TODO: Add preprocessing steps
         else:
             y = None
 
@@ -206,6 +223,9 @@ class AssemblerGenerator(keras.utils.Sequence):
         self.input_image_mask = input_image_mask
         # Which extra telescope feature use
         self.input_features = input_features
+        if self.input_features is None or len(self.input_features) == 0:
+            self.input_features = None
+
         # Add normalization and stardarization 
         self.preprocess_input_pipes = preprocess_input_pipes
 

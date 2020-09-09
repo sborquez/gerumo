@@ -28,58 +28,32 @@ Input Samples
 ================
 """
 
-def show_image_simple(input_image_sample, axis=None):
+def show_image_simple(input_image_sample, channels_names=["Charge", "Peak Pos", "Mask"], axis=None):
     # Create new figure
     if axis is None:
         channels = input_image_sample.shape[-1]
         fig, axis = plt.subplots(nrows=1, ncols=channels, figsize=(4*channels,6))
 
-    ax1 = axis[0]
-    ax1.set_title("Charge")
-    im = ax1.imshow(input_image_sample[:,:,0])
-    plt.colorbar(im, ax=ax1)
-    ax1.set_yticks([]); ax1.set_xticks([])
-
-
-    ax2 = axis[1]
-    ax2.set_title("Peak Pos")
-    im = ax2.imshow(input_image_sample[:,:,1])
-    plt.colorbar(im, ax=ax2)
-    ax2.set_yticks([]); ax2.set_xticks([])
-
-    if len(axis) == 3:
-        ax3 = axis[2]
-        ax3.set_title("Mask")
-        im = ax3.imshow(input_image_sample[:,:,2])
-        ax3.set_yticks([]); ax3.set_xticks([])
+    # for each channel
+    for i, ax in enumerate(axis):
+        ax.set_title(channels_names if isinstance(channels_names, str) else channels_names[i])
+        im = ax.imshow(input_image_sample[:,:,i])
+        plt.colorbar(im, ax=ax)
+        ax.set_yticks([]); ax.set_xticks([])
 
     return axis
 
-def show_image_simple_shift(input_image_sample, axis=None):
+def show_image_simple_shift(input_image_sample, channels_names=["Charge", "Peak Pos", "Mask"], axis=None):
     # Create new figure
     if axis is None:
         channels = input_image_sample.shape[-1]
         fig, axis = plt.subplots(nrows=2, ncols=channels, figsize=(4*channels, 14))
-
     for i, shift in ((0,"Left"), (1,"Right")):
-        ax1 = axis[i][0]
-        ax1.set_title(f"Charge - {shift}")
-        im = ax1.imshow(input_image_sample[i, :,:,0], vmin=0)
-        plt.colorbar(im, ax=ax1)
-        ax1.set_yticks([]); ax1.set_xticks([])
-
-        ax2 = axis[i][1]
-        ax2.set_title(f"Peak Pos - {shift}")
-        im = ax2.imshow(input_image_sample[i, :,:,1], vmin=0, vmax=1)
-        plt.colorbar(im, ax=ax2)
-        ax2.set_yticks([]); ax2.set_xticks([])
-
-        if len(axis[i]) == 3:
-            ax3 = axis[i][2]
-            ax3.set_title(f"Mask - {shift}")
-            im = ax3.imshow(input_image_sample[i, :,:,2])
-            ax3.set_yticks([]); ax3.set_xticks([])
-
+        for j, ax in enumerate(axis[i]):
+            ax.set_title(f"{channels_names if isinstance(channels_names, str) else channels_names[i]} - {shift}")
+            im = ax.imshow(input_image_sample[i, :,:,j], vmin=0)
+            #plt.colorbar(im, ax=ax)
+            ax.set_yticks([]); ax.set_xticks([])
     return axis
 
 def show_image_raw(input_image_sample, axis=None):
@@ -87,30 +61,55 @@ def show_image_raw(input_image_sample, axis=None):
     if axis is None:
         fig, axis = plt.subplots(nrows=1, ncols=2, figsize=(14,6))
         #TODO: add scatter plot
+        raise NotImplementedError
     return axis
 
-def plot_input_sample(input_image_sample, input_image_mode, input_features_sample, make_simple=False, save_to=None):
+def plot_input_sample(input_image_sample, input_image_mode, input_features_sample, title=None, make_simple=False, save_to=None):
+    
     if input_image_mode == "simple":
         channels = input_image_sample.shape[-1]
         fig, axis = plt.subplots(nrows=1, ncols=channels, figsize=(4*channels,6))
-        show_image_simple(input_image_sample, axis)
+        show_image_simple(input_image_sample, axis=axis)
     elif input_image_mode == "simple-shift":
         if make_simple:
             channels = input_image_sample.shape[-1]
             fig, axis = plt.subplots(nrows=1, ncols=channels, figsize=(4*channels, 6))
-            show_image_simple(input_image_sample[0], axis)
+            show_image_simple(input_image_sample[0], axis=axis)
         else:
             channels = input_image_sample.shape[-1]
             fig, axis = plt.subplots(nrows=2, ncols=channels, figsize=(4*channels, 14))
-            show_image_simple_shift(input_image_sample, axis)
+            axis = show_image_simple_shift(input_image_sample, axis=axis)
+    elif input_image_mode == "time":
+        channels = input_image_sample.shape[-1]
+        fig, axis = plt.subplots(nrows=1, ncols=channels, figsize=(4*channels,6))
+        show_image_simple(input_image_sample,channels_names=["Peak Pos", 'Mask'], axis=axis)
+    elif input_image_mode == "time-shift":
+        if make_simple:
+            channels = input_image_sample.shape[-1]
+            fig, axis = plt.subplots(nrows=1, ncols=channels, figsize=(4*channels, 6))
+            show_image_simple(input_image_sample[0], channels_names=["Peak Pos", 'Mask'], axis=axis)
+        else:
+            channels = input_image_sample.shape[-1]
+            fig, axis = plt.subplots(nrows=2, ncols=channels, figsize=(4*channels, 14))
+            show_image_simple_shift(input_image_sample, channels_names=["Peak Pos", 'Mask'], axis=axis)
     elif input_image_mode == "raw":
         fig, axis = plt.subplots(nrows=1, ncols=2, figsize=(14,6))
-        show_image_raw(input_image_sample, axis)
+        show_image_raw(input_image_sample, axis=axis)
+    else:
+        raise ValueError(f"invalid 'input_image_mode': {input_image_mode}")
     
-    plt.suptitle(f"Input Sample\nTelescope Features: {input_features_sample}")
+    if isinstance(title, str):
+        title = f"Prediction for event {title}\nTelescope Features: {input_features_sample}"
+    elif isinstance(title, tuple):
+        title = f"Prediction for event {title[0]}\ntelescope id {title[1]}\nTelescope Features: {input_features_sample}"
+    else:
+        title = f"Prediction for a event"
+    fig.suptitle(title)
+    
     # Save or Show
     if save_to is not None:
-        plt.savefig(save_to)
+        fig.savefig(save_to)
+        plt.close(fig)
     else:
         plt.show()
 

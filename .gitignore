@@ -3,6 +3,7 @@
 
 # python
 venv/
+ENV
 virtualenv/
 __pycache__/
 .pytest_cache/
