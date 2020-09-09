@@ -48,7 +48,7 @@
     "test_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/validation_events.csv",
     "test_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/validation_telescopes.csv",
     "telescopes" : {
-        "MST_FlashCam": "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/train_output_models/CNN_DET_UNIT_MST_AZ_ALT_ADAM_MST_FlashCam_mse_e044_0.0015.h5"
+        "MST_FlashCam": "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/train_output_models/CNN_BMO_UNIT_MST_AZ_ALT_ADAM_MST_FlashCam_mse_e017_0.0032_10ppc.h5"
     },
     "min_observations" : [0,0,0],
     "input_image_mode" : "simple-shift",

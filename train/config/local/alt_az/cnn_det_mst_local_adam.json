@@ -1,9 +1,10 @@
 {
-    "model_name": "CNN_DET_UNIT_MST_AZ_ALT_ADAM",
+    "model_name": "CNN_DET_UNIT_MST_AZ_ALT_ADAM_MAE",
     "model_constructor": "cnn_det_unit",
     "model_extra_params": {
         "latent_variables": 600,
-        "dropout_rate": 0.0
+        "dropout_rate": 0.0,
+	"dense_layer_blocks": 5
     },
     "save_plot" : false,
     "plot_only" : false,
@@ -44,9 +45,9 @@
     },
     "target_sigmas" : null,
     "batch_size" : 32,
-    "epochs" : 50,
+    "epochs" : 200,
     "save_checkpoints" : true,
-    "loss" : "mse",
+    "loss" : "mae",
     "optimizer": {
         "learning_rate": 1e-3,
         "name": "adam",

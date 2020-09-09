@@ -140,12 +140,10 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     front = Dense(units=128)(front)
     front = Activation(activation="relu")(front)
     front = BatchNormalization()(front)
-    
-    front = Dropout(name=f"bayesian_Dropout_{dense_i+2}", rate=dropout_rate)(front, training=True)
+    #front = Dropout(name=f"bayesian_Dropout_{dense_i+2}", rate=dropout_rate)(front, training=True)
     front = Dense(units=64)(front)
     front = Activation(activation="relu")(front)
     front = BatchNormalization()(front)
-
     #front = Dropout(name=f"bayesian_Dropout_{dense_i+3}", rate=dropout_rate)(front, training=True)
     output = Dense(len(targets), activation="linear")(front)
 

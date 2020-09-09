@@ -3,7 +3,7 @@
     "model_constructor": "cnn_bmo_unit",
     "model_extra_params": {
         "latent_variables": 600,
-        "dropout_rate": 0.1
+        "dropout_rate": 0.01
     },
     "save_plot" : false,
     "plot_only" : false,
