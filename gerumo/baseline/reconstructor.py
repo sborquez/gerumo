@@ -338,6 +338,7 @@ class Reconstructor:
         import ctaplot
 
         reco = self.reconstruct_all(max_events, min_valid_observations=min_valid_observations, plot=plot_charges, energy_regressor=energy_regressor)
+
         preds = list(reco.values())
 
         if save_plots is not None:
@@ -362,6 +363,25 @@ class Reconstructor:
 
         if save_hillas is not None:
             self.save_hillas_params(reco, save_hillas)
+
+    @staticmethod
+    def plot(results: DataFrame, save_to: str):
+        import ctaplot
+
+        reco_alt = results['pred_alt'].values
+        reco_az = results['pred_az'].values
+
+        alt = results['alt'].values
+        az = results['az'].values
+
+        energy = results['energy'].values
+        mc_energy = results['mc_energy'].values
+
+        _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+        ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, mc_energy, ax=ax1)
+        ctaplot.plot_energy_resolution(mc_energy, energy, ax=ax2)
+
+        plt.savefig(save_to)
 
     @staticmethod
     def save_predictions(reco: dict, path: str):

@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     regressor = EnergyModel()
 
-    print(f"Training regressor... ({len(dataset)})")
+    print(f"Training regressor... ({len(dataset)} observations)")
     regressor.fit(dataset)
 
     print("Saving regressor...")

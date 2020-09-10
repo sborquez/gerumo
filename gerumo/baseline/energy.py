@@ -40,12 +40,13 @@ class EnergyModel:
     def fit(self, dataset):
         grouped = dataset[["type", "mc_energy"] + self._features].groupby("type")
         for t, group in grouped:
-            if t not in self._models:
-                self._models[t] = RandomForestRegressor(n_estimators=200, max_depth=None)
+            tel_type = t.split("_")[0]
+            if tel_type not in self._models:
+                self._models[tel_type] = RandomForestRegressor(n_estimators=200, max_depth=None)
             
             x = group[self._features].values
             y = group["mc_energy"].values
-            self._models[t].fit(x, y)
+            self._models[tel_type].fit(x, y)
 
     def predict_dataset(self, dataset):
         grouped = dataset[["event_unique_id", "observation_indice", "type", "intensity", "mc_energy"] + self._features].groupby("event_unique_id")
@@ -90,7 +91,9 @@ class EnergyModel:
                 reconstruction.h_max.value
             ]])
             weights[idx] = moments.intensity
-            energies[idx] = self._models[t].predict(X)
+            
+            tel_type = t.split("_")[0]
+            energies[idx] = self._models[tel_type].predict(X)
 
         pred_energy = np.sum(weights * energies) / np.sum(weights)
         return pred_energy
