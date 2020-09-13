@@ -167,11 +167,11 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
 
 
 class Reconstructor:
-    def __init__(self, events_path: str, telescopes_path: str, version="ML1"):
+    def __init__(self, events_path: str, telescopes_path: str, replace_folder: str = None, version="ML1"):
         if version == "ML2":
             raise NotImplementedError("This reconstructor is not implemented to work with ML2 yet")
         self.version = version
-        self.dataset = load_dataset(events_path, telescopes_path)
+        self.dataset = load_dataset(events_path, telescopes_path, replace_folder=replace_folder)
         self.reconstructor = HillasReconstructor()
         self.array_directions = dict()
         for hdf5_file in self.hdf5_files:
