@@ -66,20 +66,21 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     filters = 32
     i = 1
     for kernel_size in conv_kernel_sizes:
-        front = Conv2D(name=f"encoder_conv_layer_{i}_a",
-                       filters=filters, kernel_size=kernel_size,
-                       kernel_initializer="he_uniform",
-                       padding = "same")(front)
-        front = Activation(name=f"encoder_ReLU_{i}_a", activation="relu")(front)
-        front = BatchNormalization(name=f"encoder_batchnorm_{i}_a")(front)
-        front = Conv2D(name=f"encoder_conv_layer_{i}_b",
-                       filters=filters, kernel_size=kernel_size,
-                       kernel_initializer="he_uniform",
-                       padding = "same")(front)
-        front = Activation(name=f"encoder_ReLU_{i}_b", activation="relu")(front)
-        front = BatchNormalization(name=f"encoder_batchnorm_{i}_b")(front)
+        #front = Conv2D(name=f"encoder_conv_layer_{i}_a",
+        #               filters=filters, kernel_size=kernel_size,
+        #               kernel_initializer="he_uniform",
+        #               padding = "same")(front)
+        #front = Activation(name=f"encoder_ReLU_{i}_a", activation="relu")(front)
+        #front = BatchNormalization(name=f"encoder_batchnorm_{i}_a")(front)
 
-        front = MaxPooling2D(name=f"encoder_maxpool_layer_{i}", pool_size=(2,2))(front)
+        #front = Conv2D(name=f"encoder_conv_layer_{i}_b",
+        #               filters=filters, kernel_size=kernel_size,
+        #               kernel_initializer="he_uniform",
+        #               padding = "same")(front)
+        #front = Activation(name=f"encoder_ReLU_{i}_b", activation="relu")(front)
+        #front = BatchNormalization(name=f"encoder_batchnorm_{i}_b")(front)
+
+        #front = MaxPooling2D(name=f"encoder_maxpool_layer_{i}", pool_size=(2,2))(front)
         filters *= 2
         i += 1
 
@@ -127,7 +128,7 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
 
     output = Dense(len(targets), activation="linear")(front)
 
-    model_name = f"CNN_DET_Unit_{telescope}"
+    model_name = f"CNN_DET_MAE_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
 
     model.summary()
@@ -142,9 +143,10 @@ class CNN_DET(ModelAssembler):
         super().__init__(sst1m_model_or_path=sst1m_model_or_path, mst_model_or_path=mst_model_or_path, \
                          lst_model_or_path=lst_model_or_path,
                          targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=CUSTOM_OBJECTS)
-        
-        if assembler_mode not in ['mean']:
-            raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
+
+        #BP: these lines are grom git master merge but enter in conflict with evaluat_v1.py
+        #if assembler_mode not in ['mean']:
+        #    raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
 
         self.assemble_mode = assembler_mode
         self.point_estimation_mode = point_estimation_mode

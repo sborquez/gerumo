@@ -1,10 +1,9 @@
 {
-    "model_name": "CNN_DET_UNIT_MST_AZ_ALT_ADAM_MAE",
+    "model_name": "CNN_DET_UNIT_MST_AZ_ALT_ADAM_MAE_LC_CD3_13",
     "model_constructor": "cnn_det_unit",
     "model_extra_params": {
-        "latent_variables": 600,
-        "dropout_rate": 0.0,
-	"dense_layer_blocks": 5
+        "latent_variables": 256,
+	"dense_layer_blocks": 4
     },
     "save_plot" : false,
     "plot_only" : false,
@@ -20,14 +19,14 @@
             "array_scaler_path": "ML1_array-scaler"
         }
     },
-    "output_folder" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/train_output_models/",
-    "replace_folder_train" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/raw_data_generation_list/",
-    "replace_folder_validation" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/raw_data_generation_list/",
+    "output_folder" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/models_lc/",
+    "replace_folder_train" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_13/",
+    "replace_folder_validation" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_13/",
     "replace_folder_test" : "...",
-    "train_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/train_events.csv",
-    "train_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/train_telescopes.csv", 
-    "validation_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/validation_events.csv",
-    "validation_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/validation_telescopes.csv",
+    "train_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_13_csv/train_events.csv",
+    "train_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_13_csv/train_telescopes.csv", 
+    "validation_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_13_csv/validation_events.csv",
+    "validation_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_13_csv/validation_telescopes.csv",
     "test_events_csv"    : "...",
     "test_telescope_csv" : "...",
     "telescope" : "MST_FlashCam",

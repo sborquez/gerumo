@@ -13,7 +13,7 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -128,12 +128,12 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
                                 )
 
         #BP: mono batch predictions, loss checks, plots generation
-        mse_con = 0
-        mse_sum = 0
+        mae_con = 0
+        mae_sum = 0
 
         pred = np.zeros((len(test_dataset_telescope), len(targets)))
         target = np.zeros((len(test_dataset_telescope), len(targets)))
-        local_path = f"/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/train_output_models/"
+        local_path = f"/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/models_lc/"
         
         for x, target_array, meta in tqdm(telescope_generator):
             # Predictions
@@ -144,7 +144,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
             #print(x[1].shape)
 
             #save the first 10 inputs
-            if mse_con == 0:
+            if mae_con == 0:
 
                 print(x[0].shape)
                 print(x[1].shape)
@@ -184,36 +184,39 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
             
             target_array = np.array(target_array)
 
-            pred[mse_con*batch_size:(mse_con+1)*batch_size,:] = pred_array
-            target[mse_con*batch_size:(mse_con+1)*batch_size,:] = target_array
+            pred[mae_con*batch_size:(mae_con+1)*batch_size,:] = pred_array
+            target[mae_con*batch_size:(mae_con+1)*batch_size,:] = target_array
                           
             #print(pred_array.shape, target_array.shape)
             
-            mse_sum = mse_sum + mean_squared_error(pred_array, target_array)
-            mse_con = mse_con + 1
-            #print("partial mse loss:", mean_squared_error(pred_array, target_array)) 
+            #mse_sum = mse_sum + mean_squared_error(pred_array, target_array)
+            mae_sum = mae_sum + mean_absolute_error(pred_array, target_array)
+            
+            mae_con = mae_con + 1
+            #print("partial mae loss:", mean_absolute_error(pred_array, target_array)) 
         
         for con in range(20):
             print(pred[con], target[con])
 
-        print("average loss: ", mse_sum/mse_con)
+        mae_average = mae_sum/mae_con
+        print("average loss: ", mae_average)
 
         #BMO_DET PLOTS
         plt.scatter(target[:,0], pred[:,0], s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of CNN-DET-SLIM predictions on validation set')
+        plt.title('Evaluation of CNN-DET-ADAM-MAE predictions on validation set')
         plt.xlabel('target az')
         plt.ylabel('predicted az')
         plt.xlim(-0.52,0.52)
         plt.ylim(-0.52,0.52)
-        plt.savefig(f"{local_path}/scatter_az_cnn_det_slim_adam.png")
+        plt.savefig(f"{local_path}/scatter_az_cnn_det_adam_mae_{mae_average:2.0f}.png")
 
         plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of CNN-DET-SLIM predictions on validation set')
+        plt.title('Evaluation of CNN-DET-ADAM-MAE predictions on validation set')
         plt.xlabel('target alt')
         plt.ylabel('predicted alt')
         plt.xlim(1.05, 1.382)
         plt.ylim(1.05, 1.382)
-        plt.savefig(f"{local_path}/scatter_alt_cnn_det_slim_adam.png")
+        plt.savefig(f"{local_path}/scatter_alt_cnn_det_adam_mae_{mae_average:2.0f}.png")
 
         #UMONNA PLOTS
         #target-pred scatter plot
