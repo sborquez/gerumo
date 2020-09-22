@@ -7,6 +7,7 @@ from pandas import DataFrame
 
 from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
 
 from ctapipe.utils import CutFlow
 from ctapipe.containers import HillasParametersContainer
@@ -37,13 +38,23 @@ class EnergyModel:
 
         return aggregate_hillas_dataset(train), aggregate_hillas_dataset(test)
 
-    def fit(self, dataset):
+    def fit(self, dataset, param_grid = None, cv = 5, scoring = "neg_mean_squared_error"):
+        if param_grid is None:
+            param_grid = {
+                "n_estimators": np.linspace(100, 1000, 50)
+            }
+
         grouped = dataset[["type", "mc_energy"] + self._features].groupby("type")
         for t, group in grouped:
             tel_type = t.split("_")[1]
             if tel_type not in self._models:
-                self._models[tel_type] = RandomForestRegressor(n_estimators=200, max_depth=None)
-            
+                self._models[tel_type] = GridSearchCV(
+                    estimator=RandomForestRegressor(n_estimators=200, max_depth=None),
+                    param_grid=param_grid, 
+                    cv=cv, 
+                    scoring=scoring,
+                    verbose=2
+                )
             x = group[self._features].values
             y = group["mc_energy"].values
             self._models[tel_type].fit(x, y)
