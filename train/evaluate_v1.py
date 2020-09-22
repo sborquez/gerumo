@@ -231,7 +231,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
 
         show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
                                 percentile=68.27, confidence_level=0.95, bias_correction=False,
-                                label="MST mono", xlim=None, ylim=None, ax=axis[1])
+                                label="MST mono", xlim=None, ylim=(0.1,2.0), ax=axis[1])
     
         # Save 
         plt.savefig(f"{local_path}/angular_resolution_{mae_average:.4f}.png")
