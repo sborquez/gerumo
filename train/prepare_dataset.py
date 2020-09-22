@@ -52,3 +52,12 @@ if __name__ == "__main__":
         
         print("\nval_dataset:")
         describe_dataset(val_dataset)
+
+    if split == 0:
+
+        save_dataset(dataset, output, "test")
+   
+        print("\ntest_dataset:")
+        describe_dataset(dataset)
+
+

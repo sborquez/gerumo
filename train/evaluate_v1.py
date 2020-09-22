@@ -133,6 +133,8 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
 
         pred = np.zeros((len(test_dataset_telescope), len(targets)))
         target = np.zeros((len(test_dataset_telescope), len(targets)))
+        true_energy = np.zeros((len(test_dataset_telescope)))
+
         local_path = f"/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/models_lc/"
         
         for x, target_array, meta in tqdm(telescope_generator):
@@ -172,70 +174,87 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
             #Prediction part
             ###########################
             
-            #bmo_det
+            #cnn_det
             batch_pred = assembler.model_estimation(x, telescope_i, 0)
+
+            #save the information in arrays
             pred_array = np.array(batch_pred)
-            
-            #umonna requires point_estimation to get one float prediction instead of a region
-            #point_estimation = assembler.point_estimation(batch_pred)
-            #pred_array = np.array(point_estimation)
-
-            ###########################
-            
             target_array = np.array(target_array)
+            true_energy_array = np.array(meta['true_energy'])
 
+            #fill the full arrays
             pred[mae_con*batch_size:(mae_con+1)*batch_size,:] = pred_array
             target[mae_con*batch_size:(mae_con+1)*batch_size,:] = target_array
-                          
-            #print(pred_array.shape, target_array.shape)
-            
-            #mse_sum = mse_sum + mean_squared_error(pred_array, target_array)
+            true_energy[mae_con*batch_size:(mae_con+1)*batch_size] = true_energy_array
+
             mae_sum = mae_sum + mean_absolute_error(pred_array, target_array)
             
             mae_con = mae_con + 1
             #print("partial mae loss:", mean_absolute_error(pred_array, target_array)) 
         
         for con in range(20):
-            print(pred[con], target[con])
+            print(true_energy[con], pred[con], target[con])
 
+        #mean mae value
         mae_average = mae_sum/mae_con
         print("average loss: ", mae_average)
 
-        #BMO_DET PLOTS
+        #angular resolution plot
+        predicted_az = pred[:,0]
+        predicted_alt = pred[:,1]
+        
+        true_az = target[:,0]
+        true_alt = target[:,1]
+
+        true_mc_energy = true_energy[:]
+
+        #energy histogram
+        logbins = np.logspace(np.log10(0.01), np.log10(100), 10)
+        
+        plt.hist(true_mc_energy, bins = logbins)
+        plt.xscale('log')
+        plt.xlabel("True energy [TeV]")
+        plt.ylabel("Counts")
+        plt.savefig(f"{local_path}/true_energy_{mae_average:.4f}.png")
+        plt.close()
+        
+        # Create Figure and axis
+        fig, axis = plt.subplots(1, 2, figsize=(14, 6))
+    
+        # Style
+        plt.suptitle("Angular Reconstruction")
+
+        # Generate two plots
+        show_absolute_error_angular(predicted_alt, predicted_az, true_alt, true_az,
+                                    bias_correction=None, ax=axis[0], bins=80, 
+                                    percentile_plot_range=80)
+
+        show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
+                                percentile=68.27, confidence_level=0.95, bias_correction=False,
+                                label="MST mono", xlim=None, ylim=None, ax=axis[1])
+    
+        # Save 
+        plt.savefig(f"{local_path}/angular_resolution_{mae_average:.4f}.png")
+        plt.close()
+                           
+        #cnn_det plots
         plt.scatter(target[:,0], pred[:,0], s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of CNN-DET-ADAM-MAE predictions on validation set')
+        plt.title('Evaluation of CNN-DET-ADAM-MAE predictions on test set')
         plt.xlabel('target az')
         plt.ylabel('predicted az')
         plt.xlim(-0.52,0.52)
         plt.ylim(-0.52,0.52)
-        plt.savefig(f"{local_path}/scatter_az_cnn_det_adam_mae_{mae_average:2.0f}.png")
+        plt.savefig(f"{local_path}/scatter_az_cnn_det_adam_mae_{mae_average:.4f}.png")
 
         plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
-        plt.title('Evaluation of CNN-DET-ADAM-MAE predictions on validation set')
+        plt.title('Evaluation of CNN-DET-ADAM-MAE predictions on test set')
         plt.xlabel('target alt')
         plt.ylabel('predicted alt')
         plt.xlim(1.05, 1.382)
         plt.ylim(1.05, 1.382)
-        plt.savefig(f"{local_path}/scatter_alt_cnn_det_adam_mae_{mae_average:2.0f}.png")
+        plt.savefig(f"{local_path}/scatter_alt_cnn_det_adam_mae_{mae_average:.4f}.png")
 
-        #UMONNA PLOTS
-        #target-pred scatter plot
-        #plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
-        #plt.title('Evaluation of Umonna predictions on validation set')
-        #plt.xlabel('target az')
-        #plt.ylabel('predicted az')
-        #plt.xlim(-0.52,0.52)
-        #plt.ylim(-0.52,0.52)
-        #plt.savefig(f"{local_path}/scatter_az_simple.png")
-
-        #plt.scatter(target[:,0], pred[:,0], s=10, color='blue', alpha=0.5)
-        #plt.title('Evaluation of Umonna predictions on validation set')
-        #plt.xlabel('target alt')
-        #plt.ylabel('predicted alt')
-        #plt.xlim(1.05, 1.382)
-        #plt.ylim(1.05, 1.382)
-        #plt.savefig(f"{local_path}/scatter_alt_simple.png")
-        
+        return 0
         
 if __name__ == "__main__":
     import argparse
