@@ -41,7 +41,7 @@ class EnergyModel:
     def fit(self, dataset, param_grid = None, cv = 5, scoring = "neg_mean_squared_error"):
         if param_grid is None:
             param_grid = {
-                "n_estimators": np.linspace(100, 1000, 50)
+                "n_estimators": np.linspace(100, 1000, 50, dtype=int)
             }
 
         grouped = dataset[["type", "mc_energy"] + self._features].groupby("type")
@@ -49,7 +49,7 @@ class EnergyModel:
             tel_type = t.split("_")[1]
             if tel_type not in self._models:
                 self._models[tel_type] = GridSearchCV(
-                    estimator=RandomForestRegressor(n_estimators=200, max_depth=None),
+                    estimator=RandomForestRegressor(max_depth=None),
                     param_grid=param_grid, 
                     cv=cv, 
                     scoring=scoring,
