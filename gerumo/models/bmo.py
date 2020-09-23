@@ -1,7 +1,7 @@
 """
 BMO: Bayesian Multi Observer
 ======
-Bayesian Neural Network for ,ono and multi-stereo event reconstruction
+Bayesian Neural Network for mono and multi-stereo event reconstruction
 """
 
 import numpy as np

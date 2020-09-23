@@ -32,7 +32,9 @@ def calculate_deconv_parameters(target_shapes=(81, 81, 81), max_deconv=8, max_ke
         first_deconv = [None] * len(target_shapes)
         candidates = [False] * len(target_shapes)
         for i, target_i in enumerate(target_shapes):
+            #print(target_i, deconv_blocks_size)
             kernel_size_i = target_i / (3 ** (deconv_blocks_size - 2))
+            #print(kernel_size_i)
             candidates[i] = kernel_size_i.is_integer() and (1 < kernel_size_i <= max_kernel_size)
             first_deconv[i] = int(kernel_size_i) 
         if all(candidates):
@@ -199,6 +201,7 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
         kernel_size = (5, 1)
     elif telescope == "SST1M_DigiCam":
         kernel_size = (4, 1)
+
     front = Conv2D(name=f"encoder_conv_layer_{conv_i}",
                    filters=filters, kernel_size=kernel_size,
                    kernel_initializer="he_uniform",
@@ -215,7 +218,8 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
     # Skip Connection
     l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
     skip_front = front
-    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2, kernel_regularizer=l2_(activity_regularizer_l2))(skip_front)
+    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2, \
+                       kernel_regularizer=l2_(activity_regularizer_l2))(skip_front)
     skip_front = Activation(name=f"logic_ReLU_layer_shortcut", activation="relu")(skip_front)
     skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
 
@@ -226,7 +230,8 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
 
     ## dense blocks
     for dense_i in range(dense_layer_blocks):
-        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2,  kernel_regularizer=l2_(activity_regularizer_l2))(front)
+        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2,  \
+                      kernel_regularizer=l2_(activity_regularizer_l2))(front)
         front = Activation(name=f"logic_ReLU_layer_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
         front = Dropout(name=f"logic_Dropout_layer_{dense_i}", rate=0.1)(front)
@@ -242,6 +247,7 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
             raise ValueError("target_shape, deconv_blocks and first_deconv can be None at the same time.")
         target_shapes = calculate_target_shapes(deconv_blocks, first_deconv)
     else:
+        #print(target_shapes)
         deconv_blocks, first_deconv = calculate_deconv_parameters(target_shapes)
 
 

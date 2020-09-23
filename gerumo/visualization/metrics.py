@@ -735,8 +735,8 @@ def show_absolute_error_angular(predicted_alt, predicted_az, true_alt, true_az, 
         plt.figure(figsize=(6,6))
         ax = plt.gca()
     
-    #ax = ctaplot.plot_theta2(predicted_alt, predicted_az, true_alt, true_az, bias_correction, ax, range=(0, percentile_plot_range), bins=bins)
-    ax = ctaplot.plot_theta2(predicted_alt, predicted_az, true_alt, true_az, bias_correction, ax)
+    bins = np.linspace(0.01,10,50)
+    ax = ctaplot.plot_theta2(predicted_alt, predicted_az, true_alt, true_az, bias_correction, ax, bins=bins)
     return ax
 
 def plot_error_and_angular_resolution(evaluation_results, bins=80, include_requirement=[], 
@@ -764,6 +764,7 @@ def plot_error_and_angular_resolution(evaluation_results, bins=80, include_requi
     # Generate two plots
     show_absolute_error_angular(predicted_alt, predicted_az, true_alt, true_az, bias_correction, axis[0], bins, 
                                percentile_plot_range)
+    
     show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
                             percentile, confidence_level, bias_correction, label, include_requirement, xlim, ylim,
                            ax=axis[1])
