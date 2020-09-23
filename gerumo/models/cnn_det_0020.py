@@ -26,7 +26,7 @@ from .layers import HexConvLayer, softmax
 
 def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=200, dense_layer_blocks=5, dropout_rate=0.3):
+                conv_kernel_sizes=[5, 3, 3], latent_variables=200, dense_layer_blocks=5, dropout_rate=0.3):
     """Build CNN Unit Model
     Parameters
     ==========
@@ -130,7 +130,7 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
 
     model_name = f"CNN_DET2_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
-    model.summary()
+    #model.summary()
     return model
 
 #the class BMO_DET inherits the structure of ModelAssembler class, which is defined in assembler.py

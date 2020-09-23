@@ -28,7 +28,7 @@ from .layers import HexConvLayer, softmax
 
 def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=800, dense_layer_blocks=8, dropout_rate=0.3,
+                conv_kernel_sizes = [5, 3, 3], latent_variables=800, dense_layer_blocks=8, dropout_rate=0.3,
                 activity_regularizer_l2=None):
     """Build BMO Unit Model
     Parameters
@@ -64,7 +64,7 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
         raise ValueError(f"Invalid image mode {image_mode}")
 
     ## convolutional layers
-    conv_kernel_sizes = [5, 3, 3]
+    conv_kernel_sizes = conv_kernel_sizes if conv_kernel_sizes is not None else []
     filters = 32
     i = 1
     for kernel_size in conv_kernel_sizes:

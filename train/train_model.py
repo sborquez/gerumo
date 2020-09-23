@@ -305,6 +305,13 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
             loss=loss_
         )
     
+    if quiet:
+        from contextlib import redirect_stdout
+        with open(path.join(output_folder, 'model_summary.txt'), 'w') as f:
+            with redirect_stdout(f):
+                model.summary()
+    else:
+        model.summary()
     ## fit
     start_time = time.time()
     history = model.fit(

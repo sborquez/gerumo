@@ -1,16 +1,17 @@
 {
-    "model_name": "TINY_UNIT_MST_MSE_SIMPLE",
-    "model_constructor": "tiny_unit",
-    "assembler_constructor": "tiny",
+    "model_name": "BMO_UNIT_MST_Shallow",
+    "model_constructor": "bmo_unit",
+    "assembler_constructor": "bmo",
     "model_extra_params": {
-        "conv_layers_blocks": 0,
+        "conv_kernel_sizes": null,
         "latent_variables": 256,
-        "dense_layer_blocks": 3
+        "dropout_rate": 0.1,
+        "dense_layer_blocks": 3,
+        "activity_regularizer_l2": null
     },
-
     "telescope" : "MST_FlashCam",
     "output_folder" : "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output",
-    
+   
     "version" : "ML1",
     "train_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/train_events.csv",
     "train_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/train_telescopes.csv", 
@@ -21,12 +22,12 @@
     "test_events_csv"    :  "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
     "test_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
     "replace_folder_test" : null,
-    
+   
     "input_image_mode" : "simple",
     "input_image_mask" : false,
     "min_observations" : 1,
     "input_features" : ["x", "y"],
-
+   
     "targets" : ["alt", "az"],
     "target_mode" : "lineal",
     "target_shapes" : null,
@@ -36,7 +37,7 @@
         "log10_mc_energy": [-2.351, 2.47]
     },
     "target_sigmas" : null,
-
+    
     "preprocessing": {
         "CameraPipe" : {
             "charge_scaler_value" : 62.652400970459,
@@ -47,10 +48,10 @@
             "array_scaler_path": "ML1_array-scaler"
         }
     },
-
+    
     "batch_size" : 8,
     "epochs" : 1,
-    "loss" : "mse",
+    "loss" : "mae",
     "optimizer": {
         "learning_rate": 1e-4,
         "name": "adam",

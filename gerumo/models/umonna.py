@@ -141,7 +141,7 @@ def upsampling_block(front, targets, deconv_blocks, first_deconv, latent_variabl
 
 def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=800, dense_layer_blocks=5, deconv_blocks=None, first_deconv=None,
+                conv_kernel_sizes=[5, 3, 3], latent_variables=800, dense_layer_blocks=5, deconv_blocks=None, first_deconv=None,
                 activity_regularizer_l2=None):
     """Build Umonna Unit Model
     Parameters
@@ -173,10 +173,11 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
         raise ValueError(f"Invalid image mode {image_mode}")
 
     ## convolutional layers
-    conv_kernel_sizes = [5, 3, 3]
+    conv_kernel_sizes = conv_kernel_sizes if conv_kernel_sizes is not None else []
     filters = 32
-    conv_i = 1
+    conv_i = 0
     for kernel_size in conv_kernel_sizes:
+        conv_i += 1
         front = Conv2D(name=f"encoder_conv_layer_{conv_i}_a",
                        filters=filters, kernel_size=kernel_size,
                        kernel_initializer="he_uniform",
@@ -192,9 +193,9 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
         front = BatchNormalization(name=f"encoder_batchnorm_{conv_i}_b")(front)
         front = MaxPooling2D(name=f"encoder_maxpool_layer_{conv_i}", pool_size=(2,2))(front)
         filters *= 2
-        conv_i += 1
-
+    
     ## generate latent variables by 1x1 Convolutions
+    filters = 2**(5+len(conv_kernel_sizes))
     if telescope == "LST_LSTCam":
         kernel_size = (3, 2)
     elif telescope == "MST_FlashCam":
@@ -215,13 +216,13 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
                    activation="relu")(front)
     front = Flatten(name="encoder_flatten")(front)
     
-    # Skip Connection
     l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
-    skip_front = front
-    skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2, \
-                       kernel_regularizer=l2_(activity_regularizer_l2))(skip_front)
-    skip_front = Activation(name=f"logic_ReLU_layer_shortcut", activation="relu")(skip_front)
-    skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
+    # Skip Connection
+    # skip_front = front
+    # skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2, \
+    #                    kernel_regularizer=l2_(activity_regularizer_l2))(skip_front)
+    # skip_front = Activation(name=f"logic_ReLU_layer_shortcut", activation="relu")(skip_front)
+    # skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
 
     # Logic Block
     ## extra Telescope Features
@@ -237,7 +238,7 @@ def umonna_unit(telescope, image_mode, image_mask, input_img_shape, input_featur
         front = Dropout(name=f"logic_Dropout_layer_{dense_i}", rate=0.1)(front)
 
     # Add Skip connection
-    front = Add()([front, skip_front])
+    #front = Add()([front, skip_front])
     front = Reshape((1, 1,  latent_variables//2), name="logic_reshape")(front)
 
     # Deconvolution Blocks

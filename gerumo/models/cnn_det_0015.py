@@ -26,7 +26,7 @@ from .layers import HexConvLayer, softmax
 
 def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                latent_variables=200, dense_layer_blocks=5, dropout_rate=0.3):
+                conv_kernel_sizes=None, latent_variables=200, dense_layer_blocks=5, dropout_rate=0.3):
     """Build CNN Unit Model
     Parameters
     ==========
@@ -61,9 +61,8 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
         raise ValueError(f"Invalid image mode {image_mode}")
 
     ## convolutional layers
-    conv_kernel_sizes = [5, 3, 3]
+    conv_kernel_sizes = conv_kernel_sizes if conv_kernel_sizes is not None else []
     filters = 32
-  
     i = 1
     for kernel_size in conv_kernel_sizes:
         front = Conv2D(name=f"encoder_conv_layer_{i}_a",
@@ -106,13 +105,6 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     
     front = Flatten(name="encoder_flatten_to_latent")(front)
     
-    # Skip Connection
-    #skip_front = front
-    #skip_front = Dense(name=f"logic_dense_shortcut", units=latent_variables//2)(skip_front)
-    #skip_front = Activation(name=f"logic_ReLU_shortcut", activation="relu")(skip_front)
-    #skip_front = BatchNormalization(name=f"logic_batchnorm_shortcut")(skip_front)
-    #skip_front = Dropout(name=f"bayesian_Dropout_shortcut", rate=dropout_rate)(skip_front, training=True)
-
     # Logic Block
     ## extra Telescope Features
     input_params = Input(name="feature_input", shape=input_features_shape)
@@ -125,31 +117,18 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
         front = Dropout(name=f"Dropout_{dense_i}", rate=0.25)(front)
 
-    # Add Skip connection
-    #front = Add()([front, skip_front])
-    #front = Reshape((1, 1,  latent_variables//2), name="logic_reshape")(front)
-
-    #front = Conv2D(name=f"logic_dense_last", kernel_size=1, 
-    #               filters=latent_variables//2,
-    #               kernel_initializer="he_uniform")(front)
-    #front = Activation(activation="relu")(front)
-    #front = BatchNormalization()(front)
-    #front = Dropout(name=f"bayesian_Dropout_{dense_i+1}", rate=dropout_rate)(front, training=True)
-    
     # Outpout block
     front = Dense(units=128)(front)
     front = Activation(activation="relu")(front)
     front = BatchNormalization()(front)
-    #front = Dropout(name=f"bayesian_Dropout_{dense_i+2}", rate=dropout_rate)(front, training=True)
     front = Dense(units=64)(front)
     front = Activation(activation="relu")(front)
     front = BatchNormalization()(front)
-    #front = Dropout(name=f"bayesian_Dropout_{dense_i+3}", rate=dropout_rate)(front, training=True)
     output = Dense(len(targets), activation="linear")(front)
 
     model_name = f"CNN_DET_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
-    model.summary()
+    #model.summary()
     return model
 
 #the class BMO_DET inherits the structure of ModelAssembler class, which is defined in assembler.py

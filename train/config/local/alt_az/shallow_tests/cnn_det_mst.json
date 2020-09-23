@@ -1,32 +1,32 @@
 {
-    "model_name": "TINY_UNIT_MST_MSE_SIMPLE",
-    "model_constructor": "tiny_unit",
-    "assembler_constructor": "tiny",
+    "model_name": "CNN_DET_UNIT_MST_BP_Shallow",
+    "model_constructor": "cnn_det_unit",
+    "assembler_constructor": "cnn_det",
     "model_extra_params": {
-        "conv_layers_blocks": 0,
+        "conv_kernel_sizes": null,
         "latent_variables": 256,
-        "dense_layer_blocks": 3
+        "dense_layer_blocks": 3,
+        "activity_regularizer_l2": null
     },
-
     "telescope" : "MST_FlashCam",
     "output_folder" : "/mnt/d/sebas/Google Drive/Projects/gerumo/train/output",
     
-    "version" : "ML1",
-    "train_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/train_events.csv",
-    "train_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/train_telescopes.csv", 
+    "version": "ML1",
+    "train_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
+    "train_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv", 
     "replace_folder_train" : null,
     "validation_events_csv"    : "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
     "validation_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
     "replace_folder_validation" : null,
-    "test_events_csv"    :  "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
-    "test_telescope_csv" : "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
-    "replace_folder_test" : null,
+    "test_events_csv": "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
+    "test_telescope_csv": "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
+    "replace_folder_test": null,
     
-    "input_image_mode" : "simple",
-    "input_image_mask" : false,
+    "input_image_mode" : "simple-shift",
+    "input_image_mask" : true,
     "min_observations" : 1,
     "input_features" : ["x", "y"],
-
+    
     "targets" : ["alt", "az"],
     "target_mode" : "lineal",
     "target_shapes" : null,
@@ -36,7 +36,7 @@
         "log10_mc_energy": [-2.351, 2.47]
     },
     "target_sigmas" : null,
-
+    
     "preprocessing": {
         "CameraPipe" : {
             "charge_scaler_value" : 62.652400970459,
@@ -48,13 +48,14 @@
         }
     },
 
-    "batch_size" : 8,
-    "epochs" : 1,
+    "batch_size" : 16,
+    "epochs" : 5,
     "loss" : "mse",
     "optimizer": {
-        "learning_rate": 1e-4,
+        "learning_rate": 1e-3,
         "name": "adam",
         "extra_parameters": null
+       
     },
     "save_checkpoints" : true,
     "save_predictions" : true,
