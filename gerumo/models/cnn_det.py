@@ -65,7 +65,7 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     conv_kernel_sizes = [5, 3, 3]
     filters = 32
     i = 1
-    for kernel_size in conv_kernel_sizes:
+    #for kernel_size in conv_kernel_sizes:
         #front = Conv2D(name=f"encoder_conv_layer_{i}_a",
         #               filters=filters, kernel_size=kernel_size,
         #               kernel_initializer="he_uniform",
@@ -81,14 +81,16 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
         #front = BatchNormalization(name=f"encoder_batchnorm_{i}_b")(front)
 
         #front = MaxPooling2D(name=f"encoder_maxpool_layer_{i}", pool_size=(2,2))(front)
-        filters *= 2
-        i += 1
+        #filters *= 2
+        #i += 1
 
+    filters = 256
     ## generate latent variables by 1x1 Convolutions
     if telescope == "LST_LSTCam":
         kernel_size = (3, 2)
     elif telescope == "MST_FlashCam":
-        kernel_size = (5, 1)
+        #kernel_size = (5, 1)
+        kernel_size = (3, 3)
     elif telescope == "SST1M_DigiCam":
         kernel_size = (4, 1)
         
@@ -97,11 +99,13 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
                    kernel_initializer="he_uniform",
                    padding = "valid",
                    activation="relu")(front)
+
     front = Conv2D(name="encoder_conv_layer_to_latent",
                    filters=latent_variables, kernel_size=1,
                    kernel_initializer="he_uniform",
                    padding = "valid",
                    activation="relu")(front)
+
     front = Flatten(name="encoder_flatten_to_latent")(front)
     
     # Logic Block
@@ -111,18 +115,24 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
 
     ## dense blocks
     l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
+    
+    dense_i=0
     for dense_i in range(dense_layer_blocks):
-        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2, kernel_regularizer=l2_(activity_regularizer_l2))(front)
+        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2, \
+                      kernel_regularizer=l2_(activity_regularizer_l2))(front)
         front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
 
     # Outpout block
     dense_i += 1
     front = Dense(units=128, name=f"logic_dense_{dense_i}")(front)
+    #front = Dense(units=256, name=f"logic_dense_{dense_i}")(front)
     front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
     front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
     dense_i += 1
+    
     front = Dense(units=64, name=f"logic_dense_{dense_i}")(front)
+    #front = Dense(units=256, name=f"logic_dense_{dense_i}")(front)
     front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
     front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
 
