@@ -41,7 +41,8 @@ class EnergyModel:
     def fit(self, dataset, param_grid = None, cv = 5, scoring = "neg_mean_squared_error"):
         if param_grid is None:
             param_grid = {
-                "n_estimators": np.linspace(100, 500, 5, dtype=int)
+                "n_estimators": np.linspace(300, 500, 5, dtype=int),
+                "criterion": ["gini", "entropy"]
             }
 
         grouped = dataset[["type", "mc_energy"] + self._features].groupby("type")

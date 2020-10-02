@@ -24,7 +24,11 @@ if __name__ == "__main__":
     print("Preparing dataset...")
     dataset = EnergyModel.prepare_dataset(args.events, args.telescopes, args.results, args.hillas)
 
-    regressor = EnergyModel()
+    if os.path.isfile(args.output):
+        regressor = EnergyModel.load(args.output)
+    else:
+        regressor = EnergyModel()
+    
 
     print(f"Training regressor... ({len(dataset)} observations)")
     regressor.fit(dataset)
