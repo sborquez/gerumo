@@ -42,7 +42,7 @@ class EnergyModel:
         if param_grid is None:
             param_grid = {
                 "n_estimators": np.linspace(300, 500, 5, dtype=int),
-                "min_samples_split": np.arange(2, 6, dtype=int)
+                "min_samples_split": [2, 6]
             }
 
         grouped = dataset[["type", "mc_energy"] + self._features].groupby("type")
