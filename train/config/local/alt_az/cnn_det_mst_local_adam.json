@@ -1,5 +1,5 @@
 {
-    "model_name": "CNN_DET_UNIT_MST_AZ_ALT_ADAM_MAE_LC_CD5_D11",
+    "model_name": "CNN_DET_UNIT_MST_AZ_ALT_ADAM_MAE_LC_CD7_D19",
     "model_constructor": "cnn_det_unit",
     "model_extra_params": {
         "latent_variables": 256,
@@ -13,7 +13,7 @@
         "CameraPipe" : {
             "charge_scaler_value" : 62.652400970459,
             "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
-            "tailcuts_clean_params": {"boundary_thresh": 6, "picture_thresh": 14}
+            "tailcuts_clean_params": {"boundary_thresh": 0, "picture_thresh": 0}
         },
         "TelescopeFeaturesPipe": {
             "array_scaler_path": "ML1_array-scaler"
@@ -31,8 +31,8 @@
     "test_telescope_csv" : "...",
     "telescope" : "MST_FlashCam",
     "min_observations" : 3,
-    "input_image_mode" : "simple-shift",
-    "input_image_mask" : true,
+    "input_image_mode" : "simple",
+    "input_image_mask" : false,
     "input_features" : ["x", "y"],
     "targets" : ["az","alt"],
     "target_mode" : "lineal",
