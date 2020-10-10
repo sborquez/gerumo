@@ -253,7 +253,7 @@ class Reconstructor:
             _, camera_name = split_tel_type(tel_type)
 
             charge, peak = load_camera(source, folder, tel_type, obs_id, version=self.version)
-            params = get_observation_parameters(charge, peak, camera_name, obs_cutflow, plot=plot)
+            params = get_observation_parameters(charge, peak, camera_name, obs_cutflow)
             if params is None:
                 continue
             moments, _, _, time_gradient = params
