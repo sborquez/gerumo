@@ -16,7 +16,7 @@ from ctapipe.reco import HillasReconstructor
 from ctapipe.utils import CutFlow
 from ctapipe.visualization import CameraDisplay
 
-from gerumo import load_dataset, load_cameras, load_camera, TELESCOPES_ALIAS
+from gerumo import load_dataset, filter_dataset, load_cameras, load_camera, TELESCOPES_ALIAS
 from gerumo.baseline.energy import EnergyModel
 from gerumo.baseline.cutflow import generate_observation_cutflow, CFO_MIN_PIXEL, CFO_MIN_CHARGE, CFO_POOR_MOMENTS, \
     CFO_CLOSE_EDGE, \
@@ -167,11 +167,17 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
 
 
 class Reconstructor:
-    def __init__(self, events_path: str, telescopes_path: str, replace_folder: str = None, version="ML1"):
+    def __init__(self, events_path: str, telescopes_path: str, replace_folder: str = None, version="ML1", telescopes: list = None):
         if version == "ML2":
             raise NotImplementedError("This reconstructor is not implemented to work with ML2 yet")
         self.version = version
         self.dataset = load_dataset(events_path, telescopes_path, replace_folder=replace_folder)
+
+        if telescopes is not None:
+            if isinstance(telescopes, str):
+                telescopes = [telescopes]
+            self.dataset = filter_dataset(self.dataset, telescopes)
+
         self.reconstructor = HillasReconstructor()
         self.array_directions = dict()
         for hdf5_file in self.hdf5_files:
@@ -233,8 +239,7 @@ class Reconstructor:
         return values
 
     def reconstruct_event(self, event_id: str, event_cutflow: CutFlow, obs_cutflow: CutFlow,
-                          energy_regressor = None,
-                          plot: bool = False) -> Union[None, dict, Tuple[dict, dict]]:
+                          energy_regressor = None) -> Union[None, dict, Tuple[dict, dict]]:
 
         run_array_direction = None
         n_valid_tels = 0
@@ -307,13 +312,15 @@ class Reconstructor:
         }
 
     def reconstruct_all(self, max_events=None,
+                        telescope: str = None,
                         min_valid_observations=2,
                         energy_regressor = None,
                         npix_bounds: Tuple[float, float] = None,
                         charge_bounds: Tuple[float, float] = None,
                         ellipticity_bounds: Tuple[float, float] = None,
                         nominal_distance_bounds: Tuple[float, float] = None,
-                        plot: bool = False
+                        save_to: str = None,
+                        save_hillas: str = None,
                         ) -> dict:
         event_ids = self.event_uids
         if max_events is not None and max_events < len(event_ids):
@@ -325,19 +332,26 @@ class Reconstructor:
 
         reconstructions = {}
         for event_id in tqdm(event_ids):
-            reco = self.reconstruct_event(event_id, event_cutflow, obs_cutflow, plot=plot,
+            reco = self.reconstruct_event(event_id, event_cutflow, obs_cutflow,
                                           energy_regressor=energy_regressor)
             if reco is None:
                 continue
             reconstructions[event_id] = reco
         print(f"N. Events Reconstructed: {len(reconstructions)}")
+
+        if save_to is not None:
+            self.save_predictions(reco, save_to)
+
+        if save_hillas is not None:
+            self.save_hillas_params(reco, save_hillas)
+
         return reconstructions
 
-    def plot_metrics(self, max_events: int = 100, min_valid_observations=2, energy_regressor: EnergyModel = None, plot_charges: bool = False,
+    def plot_metrics(self, max_events: int = None, min_valid_observations=2, energy_regressor: EnergyModel = None, plot_charges: bool = False,
                      save_to: str = None, save_hillas: str = None, save_plots: str = None):
         import ctaplot
 
-        reco = self.reconstruct_all(max_events, min_valid_observations=min_valid_observations, plot=plot_charges, energy_regressor=energy_regressor)
+        reco = self.reconstruct_all(max_events, min_valid_observations=min_valid_observations, energy_regressor=energy_regressor)
 
         preds = list(reco.values())
 
@@ -358,12 +372,12 @@ class Reconstructor:
 
             plt.savefig(save_plots)
 
-        if save_to is not None:
-            self.save_predictions(reco, save_to)
-
-        if save_hillas is not None:
-            self.save_hillas_params(reco, save_hillas)
-
+    @staticmethod
+    def plot_prediction_vs_real(pred, real, ax, title):
+        ax.scatter(real, pred)
+        ax.set_title(title)
+        ax.grid('on')
+    
     @staticmethod
     def plot(results: DataFrame, save_to: str):
         import ctaplot
@@ -377,9 +391,19 @@ class Reconstructor:
         energy = results['energy'].values
         mc_energy = results['mc_energy'].values
 
-        _, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7))
+        _, axes = plt.subplots(3, 2, figsize=(16, 16))
+
+        axes_a, axes_b, axes_c = axes
+        ax1, ax2 = axes_a
+        ax3, ax4 = axes_b
+        ax5, _ = axes_c
+
         ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, mc_energy, ax=ax1)
         ctaplot.plot_energy_resolution(mc_energy, energy, ax=ax2)
+
+        Reconstructor.plot_prediction_vs_real(reco_alt, alt, ax3, "Alt prediction vs. real")
+        Reconstructor.plot_prediction_vs_real(reco_az, az, ax4, "Az prediction vs. real")
+        Reconstructor.plot_prediction_vs_real(energy, mc_energy, ax5, "Energy prediction vs. real")
 
         plt.savefig(save_to)
 
@@ -442,3 +466,10 @@ class Reconstructor:
                 params.append(obs_params)
         df = DataFrame(params, columns=columns).set_index(columns[:3])
         df.to_csv(path, sep=',')
+
+"""
+TODO: Plot prediction vs. real
+TODO: Plot by type
+TODO: Experiments with LST
+TODO: RF review with paper
+"""
