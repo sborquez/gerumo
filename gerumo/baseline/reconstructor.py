@@ -340,10 +340,10 @@ class Reconstructor:
         print(f"N. Events Reconstructed: {len(reconstructions)}")
 
         if save_to is not None:
-            self.save_predictions(reco, save_to)
+            self.save_predictions(reconstructions, save_to)
 
         if save_hillas is not None:
-            self.save_hillas_params(reco, save_hillas)
+            self.save_hillas_params(reconstructions, save_hillas)
 
         return reconstructions
 
