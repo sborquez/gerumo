@@ -53,7 +53,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
     lst = telescopes.get("LST_LSTCam", None)
 
     #model generation
-    #assembler_constructor = BMO_DET, from the corresponding assembler_config file
+    #assembler_constructor = CNN_DET, from the corresponding assembler_config file
     #for single and stereo predictions
     assembler = assembler_constructor(
                 sst1m_model_or_path=sst,
