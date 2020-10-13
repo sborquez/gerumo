@@ -25,7 +25,7 @@ if __name__ == "__main__":
     if args.energy_regressor is not None:
         regressor = EnergyModel.load(args.energy_regressor)
 
-    reco = Reconstructor(args.events_path, args.telescopes_path, replace_folder=args.replace_folder)
+    reco = Reconstructor(args.events_path, args.telescopes_path, replace_folder=args.replace_folder, telescopes=args.telescope)
     reco.reconstruct_all(
         max_events=args.n_events, min_valid_observations=2, energy_regressor=regressor,
-        save_to=args.output, save_hillas=args.hillas_csv, telescope=args.telescope)
+        save_to=args.output, save_hillas=args.hillas_csv)

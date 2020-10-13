@@ -312,7 +312,6 @@ class Reconstructor:
         }
 
     def reconstruct_all(self, max_events=None,
-                        telescope: str = None,
                         min_valid_observations=2,
                         energy_regressor = None,
                         npix_bounds: Tuple[float, float] = None,
