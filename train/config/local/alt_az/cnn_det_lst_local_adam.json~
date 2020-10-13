@@ -1,5 +1,5 @@
 {
-    "model_name": "CNN_DET_UNIT_MST_AZ_ALT_ADAM_MAE_LC_CD15_CD11",
+    "model_name": "CNN_DET_UNIT_LST_AZ_ALT_ADAM_MAE_LC_CD15_CD16",
     "model_constructor": "cnn_det_unit",
     "model_extra_params": {
         "latent_variables": 128,
@@ -11,8 +11,8 @@
     "version" : "ML1",
     "preprocessing": {
         "CameraPipe" : {
-            "charge_scaler_value" : 62.652400970459,
-            "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
+            "charge_scaler_value" : 36.852122955322265,
+            "peak_scaler_path" : "ML1_LST_LSTCam_peak_scaler",
             "tailcuts_clean_params": {"boundary_thresh": 0, "picture_thresh": 0}
         },
         "TelescopeFeaturesPipe": {
@@ -20,16 +20,16 @@
         }
     },
     "output_folder" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/models_lc/",
-    "replace_folder_train" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_11/",
-    "replace_folder_validation" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_11/",
+    "replace_folder_train" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_16/",
+    "replace_folder_validation" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_16/",
     "replace_folder_test" : "...",
-    "train_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_11_csv/train_events.csv",
-    "train_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_11_csv/train_telescopes.csv", 
-    "validation_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_11_csv/validation_events.csv",
-    "validation_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_11_csv/validation_telescopes.csv",
+    "train_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_16_csv/train_events.csv",
+    "train_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_16_csv/train_telescopes.csv", 
+    "validation_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_16_csv/validation_events.csv",
+    "validation_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/data_train_valid_16_csv/validation_telescopes.csv",
     "test_events_csv"    : "...",
     "test_telescope_csv" : "...",
-    "telescope" : "MST_FlashCam",
+    "telescope" : "LST_LSTCam",
     "min_observations" : 3,
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,

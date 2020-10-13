@@ -215,7 +215,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
         plt.xscale('log')
         plt.xlabel("True energy [TeV]")
         plt.ylabel("Counts")
-        plt.savefig(f"{local_path}/true_energy_{mae_average:.4f}.png")
+        plt.savefig(f"{local_path}/true_energy_{mae_average:.4f}_assembler.png")
         plt.close()
         
         # Create Figure and axis
@@ -231,10 +231,10 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
 
         show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
                                 percentile=68.27, confidence_level=0.95, bias_correction=False,
-                                label="MST mono", xlim=None, ylim=(0.1,2.0), ax=axis[1])
+                                label="Assembler", xlim=None, ylim=(0.1,2.0), ax=axis[1])
     
         # Save 
-        plt.savefig(f"{local_path}/angular_resolution_{mae_average:.4f}.png")
+        plt.savefig(f"{local_path}/angular_resolution_{mae_average:.4f}_assembler.png")
         plt.close()
                            
         #cnn_det plots
@@ -244,7 +244,7 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
         plt.ylabel('predicted az')
         plt.xlim(-0.52,0.52)
         plt.ylim(-0.52,0.52)
-        plt.savefig(f"{local_path}/scatter_az_cnn_det_adam_mae_{mae_average:.4f}.png")
+        plt.savefig(f"{local_path}/scatter_az_cnn_det_adam_mae_{mae_average:.4f}_assembler.png")
 
         plt.scatter(target[:,1], pred[:,1], s=10, color='blue', alpha=0.5)
         plt.title('Evaluation of CNN-DET-ADAM-MAE predictions on test set')
@@ -252,9 +252,9 @@ def evaluate(model_name, assembler_constructor, telescopes, evaluation_config,
         plt.ylabel('predicted alt')
         plt.xlim(1.05, 1.382)
         plt.ylim(1.05, 1.382)
-        plt.savefig(f"{local_path}/scatter_alt_cnn_det_adam_mae_{mae_average:.4f}.png")
+        plt.savefig(f"{local_path}/scatter_alt_cnn_det_adam_mae_{mae_average:.4f}_assembler.png")
 
-        return 0
+    return 0
         
 if __name__ == "__main__":
     import argparse
