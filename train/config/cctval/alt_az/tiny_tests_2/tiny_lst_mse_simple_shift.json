@@ -1,28 +1,28 @@
 {
-    "model_name": "MR_UNIT_NoMask_Shallow",
-    "model_constructor": "multiresolution_unit",
-    "assembler_constructor": "multiresolution",
+    "model_name": "TINY_UNIT_LST_MSE_SIMPLE",
+    "model_constructor": "tiny_unit",
+    "assembler_constructor": "tiny",
     "model_extra_params": {
+        "latent_variables": 64,
         "conv_layers_blocks": 2,
-        "latent_variables": 256,
         "dense_layer_blocks": 3
     },
 
-    "telescope" : "MST_FlashCam",
+    "telescope" : "LST_LSTCam",
     "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
     
-    "version": "ML1",
+    "version" : "ML1",
     "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/ML1",
     "train_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/train_events.csv",
     "train_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/train_telescopes.csv", 
     "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
     "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
     "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/ML1",
-    "test_events_csv"    : null,
-    "test_telescope_csv" : null,
-    "replace_folder_test" : null,
+    "test_events_csv": "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
+    "test_telescope_csv": "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
+    "replace_folder_test": "/data/atlas/dbetalhc/cta-test/ML1",
     
-    "input_image_mode" : "simple",
+    "input_image_mode" : "simple-shift",
     "input_image_mask" : false,
     "min_observations" : 1,
     "input_features" : ["x", "y"],
@@ -38,19 +38,11 @@
     "target_sigmas" : null,
 
     "preprocessing": {
-        "CameraPipe" : {
-            "charge_scaler_value" : 62.652400970459,
-            "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
-            "tailcuts_clean_params": {"boundary_thresh": 6, "picture_thresh": 14}
-        },
-        "TelescopeFeaturesPipe": {
-            "array_scaler_path": "ML1_array-scaler"
-        }
     },
 
     "batch_size" : 16,
     "epochs" : 50,
-    "loss" : "mae",
+    "loss" : "mse",
     "optimizer": {
         "learning_rate": 1e-4,
         "name": "adam",

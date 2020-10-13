@@ -3,9 +3,9 @@
     "assembler_constructor": "cnn_det",
     "model_constructor": "cnn_det_unit",
     "telescopes" : {        
-        "LST_LSTCam": #"/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/",
-        "MST_FlashCam": #"/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/",
-        "SST1M_DigiCam": #"/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/"
+        "LST_LSTCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/CNN_DET_UNIT_LST_BP_310523",
+        "MST_FlashCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/CNN_DET_UNIT_MST_BP_28e0fc",
+        "SST1M_DigiCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/CNN_DET_UNIT_SST_BP_5b1b04"
     },
     "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
     
