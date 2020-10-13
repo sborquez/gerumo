@@ -161,13 +161,13 @@ def plot_observation_scatter(charge, peakpos, pixel_positions, telescope_type=No
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
     ax1.set_title("Charge")
     divider = make_axes_locatable(ax1)
-    cax = divider.append_axis("right", size="5%", pad=0.05)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
     im = ax1.scatter(pixel_positions[0], pixel_positions[1], c=charge)
     plt.colorbar(im, cax=cax)
 
     ax2.set_title("Peak Pos")
     divider = make_axes_locatable(ax2)
-    cax = divider.append_axis("right", size="5%", pad=0.05)
+    cax = divider.append_axes("right", size="5%", pad=0.05)
     im = ax2.scatter(pixel_positions[0], pixel_positions[1], c=peakpos)
     plt.colorbar(im, cax=cax)
 
