@@ -85,6 +85,7 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
         #i += 1
 
     filters = 256
+    #filters = 128
     ## generate latent variables by 1x1 Convolutions
     if telescope == "LST_LSTCam":
         kernel_size = (3, 2)
@@ -106,6 +107,8 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
                    padding = "valid",
                    activation="relu")(front)
 
+    #front = MaxPooling2D(name=f"encoder_maxpool_layer_1", pool_size=(2,2))(front)
+
     front = Flatten(name="encoder_flatten_to_latent")(front)
     
     # Logic Block
@@ -126,6 +129,7 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     # Outpout block
     dense_i += 1
     front = Dense(units=128, name=f"logic_dense_{dense_i}")(front)
+    #front = Dense(units=128, name=f"logic_dense_{dense_i}")(front)
     #front = Dense(units=256, name=f"logic_dense_{dense_i}")(front)
     front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
     front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
