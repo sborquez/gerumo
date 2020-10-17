@@ -1,24 +1,33 @@
 {
-    "model_name": "BMO_UNIT_SST_BP",
+    "model_name": "BMO_UNIT_SST",
     "model_constructor": "bmo_unit",
     "assembler_constructor": "bmo",
     "model_extra_params": {
-        "latent_variables": 600,
+        "latent_variables": 128,
+        "conv_kernel_sizes": null,
+        "compress_filters": 256,
+        "compress_kernel_size": 3,
+        "dense_layer_units": [128, 128, 64],
+        "activity_regularizer_l1": null,
+        "kernel_regularizer_l2": null,
         "dropout_rate": 0.2
     },
     "telescope" : "SST1M_DigiCam",
-    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
+    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline",
     
     "version": "ML1",
-    "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/ML1",
-    "train_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/train_events.csv",
-    "train_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/train_telescopes.csv", 
-    "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
-    "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
-    "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/ML1",
-    "test_events_csv": "/mnt/e/datasets/astronomical/cta/gerumo/validation_events.csv",
-    "test_telescope_csv": "/mnt/e/datasets/astronomical/cta/gerumo/validation_telescopes.csv",
-    "replace_folder_test": null,
+
+    "train_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_train_valid_19_csv/train_events.csv",
+    "train_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_train_valid_19_csv/train_telescopes.csv", 
+    "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/baseline",
+
+    "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_train_valid_19_csv/validation_events.csv",
+    "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_train_valid_19_csv/validation_telescopes.csv",
+    "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/baseline",
+
+    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_bp_experiments/data_test_10_csv/test_events.csv",
+    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_bp_experiments/data_test_10_csv/test_telescopes.csv",
+    "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/baseline",
     
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,
@@ -46,20 +55,19 @@
         }
     },
 
-    "batch_size" : 16,
-    "epochs" : 75,
-    "loss" : "mse",
+    "batch_size" : 32,
+    "epochs" : 100,
+    "loss" : "mae",
     "optimizer": {
         "learning_rate": 1e-3,
         "name": "adam",
         "extra_parameters": null
-       
+        
     },
+    "early_stop_patience" : 15,
+
     "save_checkpoints" : true,
     "save_predictions" : true,
     "save_regressions" : true,
-    "save_plot" : false,
-    
-    "summary" : false,
-    "plot_only" : false
+    "save_loss": true
 }

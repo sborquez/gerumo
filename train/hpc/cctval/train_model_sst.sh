@@ -1,26 +1,28 @@
 #!/bin/bash
 #SBATCH -p gpuk
-#SBATCH -J gerumo_train_sst
+#SBATCH -J bl_umo_sst
 #SBATCH --mail-user=sebastian.borquez@sansano.usm.cl
 #SBATCH --mail-type=ALL
-#SBATCH -o output_gerumo_train_sst_%j.log
-#SBATCH -e error_gerumo_train_sst_%j.log
-#SBATCH --gres=gpu:2
+#SBATCH -o logs/output_baseline_umonna_sst_%j.log
+#SBATCH -e logs/error_baseline_umonna_sst_%j.log
+#SBATCH --gres=gpu:1
 #SBATCH --time=7-0
 
 # ----------------MÃ³dulos-----------------------------
 cd $SLURM_SUBMIT_DIR
 source /opt/software/anaconda3/2019.03/setup.sh
 # ----------------Comandos--------------------------
-
 source activate /user/s/sborquez/envs/gerumo
+cd /user/s/sborquez/gerumo/train
+
+# User defined variables
+config="/user/s/sborquez/gerumo/train/config/cctval/alt_az/baseline/umonna_sst.json"
+# config="/user/s/sborquez/gerumo/train/config/cctval/alt_az/baseline/cd_sst.json"
+# config="/user/s/sborquez/gerumo/train/config/cctval/alt_az/baseline/bmo_sst.json"
+
+echo "config file: $config"
 echo "Running train_model_sst.sh"
 echo ""
- 
-cd /user/s/sborquez/gerumo/train
-#python train_model.py --config ./config/cctval/energy/umonna_sst_hpc_onecell.json
-#python train_model.py --config ./config/cctval/alt_az/umonna_sst_hpc_onecell.json
-#python train_model.py --config ./config/cctval/alt_az_energy/umonna_sst_hpc_onecell.json
-#python train_model.py --config ./config/cctval/alt_az/umonna_sst_hpc_all.json
-python train_model.py --config ./config/cctval/alt_az/inf578/umonna_sst.json --quiet -G
-#python train_model.py --config ./config/cctval/energy/umonna_sst_hpc_all.json
+
+# train 
+python train_model.py --config $config --quiet

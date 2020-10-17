@@ -1,12 +1,11 @@
-#!/bin/bash
 # ----------------SLURM Parameters----------------
 #!/bin/bash
 #SBATCH -p gpuk
 #SBATCH -J gerumo_preprocessing
 #SBATCH --mail-user=sebastian.borquez@sansano.usm.cl
 #SBATCH --mail-type=ALL
-#SBATCH -o output_preprocessing_%j.log
-#SBATCH -e error_preprocessing_%j.log
+#SBATCH -o logs/output_preprocessing_%j.log
+#SBATCH -e logs/error_preprocessing_%j.log
 #SBATCH --gres=gpu:1
 
 # ----------------MÃ³dulos-----------------------------

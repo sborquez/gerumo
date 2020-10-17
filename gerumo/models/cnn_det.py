@@ -19,7 +19,7 @@ from tensorflow.keras.layers import (
     Dense, Flatten, Concatenate, Reshape,
     Activation, BatchNormalization, Dropout
 )
-from tensorflow.keras.regularizers import l2
+from tensorflow.keras.regularizers import l1, l2
 from . import CUSTOM_OBJECTS
 from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
@@ -27,7 +27,9 @@ from .layers import HexConvLayer, softmax
 
 def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
                 targets, target_mode, target_shapes=None,
-                conv_kernel_sizes=[5, 3, 3], latent_variables=200, dense_layer_blocks=5, activity_regularizer_l2=None):
+                conv_kernel_sizes=[5, 3, 3], compress_filters=256, compress_kernel_size=3, 
+                latent_variables=200, dense_layer_units=[128, 128, 64],
+                kernel_regularizer_l2=None, activity_regularizer_l1=None):
     """Build Deterministic CNN Unit Model
     Parameters
     ==========
@@ -82,24 +84,25 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
         filters *= 2
         i += 1
 
-    ## generate latent variables by 1x1 Convolutions
-    if telescope == "LST_LSTCam":
-        kernel_size = (3, 2)
-    elif telescope == "MST_FlashCam":
-        kernel_size = (5, 1)
-    elif telescope == "SST1M_DigiCam":
-        kernel_size = (4, 1)
-        
+    ## generate latent variables by  Convolutions
+    kernel_size = compress_kernel_size
+    filters     = compress_filters
+    l1_ = lambda activity_regularizer_l1: None if activity_regularizer_l1 is None else l1(activity_regularizer_l1)
+    l2_ = lambda kernel_regularizer_l2: None if kernel_regularizer_l2 is None else l2(kernel_regularizer_l2)
     front = Conv2D(name=f"encoder_conv_layer_compress",
                    filters=filters, kernel_size=kernel_size,
                    kernel_initializer="he_uniform",
                    padding = "valid",
-                   activation="relu")(front)
+                   activation="relu",
+                   kernel_regularizer=l2_(kernel_regularizer_l2),
+                   activity_regularizer=l1_(activity_regularizer_l1))(front)
     front = Conv2D(name="encoder_conv_layer_to_latent",
                    filters=latent_variables, kernel_size=1,
                    kernel_initializer="he_uniform",
                    padding = "valid",
-                   activation="relu")(front)
+                   activation="relu",
+                   kernel_regularizer=l2_(kernel_regularizer_l2),
+                   activity_regularizer=l1_(activity_regularizer_l1))(front)
     front = Flatten(name="encoder_flatten_to_latent")(front)
     
     # Logic Block
@@ -108,24 +111,17 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
     front = Concatenate()([input_params, front])
 
     ## dense blocks
-    l2_ = lambda activity_regularizer_l2: None if activity_regularizer_l2 is None else l2(activity_regularizer_l2)
-    for dense_i in range(dense_layer_blocks):
-        front = Dense(name=f"logic_dense_{dense_i}", units=latent_variables//2, kernel_regularizer=l2_(activity_regularizer_l2))(front)
+    for dense_i, dense_units in enumerate(dense_layer_units):
+        front = Dense(name=f"logic_dense_{dense_i}", units=dense_units, 
+                      kernel_regularizer=l2_(kernel_regularizer_l2),
+                      activity_regularizer=l1_(activity_regularizer_l1))(front)
         front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
 
     # Outpout block
-    dense_i += 1
-    front = Dense(units=128, name=f"logic_dense_{dense_i}")(front)
-    front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
-    front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
-    dense_i += 1
-    front = Dense(units=64, name=f"logic_dense_{dense_i}")(front)
-    front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
-    front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
     output = Dense(len(targets), activation="linear")(front)
 
-    model_name = f"CNN_DET_Unit_{telescope}"
+    model_name = f"CD15_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
     return model
 

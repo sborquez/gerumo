@@ -1,7 +1,7 @@
 {
-    "model_name": "BMO_UNIT_MST",
-    "model_constructor": "bmo_unit",
-    "assembler_constructor": "bmo",
+    "model_name": "CNN_DET_UNIT_MST_AZ_ALT_ADAM_MAE_LC_CD15_CD11",
+    "model_constructor": "cnn_det_unit",
+    "assembler_constructor": "cnn_det",
     "model_extra_params": {
         "latent_variables": 128,
         "conv_kernel_sizes": null,
@@ -9,8 +9,7 @@
         "compress_kernel_size": 3,
         "dense_layer_units": [128, 128, 64],
         "activity_regularizer_l1": null,
-        "kernel_regularizer_l2": null,
-        "dropout_rate": 0.2
+        "kernel_regularizer_l2": null
     },
     "telescope" : "MST_FlashCam",
     "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline",

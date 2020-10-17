@@ -3,16 +3,16 @@
     "assembler_constructor": "bmo",
     "model_constructor": "bmo_unit",
     "telescopes" : {
-        "LST_LSTCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/BMO_UNIT_LST_BP_189aa1",
-        "MST_FlashCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/BMO_UNIT_MST_BP_4897c5",
-        "SST1M_DigiCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/BMO_UNIT_SST_BP_53e2c7"
+        "LST_LSTCam": null,
+        "MST_FlashCam": null,
+        "SST1M_DigiCam": null
     },
-    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
+    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline",
     
     "version" : "ML1",
-    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
-    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
-    "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/ML1",
+    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_bp_experiments/data_test_10_csv/test_events.csv",
+    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_bp_experiments/data_test_10_csv/test_telescopes.csv",
+    "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/baseline",
     
     "input_image_mode" : "simple-shift",
     "input_image_mask" : true,

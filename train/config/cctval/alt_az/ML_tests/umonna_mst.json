@@ -1,17 +1,20 @@
 {
-    "model_name": "UMONNA_UNIT_MST_V2",
+    "model_name": "UMONNA_UNIT_MST_Shallow",
     "model_constructor": "umonna_unit",
     "assembler_constructor": "umonna",
     "model_extra_params": {
-        "latent_variables": 600
+        "conv_kernel_sizes": null,
+        "latent_variables": 256,
+        "dense_layer_blocks": 3,
+        "activity_regularizer_l2": null
     },
     "telescope" : "MST_FlashCam",
     "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az",
     
     "version": "ML1",
+    "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/ML1",
     "train_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/train_events.csv",
     "train_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/train_telescopes.csv", 
-    "replace_folder_train" : "/data/atlas/dbetalhc/cta-test/ML1",
     "validation_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_events.csv",
     "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_small/validation_telescopes.csv",
     "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/ML1",
@@ -49,11 +52,11 @@
         }
     },
 
-    "batch_size" : 16,
-    "epochs" : 75,
+    "batch_size" : 64,
+    "epochs" : 50,
     "loss" : "crossentropy",
     "optimizer": {
-        "learning_rate": 1e-4,
+        "learning_rate": 1e-3,
         "name": "sgd",
         "extra_parameters": {
             "momentum": 0.01,
@@ -62,9 +65,5 @@
     },
     "save_checkpoints" : true,
     "save_predictions" : true,
-    "save_regressions" : true,
-    "save_plot" : false,
-    
-    "summary" : false,
-    "plot_only" : false
+    "save_regressions" : true
 }
