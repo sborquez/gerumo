@@ -17,6 +17,17 @@ from . import (
     TELESCOPES, TELESCOPES_ALIAS,  TELESCOPE_CAMERA,
     PIXELS_POSITION
 )
+import threading
+
+lock = threading.Lock()
+
+def synchronized_open_file(*args, **kwargs):
+    with lock:
+        return tables.open_file(*args, **kwargs)
+
+def synchronized_close_file(self, *args, **kwargs):
+    with lock:
+        return self.close(*args, **kwargs)
 
 __all__ = [
     'load_camera', 'load_cameras', 'load_camera_geometry',
@@ -64,18 +75,21 @@ def load_cameras(dataset, version="ML1"):
     indices = np.arange(len(dataset))
     # iterate over file
     for hdf5_filepath in hdf5_filepaths:
-        with tables.open_file(hdf5_filepath, "r") as hdf5_file:
-            # and over telescope tables
-            for telescope_type in telescopes:
-                telescope_alias = TELESCOPES_ALIAS[version][telescope_type]
-                # select indices for this file and telescope
-                selector = (dataset["hdf5_filepath"] == hdf5_filepath) & (dataset["type"] == telescope_type)
-                observations_indices_selected = dataset[selector]["observation_indice"].to_numpy()
-                respond_indices_selected = indices[selector]
-                # load images and copy results
-                images = hdf5_file.root[telescope_alias][observations_indices_selected]
-                for i, img in zip(respond_indices_selected, images):
-                    respond[i] = (img[_images_attributes[version]["charge"]], img[_images_attributes[version]["peakpos"]]) 
+        #with tables.open_file(hdf5_filepath, "r") as hdf5_file:
+        hdf5_file = synchronized_open_file(hdf5_filepath, mode="r")
+        # and over telescope tables
+        for telescope_type in telescopes:
+            telescope_alias = TELESCOPES_ALIAS[version][telescope_type]
+            # select indices for this file and telescope
+            selector = (dataset["hdf5_filepath"] == hdf5_filepath) & (dataset["type"] == telescope_type)
+            observations_indices_selected = dataset[selector]["observation_indice"].to_numpy()
+            respond_indices_selected = indices[selector]
+            # load images and copy results
+            images = hdf5_file.root[telescope_alias][observations_indices_selected]
+            for i, img in zip(respond_indices_selected, images):
+                respond[i] = (img[_images_attributes[version]["charge"]], img[_images_attributes[version]["peakpos"]]) 
+        # Free lock
+        synchronized_close_file(hdf5_file)
     return respond
     
 def load_camera_geometry(telescope_type, version="ML1"):

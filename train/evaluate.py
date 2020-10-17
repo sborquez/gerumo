@@ -600,7 +600,7 @@ if __name__ == "__main__":
     ap.add_argument("-a", "--assembler", type=str, default=None, 
                     help="Assembler configuration file.")
     ap.add_argument("--all", action="store_true", dest="save_all_unit_evaluations",
-                     help="Save inputs and predictions plots from sample dataset.")
+                     help="Evaluate each telescope.")
     # Option 2
     ap.add_argument("-e", "--experiment", type=str, default=None, 
                     help="Experiment folder.")
@@ -613,7 +613,7 @@ if __name__ == "__main__":
                     help="Model configuration file. (require model checkpoint)")
     ## Plots
     ap.add_argument("--results", action="store_true", dest="save_results",
-                     help="Save resutls into csv file.")
+                     help="Save results into csv file.")
     ap.add_argument("--samples", action="store_true", dest="save_samples",
                      help="Save inputs and predictions plots from sample dataset.")
     ap.add_argument("--predictions", action="store_true", dest="save_predictions",
@@ -622,7 +622,7 @@ if __name__ == "__main__":
     ap.add_argument("--output", type=str, default=None,
                     help="Output folder.")
     ap.add_argument("--seed", type=int, default=None, 
-                    help="Set random state seed.")
+                    help="Set random state seed. (not implemented)") # TODO: implement seed 
     ap.add_argument("--replace_folder_test", type=str, default=None,
                     help="Replace test folder without edit configuration files.")
     args = vars(ap.parse_args()) 
