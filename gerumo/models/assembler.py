@@ -142,8 +142,8 @@ class ModelAssembler():
             targets_values.extend(batch_t)
 
             # Predictions
-            batch_p = self.model_estimation(batch_x, telescope)
-            batch_p_points = self.point_estimation(batch_p)
+            batch_p = self.model_estimation(batch_x, telescope) # TODO: ineficiente con BMO
+            batch_p_points = self.point_estimation(batch_p)     # hace samples 2 veces
             predictions_points.extend(batch_p_points)
             
             # Return inputs

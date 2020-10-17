@@ -107,7 +107,7 @@ class ValidationSamplesCallback(keras.callbacks.Callback):
             # Make predictions and save each plot 
             for batch_x, batch_t, meta in self.sample_generator:
                 # Predictions
-                batch_p = self.assembler.exec_model_estimation(batch_x, self.model, 0)
+                batch_p = self.assembler.exec_model_estimation(batch_x, self.model, 0) # TODO: ineficiente con BMO
                 batch_p_points = self.assembler.point_estimation(batch_p)
                 batch_input_image, batch_input_features = batch_x
                 # save  prediction
@@ -145,8 +145,8 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
             optimizer_parameters = {},
             learning_rate = 1e-1,
             preprocessing_parameters = {},
-            save_checkpoints = True, save_predictions=True, save_regressions = True,
-            quiet=False, multi_gpu=False):
+            save_checkpoints = True, save_predictions=True, save_regressions = True, save_loss=True,
+            quiet=False, multi_gpu=False, early_stop_patience=None):
     # Assembler
     assembler = assembler_constructor(targets=targets, 
                                       target_shapes=target_mode_config["target_shapes"],
@@ -216,6 +216,13 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
         callbacks.append(
             keras.callbacks.ModelCheckpoint(checkpoint_filepath, monitor='val_loss', 
                  verbose=1, save_weights_only=False, mode='min', save_best_only=True))
+    if save_loss:
+        # CSV logger parameters
+        csv_logger_filename = path.join(output_folder, 'loss.csv')
+        callbacks.append(
+            keras.callbacks.CSVLogger(csv_logger_filename)
+        )
+
     if save_predictions:
         # Prediction parameters
         predictions_folder = path.join(output_folder, 'predictions')
@@ -249,6 +256,12 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
         callbacks.append(
             ValidationRegressionCallback(validation_generator, regression_folder, assembler)
         )
+
+    if (early_stop_patience is not None) and (early_stop_patience > 0):
+        callbacks.append(
+            keras.callbacks.EarlyStopping(monitor='val_loss', patience=early_stop_patience)
+        )
+
     # Train
     input_img_shape = INPUT_SHAPE[f"{input_image_mode}-mask" if input_image_mask else input_image_mode][telescope]
     input_features_shape = (len(input_features),)
@@ -403,6 +416,7 @@ if __name__ == "__main__":
     learning_rate = config["optimizer"]["learning_rate"]
     optimizer_parameters = config["optimizer"]["extra_parameters"]
     optimizer_parameters = {} if optimizer_parameters is None else optimizer_parameters
+    early_stop_patience = config.get("early_stop_patience", None)
 
     # Preprocessing
     preprocessing_parameters = config.get("preprocessing", {})
@@ -411,6 +425,7 @@ if __name__ == "__main__":
     save_checkpoints = config.get("save_checkpoints", True)
     save_predictions = config.get("save_predictions", True)
     save_regressions = config.get("save_regressions", True)
+    save_loss = config.get("save_loss", True)
 
     # Setup Experiment Folder
     experiment_run = uuid.uuid4().hex[:6]
@@ -440,7 +455,7 @@ if __name__ == "__main__":
         # Training paramters
         batch_size = batch_size,
         epochs = epochs, 
-        loss =loss, 
+        loss = loss, 
         optimizer = optimizer, 
         optimizer_parameters = optimizer_parameters, 
         learning_rate = learning_rate,
@@ -450,8 +465,10 @@ if __name__ == "__main__":
         save_checkpoints = save_checkpoints,
         save_predictions = save_predictions,
         save_regressions = save_regressions,
+        save_loss = save_loss,
         # Extra parameters
         quiet=quiet,
         # HPC
-        multi_gpu=multi_gpu
+        multi_gpu=multi_gpu,
+        early_stop_patience=early_stop_patience
     )
