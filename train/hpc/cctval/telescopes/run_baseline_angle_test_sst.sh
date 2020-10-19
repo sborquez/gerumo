@@ -2,7 +2,7 @@
 # ----------------SLURM Parameters----------------
 #!/bin/bash
 #SBATCH -p batch
-#SBATCH -J gerumo_baseline_test_lst
+#SBATCH -J gerumo_baseline_test_sst
 #SBATCH --mail-user=patricio.campana@sansano.usm.cl
 #SBATCH --mail-type=ALL
 #SBATCH -o output_baseline_%j.log
@@ -33,4 +33,4 @@ cp ${d}telescopes.csv ${TMPDIR}
 
 echo "Running angle baseline ${d}"
 mkdir ${TEST_RESULTS}
-python run_baseline.py -e ${TMPDIR}/events.csv -t ${TMPDIR}/telescopes.csv -T LST_LSTCam -c ${TEST_RESULTS}hillas.csv -o ${TEST_RESULTS}results.csv -f ${TMPDIR} # -r ${ML1PATH}001/energy_regressor.pickle
+python run_baseline.py -e ${TMPDIR}/events.csv -t ${TMPDIR}/telescopes.csv -T SST1M_DigiCam -c ${TEST_RESULTS}hillas.csv -o ${TEST_RESULTS}results.csv -f ${TMPDIR} # -r ${ML1PATH}001/energy_regressor.pickle
