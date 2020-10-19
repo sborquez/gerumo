@@ -50,6 +50,7 @@ def plot_model_training_history(history, training_time, model_name, epochs, save
     Display training loss and validation loss vs epochs.
     """
     fig = plt.figure(figsize=(12,6))
+    epochs = len(history.history['loss']) #fix: early stop 
     epochs = [i for i in range(1, epochs+1)]
     plt.plot(epochs, history.history['loss'], "*--", label="Train")
     plt.plot(epochs, history.history['val_loss'], "*--", label="Validation")
