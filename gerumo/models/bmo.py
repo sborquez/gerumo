@@ -143,7 +143,7 @@ class BMO(ModelAssembler):
         self.point_estimation_mode = point_estimation_mode
         self.target_resolutions = target_resolutions
         self.sample_size = 250
-        self.expected_value_sample_size = 500
+        #self.expected_value_sample_size = 500
 
     @staticmethod
     def bayesian_estimation(model, x_i_telescope, sample_size, verbose, **kwargs):
@@ -164,11 +164,11 @@ class BMO(ModelAssembler):
 
     def expected_value(self, y_predictions):
         if isinstance(y_predictions[0], st.gaussian_kde):
-            y_mus = np.array([y_i.resample(self.expected_value_sample_size).mean(axis=1) for y_i in y_predictions])
+            #y_mus = np.array([y_i.resample(self.expected_value_sample_size).mean(axis=1) for y_i in y_predictions])
+            y_mus = np.array([y_i.dataset.mean(axis=1) for y_i in y_predictions])
             return y_mus
 
     def assemble(self, y_i_by_telescope):
-        # TODO: ineficiente
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
         if self.assemble_mode == "resample":
             yi_assembled = self.resample(y_i_all)
@@ -177,7 +177,8 @@ class BMO(ModelAssembler):
         return yi_assembled
 
     def resample(self, y_i):
-        resamples = np.array(np.hstack([y_kde_j.resample(self.sample_size) for y_kde_j in y_i]))
+        #resamples = np.hstack([y_kde_j.resample(self.sample_size) for y_kde_j in y_i])
+        resamples = np.hstack([y_kde_j.dataset for y_kde_j in y_i])
         return st.gaussian_kde(resamples)
 
     def normalized_product(self, y_i):
