@@ -13,12 +13,17 @@ from glob import glob
 from tqdm import tqdm
 import numpy as np
 import pandas as pd
+import scipy.stats as st
 from sklearn.metrics import r2_score
 from tensorflow.keras.models import load_model, Model
 import tensorflow_probability as tfp
 import matplotlib as mpl
 mpl.use('Agg')
 
+
+def same_telescopes(src_telescopes, sample_telescopes):
+    return set(sample_telescopes).issubset(set(src_telescopes))
+    
 # Evaluate
 # 1. Save results: points, predictions (optional), targets, energy, event info and telescope info
 # 2. Calculate regression
@@ -81,7 +86,7 @@ def evaluate_experiment_folder(experiment_folder,  save_results=True, save_predi
 def evaluate_unit(model_or_path, config_file, output_folder,
                  assembler=None, telescope=None,
                  save_results=True, save_predictions=True, save_samples=True, 
-                 model_name=None, replace_folder_test=None, seed=None):
+                 model_name=None, replace_folder_test=None, seed=None, sample_telescopes=None):
     """
     Evaluate model, with configuration file given.
     
@@ -109,6 +114,8 @@ def evaluate_unit(model_or_path, config_file, output_folder,
         Replace config `replace_folder_test` without edit configuration file.
     seed : `int`, optional
         Seed for random states.
+    sample_telescopes : `list` of `str` or `None`
+        Filter sample dataset.
     Returns
     -------
     `pd.DataFrame`
@@ -173,7 +180,8 @@ def evaluate_unit(model_or_path, config_file, output_folder,
     describe_dataset(test_dataset, save_to=path.join(output_folder, "test_description.txt"))
     if save_samples:
         # events with observations of every type of telescopes
-        sample_events = [e for e, df in test_dataset.groupby("event_unique_id") if df["type"].nunique() == len(TELESCOPES)]
+        sample_telescopes = sample_telescopes if sample_telescopes is not None else [telescope]
+        sample_events = [e for e, df in test_dataset.groupby("event_unique_id") if same_telescopes(df["type"].unique(), sample_telescopes)]
         # TODO: add custom seed
         r = np.random.RandomState(42)
         sample_events = r.choice(sample_events, size=5, replace=False)
@@ -274,6 +282,8 @@ def evaluate_unit(model_or_path, config_file, output_folder,
                 mu = prediction.mean().numpy()
                 cov = prediction.covariance().numpy()
                 np.save(prediction_filepath, np.vstack((mu, cov)))
+            elif isinstance(prediction, st.gaussian_kde):
+                np.save(prediction_filepath, prediction.dataset)
             else:
                 raise NotImplemented("Unknown prediction type:", type(prediction))
 
@@ -334,6 +344,7 @@ def evaluate_unit(model_or_path, config_file, output_folder,
 
     return results
 
+
 def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_evaluations=True, save_results=True, save_predictions=True, save_samples=True, seed=None):
     """
     Evaluate assembler from a configuration file.
@@ -367,7 +378,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
     model_name = config["model_name"]
     model_name = model_name.replace(' ', '_')
     assembler_constructor = ASSEMBLERS[config["assembler_constructor"]]
-    telescopes = config["telescopes"] 
+    telescopes = {t:m for t,m in config["telescopes"].items() if m is not None}
     output_folder = config["output_folder"] if output_folder is None else output_folder
     output_folder = path.join(output_folder, f"{model_name}_evaluation")
     print("Saving assembelr evaluation in:", output_folder)
@@ -418,7 +429,8 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
     describe_dataset(test_dataset, save_to=path.join(output_folder, "test_description.txt"))
     if save_samples:
         # events with observations of every type of telescopes
-        sample_events = [e for e, df in test_dataset.groupby("event_unique_id") if df["type"].nunique() == len(TELESCOPES)]
+        sample_telescopes = [t for t,p in telescopes.items() if p is not None]
+        sample_events = [e for e, df in test_dataset.groupby("event_unique_id") if same_telescopes(df["type"].unique(), sample_telescopes)]
         # TODO: add custom seed
         r = np.random.RandomState(42)
         sample_events = r.choice(sample_events, size=5, replace=False)
@@ -427,7 +439,10 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
 
         print("Sample dataset")
         describe_dataset(sample_dataset, save_to=path.join(output_folder, "sample_description.txt"))
+        if len(sample_dataset) == 0:
+            raise ValueError("Sample dataset is empty.")
     else:
+        sample_telescopes = None
         sample_dataset = None
         sample_generator = None
     test_dataset = filter_dataset(test_dataset, telescopes.keys(), min_observations, target_domains)
@@ -455,7 +470,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
             unit_evaluation = evaluate_unit(model_path, assembler_config_file, model_output_folder,
                  assembler=assembler, telescope=telescope,
                  save_results=save_results, save_predictions=save_predictions, save_samples=save_samples, 
-                 model_name=model_name, seed=seed)
+                 model_name=model_name, seed=seed, sample_telescopes=sample_telescopes)
             if save_predictions:
                 all_results[telescope] = unit_evaluation[0]
             else:    
@@ -536,6 +551,8 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
                 mu = prediction.mean().numpy()
                 cov = prediction.covariance().numpy()
                 np.save(prediction_filepath, np.vstack((mu, cov)))
+            elif isinstance(prediction, st.gaussian_kde):
+                np.save(prediction_filepath, prediction.dataset)
             else:
                 raise NotImplemented("Unknown prediction type:", type(prediction))
 
