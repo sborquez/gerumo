@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p gpuk
-#SBATCH -J tiny_eval 
+#SBATCH -J eval_cl 
 #SBATCH --mail-user=sebastian.borquez@sansano.usm.cl
 #SBATCH --mail-type=ALL
 #SBATCH -o logs/output_tiny_eval_%j.log
@@ -17,7 +17,17 @@ source activate /user/s/sborquez/envs/gerumo
 echo "Running train_model_sst.sh"
 echo ""
 
-experiment="/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/TINY_UNIT_MST_MAE_SIMPLE_d525a5" 
+# umonna
+#experiment="/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/UMONNA_UNIT_SST_Shallow_f2c057" 
+experiment="/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/UMONNA_UNIT_MST_Shallow_5f2107"
+#experiment="/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/UMONNA_UNIT_LST_Shallow_92e4f6"
+
+# cd
+#experiment="/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/CNN_DET_UNIT_LST_AZ_ALT_ADAM_MAE_LC_CD15_CD11_31af42" 
+
+# bmo
+#experiment="/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/BMO_UNIT_LST_690b25"
+
 cd /user/s/sborquez/gerumo/train
-python evaluate.py --results --samples --predictions --experiment "$experiment"
+python evaluate.py --results --samples --experiment "$experiment"
 
