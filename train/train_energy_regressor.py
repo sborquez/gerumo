@@ -28,7 +28,6 @@ if __name__ == "__main__":
         regressor = EnergyModel.load(args.output)
     else:
         regressor = EnergyModel()
-    
 
     print(f"Training regressor... ({len(dataset)} observations)")
     regressor.fit(dataset)

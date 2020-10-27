@@ -21,7 +21,7 @@ from gerumo.baseline.cutflow import generate_observation_cutflow
 class EnergyModel:
     def __init__(self):
         self._models = dict()
-        self._features = ["log10_intensity", "log10_impact", "width", "length", "h_max"]
+        self._features = ["log10_intensity", "log10_impact", "width", "length", "h_max", "telescope_az", "telescope_alt"]
 
     @staticmethod
     def prepare_dataset(events_csv: str, telescopes_csv: str, results_csv: str, hillas_csv: str, split: float = None):
@@ -41,7 +41,7 @@ class EnergyModel:
     def fit(self, dataset, param_grid = None, cv = 5, scoring = "neg_mean_squared_error"):
         if param_grid is None:
             param_grid = {
-                "n_estimators": np.linspace(300, 500, 5, dtype=int),
+                "n_estimators": np.linspace(200, 500, 5, dtype=int),
                 "min_samples_split": [2, 6]
             }
 
@@ -85,7 +85,7 @@ class EnergyModel:
 
         return results
 
-    def predict_event(self, positions, types, hillas_containers, reconstruction):
+    def predict_event(self, positions, types, hillas_containers, reconstruction, run_array_direction):
         n_obs = len(hillas_containers)
         energies = np.zeros(n_obs)
         weights = np.zeros(n_obs)
@@ -100,7 +100,9 @@ class EnergyModel:
                 np.log10(impact),
                 moments.width.value,
                 moments.length.value,
-                reconstruction.h_max.value
+                reconstruction.h_max.value,
+                run_array_direction[0],
+                run_array_direction[1]
             ]])
             weights[idx] = moments.intensity
             

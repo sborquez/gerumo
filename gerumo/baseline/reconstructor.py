@@ -1,4 +1,4 @@
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Dict
 
 from tqdm import tqdm
 from pandas import DataFrame
@@ -285,7 +285,7 @@ class Reconstructor:
         if energy_regressor is None:
             energy = None
         else:
-            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco)
+            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, run_array_direction)
 
         return dict(
             pred_az=2 * np.pi * u.rad + reco.az,
@@ -300,7 +300,8 @@ class Reconstructor:
             mc_energy=mc[event_id]["mc_energy"],
             energy=energy,
             event_id=event_id,
-            hillas=hillas_by_obs
+            hillas=hillas_by_obs,
+            run_array_direction=run_array_direction
         )
 
     def get_event_cams_and_foclens(self, event_id: str):
@@ -363,7 +364,7 @@ class Reconstructor:
             if energy_regressor is not None:
                 energy = np.array([pred['energy'] for pred in preds])
             mc_energy = np.array([pred['mc_energy'] for pred in preds])
-            
+ 
             _, (ax1, ax2) = plt.subplots(1, 2)
             ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, mc_energy, ax=ax1)
             if energy_regressor is not None:
@@ -376,35 +377,44 @@ class Reconstructor:
         ax.scatter(real, pred)
         ax.set_title(title)
         ax.grid('on')
-    
+
     @staticmethod
     def plot(results: DataFrame, save_to: str):
-        import ctaplot
+        import os
+        from gerumo import plot_error_and_angular_resolution, plot_angular_resolution_comparison
 
-        reco_alt = results['pred_alt'].values
-        reco_az = results['pred_az'].values
+        results['true_alt'] = results['alt']
+        results['true_az'] = results['az']
 
-        alt = results['alt'].values
-        az = results['az'].values
+        results['true_mc_energy'] = results['mc_energy']
 
-        energy = results['energy'].values
-        mc_energy = results['mc_energy'].values
+        plot_error_and_angular_resolution(results, save_to=os.path.join(save_to, "angular_resolution.png"), ylim=[0, 2])
 
-        _, axes = plt.subplots(3, 2, figsize=(16, 16))
+        fig, axes = plt.subplots(1, 2)
+        ax1, ax2 = axes
+        Reconstructor.plot_prediction_vs_real(results['pred_alt'], results['alt'], ax1, "Altitude")
+        Reconstructor.plot_prediction_vs_real(results['pred_az'].apply(lambda rad: np.arctan2(np.sin(rad), np.cos(rad))), results['az'].apply(lambda rad: np.arctan2(np.sin(rad), np.cos(rad))), ax2, "Azimuth")
 
-        axes_a, axes_b, axes_c = axes
-        ax1, ax2 = axes_a
-        ax3, ax4 = axes_b
-        ax5, _ = axes_c
+        fig.savefig(os.path.join(save_to, "scatter.png"))
 
-        ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, mc_energy, ax=ax1)
-        ctaplot.plot_energy_resolution(mc_energy, energy, ax=ax2)
+    @staticmethod
+    def plot_comparison(results: Dict[str, DataFrame], save_to: str):
+        import os
+        from gerumo import plot_error_and_angular_resolution, plot_angular_resolution_comparison
 
-        Reconstructor.plot_prediction_vs_real(reco_alt, alt, ax3, "Alt prediction vs. real")
-        Reconstructor.plot_prediction_vs_real(reco_az, az, ax4, "Az prediction vs. real")
-        Reconstructor.plot_prediction_vs_real(energy, mc_energy, ax5, "Energy prediction vs. real")
+        models = dict()
+        for label, result in results.items():
+            targets = np.transpose(np.vstack([result['alt'], result['az']]))
+            predictions = np.transpose(np.vstack([result['pred_alt'], result['pred_az']]))
+            mc_energy = result['mc_energy'].values
+            models[label] = {
+                "targets": targets,
+                "predictions": predictions,
+                "true_energy": mc_energy
+            }
 
-        plt.savefig(save_to)
+        plot_angular_resolution_comparison(models, ylim=[0, 2], save_to=os.path.join(save_to, "angular_resolution_comparable.png"))
+
 
     @staticmethod
     def save_predictions(reco: dict, path: str):
@@ -441,11 +451,14 @@ class Reconstructor:
             "skewness",
             "width",
             "x",
-            "y"
+            "y",
+            "telescope_az",
+            "telescope_alt",
         ]
         
         params = list()
         for event_id, r in reco.items():
+            run_array_direction = r["run_array_direction"]
             for (tel_type, obs_id), moments in r["hillas"].items():
                 obs_params = (
                     event_id,
@@ -460,15 +473,15 @@ class Reconstructor:
                     moments.skewness,
                     moments.width.value,
                     moments.x.value,
-                    moments.y.value
+                    moments.y.value,
+                    run_array_direction[0],
+                    run_array_direction[1]
                 )
                 params.append(obs_params)
         df = DataFrame(params, columns=columns).set_index(columns[:3])
         df.to_csv(path, sep=',')
 
 """
-TODO: Plot prediction vs. real
-TODO: Plot by type
-TODO: Experiments with LST
+TODO: LST, MST and SST experiments with and without cuts
 TODO: RF review with paper
 """
