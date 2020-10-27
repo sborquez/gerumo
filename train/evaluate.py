@@ -594,7 +594,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
         plot_angular_resolution_comparison({model_name: results}, ylim=[0, 2], save_to=path.join(output_folder, "angular_resolution_comparable.png"))
         if save_all_unit_evaluations:
             all_results[model_name] = results
-            plot_angular_resolution_comparison(all_results, ylim=[0, 2], save_to=path.join(output_folder, "angular_resolution_comparason.png"))
+            plot_angular_resolution_comparison(all_results, ylim=[0, 2], save_to=path.join(output_folder, "angular_resolution_comparison.png"))
 
     if reconstruction_mode in ("energy reconstruction", "complete reconstruction"):
         print("Energy resolution")
@@ -603,7 +603,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
         plot_energy_resolution_comparison({model_name: results}, ylim=[0, 2], save_to=path.join(output_folder, "energy_resolution_comparable.png"))
         if save_all_unit_evaluations:
             all_results[model_name] = results
-            plot_energy_resolution_comparison(all_results, ylim=[0, 2], save_to=path.join(output_folder, "energy_resolution_comparason.png"))
+            plot_energy_resolution_comparison(all_results, ylim=[0, 2], save_to=path.join(output_folder, "energy_resolution_comparison.png"))
 
     if save_predictions:
         return results, predictions
