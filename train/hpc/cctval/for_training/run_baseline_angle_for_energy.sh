@@ -5,8 +5,9 @@
 #SBATCH -J gerumo_baseline_train
 #SBATCH --mail-user=patricio.campana@sansano.usm.cl
 #SBATCH --mail-type=ALL
-#SBATCH -o output_preprocessing_%j.log
-#SBATCH -e error_preprocessing_%j.log
+#SBATCH -o output_baseline_%j.log
+#SBATCH -e error_baseline_%j.log
+#SBATCH --time=20:00:00
 
 # ----------------MÃ³dulos-----------------------------
 cd $SLURM_SUBMIT_DIR
@@ -14,21 +15,23 @@ source /opt/software/anaconda3/2019.03/setup.sh
 # ----------------Comandos--------------------------
 
 source activate /user/c/campana/envs/gerumo
-echo "Running train_energy_regressor.sh"
+echo "Running run_baseline.sh"
 echo ""
 
 cd /user/c/campana/gerumo/train
+
 ML1PATH=/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/
+DATASET=$1/
+d=${ML1PATH}${DATASET}
+
+echo "Copying dataset from ${d} to ${TMPDIR}"
+cp ${d}*.h5 ${TMPDIR}
+cp ${d}train_events.csv ${TMPDIR}
+cp ${d}train_telescopes.csv ${TMPDIR}
 
 RESULTS=/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/HILLAS/
-DXY=${RESULTS}train/D$1$2/
-mkdir -p ${DXY}
+TRAIN_RESULTS=${RESULTS}energy/train/$1/
+mkdir -p ${TRAIN_RESULTS}
 
-for i in {00$1..$2} do
-    DATASET=${i}/
-    d=${ML1PATH}${DATASET}
-    RESULTS=${d}baseline/
-
-    echo "Training energy regressor ${DXY} for dataset ${d}"
-    python train_energy_regressor.py -e ${d}events.csv -t ${d}telescopes.csv -H ${RESULTS}hillas.csv -r ${RESULTS}results_hillas.csv -o ${DXY}energy_regressor.pickle
-done
+echo "Running angle baseline ${d}"
+python run_baseline.py -e ${TMPDIR}/events.csv -t ${TMPDIR}/telescopes.csv -c ${TRAIN_RESULTS}hillas.csv -o ${TRAIN_RESULTS}results.csv -f ${TMPDIR} # -r ${ML1PATH}001/energy_regressor.pickle
