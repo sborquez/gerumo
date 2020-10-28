@@ -22,7 +22,7 @@ from sklearn.metrics import r2_score
 __all__ = [
     'plot_model_training_history', 
     'plot_prediction', 
-        'show_points_2d',
+        'show_points_1d','show_points_2d',
         'show_pdf_2d',
         'show_pmf_1d', 'show_pmf_2d', 'show_pmf_3d', 
     'plot_model_validation_regressions',
@@ -115,7 +115,7 @@ def _label_formater(target, use_degrees=False, only_units=False):
         "az" : "[deg]" if use_degrees else "[rad]",
         "alt": "[deg]" if use_degrees else "[rad]",
         "mc_energy": "[TeV]",
-        "log10_mc_energy":  "$log_10$ [TeV]"
+        "log10_mc_energy":  "$log_{10}$ [TeV]"
     }
     if only_units:
         return units[target]
@@ -151,7 +151,7 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
     # point estimator
     if np.array_equal(prediction, prediction_point):
         if len(targets) == 1:
-            raise NotImplementedError
+            ax = show_points_1d(prediction, prediction_point, targets, target_domains, targets_values, ax)
         elif len(targets) == 2:
             ax = show_points_2d(prediction, prediction_point, targets, target_domains, targets_values, ax)
         elif len(targets) == 3:
@@ -188,7 +188,50 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
 POINT predictions
 ----------------
 """
+def show_points_1d(prediction, prediction_point, targets, target_domains, targets_values=None, axis=None):
+    """
+    Show predicted point in a 1d target domain.
+    """
+    # Create new figure
+    if axis is None:
+        plt.figure(figsize=(8,8))
+        axis = plt.gca()
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
 
+    # Draw probability map
+    x1=np.linspace(target_domains[0][0], prediction_point[0], 75)
+    y1=np.zeros_like(x1)
+    y1[-1] = 1
+    x2=np.linspace(prediction_point[0], target_domains[0][1], 75)[1:]
+    y2=np.zeros_like(x2) 
+    x = np.hstack((x1, x2))
+    y = np.hstack((y1, y2))
+    axis.plot(x, y, "-",color="blue", alpha=0.9)
+    def rainbow_fill(X,Y, axis, cmap=plt.get_cmap("jet")):
+        axis.plot(X,Y, lw=0)  # Plot so the axes scale correctly
+        dx = (X[1]-X[0])
+        N  = float(X.size)
+        y_max = Y.max()
+        for x,y in zip(X,Y):
+            polygon = plt.Rectangle((x,0),dx,y,color=cmap(y/y_max), alpha=0.9)
+            axis.add_patch(polygon)
+        rainbow_fill(x, y, axis)
+
+    # Add predicted point
+    axis.axvline(x=prediction_point[0], c="white", linestyle="--", linewidth=3,
+                 label=f"prediction=({prediction_point[0]:.4f})", alpha=0.9)
+    # Add target point
+    if targets_values is not None:
+      axis.axvline(x=targets_values[0], linestyle="--", c="black", linewidth=3,
+                   label=f"target=({targets_values[0]:.4f})", alpha=0.9)
+
+    # Style
+    axis.set_facecolor('lightgrey')
+    axis.set_xlim(target_domains[0])
+    axis.set_xlabel(_label_formater(targets[0]))
+    axis.legend()
+    return axis
 
 def show_points_2d(prediction, prediction_point, targets, target_domains, targets_values=None, axis=None):
     """
@@ -294,7 +337,7 @@ def show_pmf_1d(prediction, prediction_point, targets, target_domains,
 
     # Create new figure
     if axis is None:
-        #plt.figure(figsize=(8,8))
+        plt.figure(figsize=(8,8))
         axis = plt.gca()
     if isinstance(target_domains, dict):
         target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
