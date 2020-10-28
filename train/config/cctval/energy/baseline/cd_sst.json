@@ -1,7 +1,7 @@
 {
-    "model_name": "BMO_UNIT_MST",
-    "model_constructor": "bmo_unit",
-    "assembler_constructor": "bmo",
+    "model_name": "CD_UNIT_SST_CD15",
+    "model_constructor": "cnn_det_unit",
+    "assembler_constructor": "cnn_det",
     "model_extra_params": {
         "latent_variables": 128,
         "conv_kernel_sizes": null,
@@ -9,11 +9,10 @@
         "compress_kernel_size": 3,
         "dense_layer_units": [128, 128, 64],
         "activity_regularizer_l1": null,
-        "kernel_regularizer_l2": null,
-        "dropout_rate": 0.2
+        "kernel_regularizer_l2": null
     },
-    "telescope" : "MST_FlashCam",
-    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline",
+    "telescope" : "SST1M_DigiCam",
+    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/energy/baseline",
     
     "version": "ML1",
 
@@ -34,7 +33,7 @@
     "min_observations" : 1,
     "input_features" : ["x", "y"],
     
-    "targets" : ["alt", "az"],
+    "targets" : ["log10_mc_energy"],
     "target_mode" : "lineal",
     "target_shapes" : null,
     "target_domains" : {
@@ -46,28 +45,28 @@
     
     "preprocessing": {
         "CameraPipe" : {
-            "charge_scaler_value" : 62.652400970459,
-            "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
-            "tailcuts_clean_params": {"boundary_thresh": 6, "picture_thresh": 14}
+            "charge_scaler_value" : 39.223409118652356,
+            "peak_scaler_path" : "ML1_SST1M_DigiCam_peak_scaler",
+            "tailcuts_clean_params": {"boundary_thresh": 2, "picture_thresh": 4}
         },
         "TelescopeFeaturesPipe": {
             "array_scaler_path": "ML1_array-scaler"
         }
     },
 
-    "batch_size" : 64,
-    "epochs" : 200,
+    "batch_size" : 32,
+    "epochs" : 100,
     "loss" : "mae",
     "optimizer": {
         "learning_rate": 1e-3,
         "name": "adam",
         "extra_parameters": null
-        
+       
     },
-    "early_stop_patience" : 25,
+    "early_stop_patience" : 15,
 
     "save_checkpoints" : true,
-    "save_predictions" : false,
-    "save_regressions" : false,
+    "save_predictions" : true,
+    "save_regressions" : true,
     "save_loss": true
 }

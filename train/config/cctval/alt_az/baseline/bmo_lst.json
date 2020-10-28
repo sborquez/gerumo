@@ -55,19 +55,18 @@
         }
     },
 
-    "batch_size" : 32,
-    "epochs" : 100,
+    "batch_size" : 64,
+    "epochs" : 200,
     "loss" : "mae",
     "optimizer": {
         "learning_rate": 1e-3,
         "name": "adam",
         "extra_parameters": null
-       
     },
-    "early_stop_patience" : 15,
+    "early_stop_patience" : 25,
 
     "save_checkpoints" : true,
-    "save_predictions" : true,
-    "save_regressions" : true,
+    "save_predictions" : false,
+    "save_regressions" : false,
     "save_loss": true
 }

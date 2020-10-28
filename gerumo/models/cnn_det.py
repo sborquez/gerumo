@@ -45,7 +45,7 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
         keras.Model 
     """
     # Soport lineal only
-    if target_mode != 'lineal':
+    if target_mode not in ('lineal', 'linear'):
         raise ValueError(f"Invalid target_mode: '{target_mode}'" )
 
     # Image Encoding Block
