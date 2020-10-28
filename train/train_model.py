@@ -10,6 +10,7 @@ import os
 from os import path
 
 import uuid
+from datetime import datetime
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -428,8 +429,9 @@ if __name__ == "__main__":
     save_loss = config.get("save_loss", True)
 
     # Setup Experiment Folder
-    experiment_run = uuid.uuid4().hex[:6]
-    output_folder = path.join(output_folder, f"{model_name}_{experiment_run}")
+    experiment_date = datetime.now().strftime("%Y%m%d_%H%M%S")
+    experiment_run = uuid.uuid4().hex[:3]
+    output_folder = path.join(output_folder, f"{model_name}_{experiment_date}_{experiment_run}")
     os.makedirs(output_folder, exist_ok=False)
     print("Experiment Folder:", path.abspath(output_folder))
     experiment_config_file = path.join(output_folder, path.basename(config_file))
