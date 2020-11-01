@@ -143,10 +143,42 @@ class CNN_DET(ModelAssembler):
         self.target_resolutions = target_resolutions
     
     def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
+        """
+        Predict values for a batch of inputs `x_i_telescope` with the `telescope` model.
+            
+        Parameters
+        ----------
+        x_i_telescope : `np.ndarray`
+            Batch of inputs with shape [(batch_size, [shift], height, width, channels), (batch_size, telescope_features)]
+        telescope : `str`
+            Telesope 
+        verbose : `int`, optional
+            Log extra info. (default=0)
+        kwargs : `dict`, optinal
+            keras.model.predict() kwargs
+
+        Returns
+        -------
+            Iterable of size batch_size
+                A list or array with the model's predictions.
+        """
         model_telescope = self.models[telescope]
         return model_telescope.predict(x_i_telescope, verbose=verbose, **kwargs)
 
     def point_estimation(self, y_predictions):
+        """
+        Predict points for a batch of predictions `y_predictions` using `self.point_estimation_mode` method.
+            
+        Parameters
+        ----------
+        y_predictions : `np.ndarray` or `list`
+            Batch of predictions with len batch_size.
+
+        Returns
+        -------
+            Iterable of size batch_size
+                A list or array with the model's  point predictions.
+        """
         return y_predictions
 
     #expected value using the assembling of several telescopes    

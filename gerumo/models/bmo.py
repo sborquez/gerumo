@@ -23,6 +23,7 @@ from tensorflow.keras.regularizers import l1, l2
 from . import CUSTOM_OBJECTS
 from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
+#from .tools import split_model
 
 
 def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
@@ -30,7 +31,7 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
                 conv_kernel_sizes=[5, 3, 3], compress_filters=256, compress_kernel_size=3,
                 latent_variables=200, dense_layer_units=[128, 128, 64],
                 kernel_regularizer_l2=None, activity_regularizer_l1=None,
-                dropout_rate=0.1):
+                dropout_rate=0.5):
     """Build BMO Unit Model
     Parameters
     ==========
@@ -54,7 +55,7 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
     input_img = Input(name="image_input", shape=input_img_shape)
     if image_mode in ("simple-shift", "time-shift"):
         front = HexConvLayer(filters=32, kernel_size=(3,3), name="encoder_hex_conv_layer")(input_img)
-    elif image_mode in ("simple-shift", "time-shift"):
+    elif image_mode in ("simple", "time"):
         front = Conv2D(name="encoder_conv_layer_0",
                        filters=32, kernel_size=(3,3),
                        kernel_initializer="he_uniform",
@@ -113,15 +114,18 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
 
     ## dense blocks
     for dense_i, dense_units in enumerate(dense_layer_units):
+        if dropout_rate is not None and dropout_rate > 0:
+            dense_units = int(dense_units/dropout_rate)
         front = Dense(name=f"logic_dense_{dense_i}", units=dense_units, 
                       kernel_regularizer=l2_(kernel_regularizer_l2),
                       activity_regularizer=l1_(activity_regularizer_l1))(front)
         front = Activation(name=f"logic_ReLU_{dense_i}", activation="relu")(front)
         front = BatchNormalization(name=f"logic_batchnorm_{dense_i}")(front)
-        front = Dropout(name=f"bayesian_Dropout_{dense_i}", rate=dropout_rate)(front, training=True)
+        if dropout_rate is not None and dropout_rate > 0:
+            front = Dropout(name=f"bayesian_Dropout_{dense_i}", rate=dropout_rate)(front, training=True)
 
     # Output block
-    output = Dense(len(targets), activation="linear")(front)
+    output = Dense(len(targets), activation="linear", name="regression")(front)
     model_name = f"BMO_Unit_{telescope}"
     model = Model(name=model_name, inputs=[input_img, input_params], outputs=output)
     return model
@@ -153,11 +157,43 @@ class BMO(ModelAssembler):
         return y_predictions_kde, y_predictions_points
     
     def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
+        """
+        Predict values for a batch of inputs `x_i_telescope` with the `telescope` model.
+            
+        Parameters
+        ----------
+        x_i_telescope : `np.ndarray`
+            Batch of inputs with shape [(batch_size, [shift], height, width, channels), (batch_size, telescope_features)]
+        telescope : `str`
+            Telesope 
+        verbose : `int`, optional
+            Log extra info. (default=0)
+        kwargs : `dict`, optinal
+            keras.model.predict() kwargs
+
+        Returns
+        -------
+            Iterable of size batch_size
+                A list or array with the model's predictions.
+        """
         model_telescope = self.models[telescope]
         y_predictions, _ = BMO.bayesian_estimation(model_telescope, x_i_telescope, self.sample_size, verbose, **kwargs)
         return y_predictions
 
     def point_estimation(self, y_predictions):
+        """
+        Predict points for a batch of predictions `y_predictions` using `self.point_estimation_mode` method.
+            
+        Parameters
+        ----------
+        y_predictions : `np.ndarray` or `list`
+            Batch of predictions with len batch_size.
+
+        Returns
+        -------
+            Iterable of size batch_size
+                A list or array with the model's  point predictions.
+        """
         if self.point_estimation_mode == "expected_value":
             y_point_estimations = self.expected_value(y_predictions)
         return y_point_estimations

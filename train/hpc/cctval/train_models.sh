@@ -1,10 +1,10 @@
 #!/bin/bash
 #SBATCH -p gpuk
-#SBATCH -J bl_det_assembler
+#SBATCH -J bl_cd_energy
 #SBATCH --mail-user=sebastian.borquez@sansano.usm.cl
 #SBATCH --mail-type=ALL
-#SBATCH -o logs/output_baseline_det_assembler_%j.log
-#SBATCH -e logs/error_baseline_det_assembler_%j.log
+#SBATCH -o logs/output_baseline_det_energy_%j.log
+#SBATCH -e logs/error_baseline_det_energy_%j.log
 #SBATCH --gres=gpu:1
 #SBATCH --time=7-0
 
@@ -19,9 +19,13 @@ echo ""
 cd /user/s/sborquez/gerumo/train
 
 #TODO: add list of files
-configuration_files = 0 
+#configuration_files = 0 
 
+#config="/user/s/sborquez/gerumo/train/config/cctval/energy/baseline/cd_sst.json"
+#python train_model.py --config $config --quiet
 
-python train_model.py --config ./config/cctval/alt_az/tiny_tests_2/tiny_lst_mae_simple.json --quiet
-python train_model.py --config ./config/cctval/alt_az/tiny_tests_2/tiny_mst_mae_simple.json --quiet
-python train_model.py --config ./config/cctval/alt_az/tiny_tests_2/tiny_sst_mae_simple.json --quiet
+#config="/user/s/sborquez/gerumo/train/config/cctval/energy/baseline/cd_mst.json"
+#python train_model.py --config $config --quiet
+
+config="/user/s/sborquez/gerumo/train/config/cctval/energy/baseline/cd_lst.json"
+python train_model.py --config $config --quiet

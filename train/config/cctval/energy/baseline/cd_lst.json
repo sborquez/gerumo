@@ -63,7 +63,7 @@
         "extra_parameters": null
        
     },
-    "early_stop_patience" : 15,
+    "early_stop_patience" : 25,
 
     "save_checkpoints" : true,
     "save_predictions" : true,
