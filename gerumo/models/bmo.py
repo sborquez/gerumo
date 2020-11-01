@@ -23,7 +23,7 @@ from tensorflow.keras.regularizers import l1, l2
 from . import CUSTOM_OBJECTS
 from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
-#from .tools import split_model
+from .tools import split_model
 
 
 def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_shape,
@@ -132,6 +132,8 @@ def bmo_unit(telescope, image_mode, image_mask, input_img_shape, input_features_
 
 
 class BMO(ModelAssembler):
+    # static
+    cache_models = {}
     def __init__(self, sst1m_model_or_path=None, mst_model_or_path=None, lst_model_or_path=None,
                  targets=[], target_domains=tuple(), target_resolutions=tuple(), target_shapes=(),
                  assembler_mode="resample", point_estimation_mode="expected_value", custom_objects=CUSTOM_OBJECTS):
@@ -146,16 +148,77 @@ class BMO(ModelAssembler):
         self.assemble_mode = assembler_mode
         self.point_estimation_mode = point_estimation_mode
         self.target_resolutions = target_resolutions
-        self.sample_size = 250
+        self.sample_size = 500
         #self.expected_value_sample_size = 500
 
     @staticmethod
-    def bayesian_estimation(model, x_i_telescope, sample_size, verbose, **kwargs):
+    def bayesian_estimation_old(model, x_i_telescope, sample_size, verbose, **kwargs):
+        """
+        Predictive distributions and predicted samples for a batch of inputs
+        `x_i_telescope` with model.
+            
+        Parameters
+        ----------
+        x_i_telescope : `np.ndarray`
+            Batch of inputs with shape
+             [(batch_size, [shift], height, width, channels),
+             (batch_size, telescope_features)]
+        model : `tensorflow.keras.Model`
+            Telescope unit model.
+        verbose : `int`, optional
+            Log extra info. (default=0)
+        kwargs : `dict`, optinal
+            keras.model.predict() kwargs
+
+        Returns
+        -------
+            Tuple of list with length batch_size
+                Tuple of 2 lists with the model's predictive distributions (kde)
+                and samples (np.ndarray).
+        """
         y_predictions_points = np.array([model.predict(x_i_telescope, verbose=verbose, **kwargs) for _ in range(sample_size)])
         y_predictions_points = np.swapaxes(np.swapaxes(y_predictions_points, 0, 1), 1, 2)
         y_predictions_kde    = [st.gaussian_kde(y_predictions_point) for y_predictions_point in y_predictions_points]
         return y_predictions_kde, y_predictions_points
     
+    @staticmethod
+    def bayesian_estimation(model, x_i_telescope, sample_size, verbose, **kwargs):
+        """
+        Predictive distributions and predicted samples for a batch of inputs
+        `x_i_telescope` with model.
+            
+        Parameters
+        ----------
+        x_i_telescope : `np.ndarray`
+            Batch of inputs with shape
+             [(batch_size, [shift], height, width, channels),
+             (batch_size, telescope_features)]
+        model : `tensorflow.keras.Model`
+            Telescope unit model.
+        verbose : `int`, optional
+            Log extra info. (default=0)
+        kwargs : `dict`, optinal
+            keras.model.predict() kwargs
+
+        Returns
+        -------
+            Tuple of list with length batch_size
+                Tuple of 2 lists with the model's predictive distributions (kde)
+                and samples (np.ndarray).
+        """
+        # Save time for future predictions
+        if model not in BMO.cache_models:
+            encoder, regressor = split_model(model, split_layer_name="logic_dense_0")
+            BMO.cache_models[model] = {"deterministic": encoder,"stochastic": regressor}
+        # Get models
+        deterministic, stochastic = BMO.cache_models[model]["deterministic"], BMO.cache_models[model]["stochastic"]
+        # Get deterministic latent variables, this part of model is deterministic.
+        deterministic_output = deterministic(x_i_telescope)
+        # Use the deterministic part for sampling model's stochastic part.
+        y_predictions_points = [np.swapaxes(stochastic(np.tile(z_i, (sample_size, 1))), 0, 1) for z_i in deterministic_output]
+        y_predictions_kde    = [st.gaussian_kde(y_predictions_point) for y_predictions_point in y_predictions_points]
+        return y_predictions_kde, y_predictions_points
+
     def model_estimation(self, x_i_telescope, telescope, verbose=0, **kwargs):
         """
         Predict values for a batch of inputs `x_i_telescope` with the `telescope` model.
@@ -219,3 +282,4 @@ class BMO(ModelAssembler):
 
     def normalized_product(self, y_i):
         raise NotImplementedError
+ 
