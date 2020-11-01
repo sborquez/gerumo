@@ -11,7 +11,7 @@ __all__ = ['split_model']
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input
 
-def split_model(model, split_layer_name=None, split_layer_index=None, mc_dropout_layer_prefix=None):
+def split_model(model, split_layer_name=None, split_layer_index=None, mc_dropout_layer_prefix="bayesian_"):
     """
     Split a trained model for predictions.
 
