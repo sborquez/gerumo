@@ -161,8 +161,8 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
             return
         if cutflow.cut(CFO_CLOSE_EDGE, moments, camera.camera_name):
             return
-        if cutflow.cut(CFO_BAD_ELLIP, moments):
-            return
+    if cutflow.cut(CFO_BAD_ELLIP, moments):
+        return
 
     timing_c = timing_parameters(geometry, charge, peak, moments, mask)
     time_gradient = timing_c.slope.value if geometry.camera_name != 'ASTRICam' else moments.skewness
