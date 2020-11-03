@@ -25,10 +25,13 @@ if __name__ == "__main__":
         "sst": "SST1M_DigiCam",
         "mst": "MST_FlashCam",
         "lst": "LST_LSTCam",
-        "all": "All events"
+        "assembler": "EXP ASSEMBLER"
     }
     for file in glob(os.path.join(args.results, "**/results.csv"), recursive=True):
         r = pandas.read_csv(file)
         results[labels[os.path.basename(os.path.dirname(file))]] = r
     
     Reconstructor.plot_comparison(results, save_to=args.plot_path)
+
+# TODO: Unfiltered Hillas
+# TODO: New RF experiment

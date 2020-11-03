@@ -110,7 +110,8 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
                                boundary_threshold: float = None,
                                picture_threshold: float = None,
                                min_neighbours: float = None,
-                               plot: bool = False
+                               plot: bool = False,
+                               cut: bool = False
                                ):
     """
     :param charge: Charge image
@@ -129,10 +130,11 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
     camera = get_camera(cam_name)
     geometry = camera.geometry
     charge_biggest, camera_biggest = mask_from_biggest_island(charge, geometry, mask)
-    if cutflow.cut(CFO_MIN_PIXEL, charge_biggest):
-        return
-    if cutflow.cut(CFO_MIN_CHARGE, np.sum(charge_biggest)):
-        return
+    if cut:
+        if cutflow.cut(CFO_MIN_PIXEL, charge_biggest):
+            return
+        if cutflow.cut(CFO_MIN_CHARGE, np.sum(charge_biggest)):
+            return
     if cutflow.cut(CFO_NEGATIVE_CHARGE, charge_biggest):
         return
 
@@ -154,12 +156,13 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
         plt.show()
 
     moments = hillas_parameters(camera_biggest, charge_biggest)
-    if cutflow.cut(CFO_POOR_MOMENTS, moments):
-        return
-    if cutflow.cut(CFO_CLOSE_EDGE, moments, camera.camera_name):
-        return
-    if cutflow.cut(CFO_BAD_ELLIP, moments):
-        return
+    if cut:
+        if cutflow.cut(CFO_POOR_MOMENTS, moments):
+            return
+        if cutflow.cut(CFO_CLOSE_EDGE, moments, camera.camera_name):
+            return
+        if cutflow.cut(CFO_BAD_ELLIP, moments):
+            return
 
     timing_c = timing_parameters(geometry, charge, peak, moments, mask)
     time_gradient = timing_c.slope.value if geometry.camera_name != 'ASTRICam' else moments.skewness
