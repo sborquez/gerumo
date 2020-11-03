@@ -157,11 +157,13 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
 
     moments = hillas_parameters(camera_biggest, charge_biggest)
     if cut:
-        if cutflow.cut(CFO_POOR_MOMENTS, moments):
-            return
+        
         if cutflow.cut(CFO_CLOSE_EDGE, moments, camera.camera_name):
             return
-    if cutflow.cut(CFO_BAD_ELLIP, moments):
+        if cutflow.cut(CFO_BAD_ELLIP, moments):
+            return
+
+    if cutflow.cut(CFO_POOR_MOMENTS, moments):
         return
 
     timing_c = timing_parameters(geometry, charge, peak, moments, mask)
