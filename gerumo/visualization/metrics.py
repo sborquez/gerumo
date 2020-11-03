@@ -20,7 +20,7 @@ from sklearn.metrics import r2_score
 
 
 __all__ = [
-    'plot_model_training_history', 
+    'plot_model_training_history',
     'plot_prediction', 
         'show_points_1d','show_points_2d',
         'show_pdf_2d',
@@ -97,7 +97,6 @@ def plot_model_validation_regressions(evaluation_results, targets, save_to=None)
         # Show error distribution
         ax_d = axs[i][2] if n_targets > 1 else axs[2]
         show_residual_error_distribution(prediction_points, targets_points, score, target, vertical=True, axis=ax_d)
-
     # Save or Show
     if save_to is not None:
         fig.savefig(save_to)
@@ -105,7 +104,7 @@ def plot_model_validation_regressions(evaluation_results, targets, save_to=None)
     else:
         plt.show()
 
-
+ 
 """
 Predictions
 ----------
@@ -130,7 +129,6 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
     Display the assembled prediction of a event, the probability and the predicted point.
     If targets_values is not None, the target point is included in the figure.
     """
-    #TODO: change function name
 
     # Create new Figure
     plt.figure(figsize=(8,8))
@@ -158,7 +156,7 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
             raise NotImplementedError
     # probability density function estimator
     elif np.any(np.array(target_resolutions) == np.inf) :
-        # Show prediction according to targets dim 
+        # Show prediction according to targets dim
         if len(targets) == 1:
             raise NotImplementedError
         elif len(targets) == 2:
@@ -167,7 +165,7 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
             raise NotImplementedError
     # probability mass function estimator
     else:
-        # Show prediction according to targets dim 
+        # Show prediction according to targets dim
         if len(targets) == 1:
             ax = show_pmf_1d(prediction, prediction_point, targets, target_domains, 
                         target_resolutions, targets_values, ax)
@@ -684,23 +682,18 @@ def plot_error_and_energy_resolution(evaluation_results, bins=80, include_requir
     """
     Display absolute energy error and energy resolution for a model's predictions.
     """
-
     predicted_mc_energy = evaluation_results["pred_log10_mc_energy"].apply(lambda log_e: np.power(log_e, 10))
     true_mc_energy = evaluation_results["true_mc_energy"]
-
     # Create Figure and axis
     fig, axis = plt.subplots(1, 2, figsize=(14, 6))
-    
     # Style
     plt.suptitle("Energy Reconstruction")
-
     # Generate two plots
     show_absolute_error_energy(predicted_mc_energy, true_mc_energy, bins=bins, 
                                percentile_plot_range=percentile_plot_range, ax=axis[0])
     show_energy_resolution(predicted_mc_energy, true_mc_energy, percentile, confidence_level,
                            bias_correction, label, include_requirement, xlim, ylim,
                            ax=axis[1])
-    
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
@@ -714,25 +707,23 @@ def plot_energy_resolution_comparison(evaluation_results_dict, include_requireme
     """
     Display comparison of the energy resolution for different models.
     """
-
     # Create Figure and axis
     fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
-
     plt.title("Energy Resolution Comparison")
     for label, results in evaluation_results_dict.items():
-        predicted_mc_energy = np.power(results["predictions"].flatten(), 10)
-        true_mc_energy = results["true_energy"].flatten()
+        # Prediction values
+        predicted_log10_mc_energy = results["pred_log10_mc_energy"]
+        predicted_mc_energy = np.power(predicted_log10_mc_energy, 10)
+        true_mc_energy = results["true_mc_energy"]
         show_energy_resolution(predicted_mc_energy, true_mc_energy, 
                            percentile, confidence_level, bias_correction,
                            label, [], xlim, ylim, ax)
-        
     try:
         for include in include_requirement:
             ax = ctaplot.plot_energy_resolution_cta_requirement(include, ax)
     except:
         print("Unable to display cta requirements.")
-
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
@@ -746,12 +737,10 @@ def show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true
     """
     Show absolute angular error for a model's predictions.
     """
-
     # Create new figure
     if ax is None:
         plt.figure(figsize=(6,6))
         ax = plt.gca()
-
     ax = ctaplot.plot_angular_resolution_per_energy(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
                                 percentile, confidence_level, bias_correction, ax,
                                 marker='o', label=label)
@@ -760,7 +749,6 @@ def show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true
     if ylim is not None:
         ax.set_ylim(ylim)
     ax.legend()
-
     try:
         for include in include_requirement:
             ax = ctaplot.plot_energy_resolution_cta_requirement(include, ax)
@@ -773,7 +761,6 @@ def show_absolute_error_angular(predicted_alt, predicted_az, true_alt, true_az, 
     """
     Show the absolute error distribution of a method.
     """
-
     # Create new figure
     if ax is None:
         plt.figure(figsize=(6,6))
@@ -790,29 +777,23 @@ def plot_error_and_angular_resolution(evaluation_results, bins=80, include_requi
     """
     Display absolute angular error and angular resolution for a model's predictions.
     """
-    
+    # Predictted values
     predicted_alt = evaluation_results["pred_alt"]
     predicted_az = evaluation_results["pred_az"]
-
+    # True values
     true_alt = evaluation_results["true_alt"]
     true_az = evaluation_results["true_az"]
-
     true_mc_energy = evaluation_results["true_mc_energy"]
-
     # Create Figure and axis
     fig, axis = plt.subplots(1, 2, figsize=(14, 6))
-    
     # Style
     plt.suptitle("Angular Reconstruction")
-
     # Generate two plots
     show_absolute_error_angular(predicted_alt, predicted_az, true_alt, true_az, bias_correction, axis[0], bins, 
                                percentile_plot_range)
-    
     show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
                             percentile, confidence_level, bias_correction, label, include_requirement, xlim, ylim,
                            ax=axis[1])
-    
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)
@@ -820,36 +801,33 @@ def plot_error_and_angular_resolution(evaluation_results, bins=80, include_requi
     else:
         plt.show()
 
+
 def plot_angular_resolution_comparison(evaluation_results_dict, include_requirement=[], 
                                      percentile=68.27, confidence_level=0.95, bias_correction=False,
                                      percentile_plot_range=80, xlim=None, ylim=None, save_to=None):
     """
     Display comparison of the angular resolution for different models.
     """
-    
     # Create Figure and axis
     fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
-
     plt.title("Angular Resolution Comparison")
     for label, results in evaluation_results_dict.items():
+        # Prediction values
         predicted_alt = results["pred_alt"]
         predicted_az = results["pred_az"]
-
+        # True values
         true_alt = results["true_alt"]
         true_az = results["true_az"]
-        
         true_mc_energy = results["true_mc_energy"]
         show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
                            percentile, confidence_level, bias_correction,
                            label, [], xlim, ylim, ax)
-        
     try:
         for include in include_requirement:
             ax = ctaplot.plot_angular_resolution_cta_requirement(include, ax)
     except:
         print("Unable to display cta requirements.")
-
     # Save or Show
     if save_to is not None:
         plt.savefig(save_to)

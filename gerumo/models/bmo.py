@@ -216,6 +216,7 @@ class BMO(ModelAssembler):
         deterministic_output = deterministic(x_i_telescope)
         # Use the deterministic part for sampling model's stochastic part.
         y_predictions_points = [np.swapaxes(stochastic(np.tile(z_i, (sample_size, 1))), 0, 1) for z_i in deterministic_output]
+        # y_predictions_points shape: (input batch_size, dimension, samples batch_size)
         y_predictions_kde    = [st.gaussian_kde(y_predictions_point) for y_predictions_point in y_predictions_points]
         return y_predictions_kde, y_predictions_points
 
