@@ -156,8 +156,7 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
         plt.show()
 
     moments = hillas_parameters(camera_biggest, charge_biggest)
-    if cut:
-        
+    if cut:        
         if cutflow.cut(CFO_CLOSE_EDGE, moments, camera.camera_name):
             return
         if cutflow.cut(CFO_BAD_ELLIP, moments):
@@ -490,3 +489,5 @@ class Reconstructor:
 TODO: LST, MST and SST experiments with and without cuts
 TODO: RF review with paper
 """
+
+# Tight, Full, Loose
