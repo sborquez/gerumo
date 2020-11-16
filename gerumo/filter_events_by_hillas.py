@@ -20,20 +20,18 @@ def hillas_filter(src_events_csv, src_telescopes_csv, hillas_csv, dst_events_csv
     telescopes_filtered.to_csv(dst_telescopes_csv, sep=";", index=False)
 
 # source dataset (Boris)
-src_events_csv = "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/events.csv"
-src_telescopes_csv = "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/telescopes.csv"
+src_events_csv = "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/full/events.csv"
+src_telescopes_csv = "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/full/telescopes.csv"
+# filter
+hillas_base = "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/HILLAS/nocuts/"
+# dest
+dst_base    = "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/loose" 
 
-# for tel in ["lst", "mst", "sst"]:
-#     # filtered datasets (Paths)
-#     hillas_csv = f"/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/HILLAS/{tel}/hillas.csv"
-#     # dst dataset 
-#     dst_events_csv = f"/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/hillas_{tel}_events.csv" 
-#     dst_telescopes_csv = f"/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/hillas_{tel}_telescopes.csv" 
-#     hillas_filter(src_events_csv, src_telescopes_csv, hillas_csv, dst_events_csv, dst_telescopes_csv)
-
-# filtered datasets (Paths)
-hillas_csv = f"/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/HILLAS/all/hillas.csv"
-# dst dataset 
-dst_events_csv = f"/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/hillas_all_events.csv" 
-dst_telescopes_csv = f"/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/hillas_all_telescopes.csv" 
-hillas_filter(src_events_csv, src_telescopes_csv, hillas_csv, dst_events_csv, dst_telescopes_csv)
+# # filtered datasets (Paths)
+for tel in ["all", "sst", "mst","lst"]:
+    # filtered datasets (Paths)
+    hillas_csv = f"{hillas_base}/{tel}/hillas.csv"
+    # dst dataset 
+    dst_events_csv = f"{dst_base}/{tel}_events.csv" 
+    dst_telescopes_csv = f"{dst_base}/{tel}_telescopes.csv" 
+    hillas_filter(src_events_csv, src_telescopes_csv, hillas_csv, dst_events_csv, dst_telescopes_csv)
