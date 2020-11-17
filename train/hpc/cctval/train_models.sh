@@ -16,16 +16,16 @@ source /opt/software/anaconda3/2019.03/setup.sh
 source activate /user/s/sborquez/envs/gerumo
 echo "Running train_models.sh"
 echo ""
-cd /user/s/sborquez/gerumo/train
+cd /data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train
 
 #TODO: add list of files
 #configuration_files = 0 
 
-#config="/user/s/sborquez/gerumo/train/config/cctval/energy/baseline/cd_sst.json"
+#config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/energy/baseline/cd_sst.json"
 #python train_model.py --config $config --quiet
 
-#config="/user/s/sborquez/gerumo/train/config/cctval/energy/baseline/cd_mst.json"
+#config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/energy/baseline/cd_mst.json"
 #python train_model.py --config $config --quiet
 
-config="/user/s/sborquez/gerumo/train/config/cctval/energy/baseline/cd_lst.json"
+config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/energy/baseline/cd_lst.json"
 python train_model.py --config $config --quiet

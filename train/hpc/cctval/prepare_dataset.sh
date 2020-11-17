@@ -13,11 +13,11 @@ cd $SLURM_SUBMIT_DIR
 source /opt/software/anaconda3/2019.03/setup.sh
 # ----------------Comandos--------------------------
 
-source activate /user/s/sborquez/envs/gerumo
+source activate /data/atlas/dbetalhc/cta-test/gerumo/env/gerumo
 echo "Running prepare_dataset.sh"
 echo ""
 
-cd /user/s/sborquez/gerumo/train
+cd /data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train
 
 # Train small
 ## ls -d  ~/data/train/* | head -n 30

@@ -13,7 +13,7 @@ cd $SLURM_SUBMIT_DIR
 source /opt/software/anaconda3/2019.03/setup.sh
 # ----------------Comandos--------------------------
 
-source activate /user/s/sborquez/envs/gerumo
+source activate /data/atlas/dbetalhc/cta-test/gerumo/env/gerumo
 echo "Running train_model_sst.sh"
 echo ""
 
@@ -28,6 +28,6 @@ experiment="/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/UMONNA_U
 # bmo
 #experiment="/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/BMO_UNIT_LST_690b25"
 
-cd /user/s/sborquez/gerumo/train
+cd /data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train
 python evaluate.py --results --samples --experiment "$experiment"
 

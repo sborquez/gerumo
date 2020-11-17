@@ -74,6 +74,20 @@ def plot_model_training_history(history, training_time, model_name, epochs, save
 def plot_model_validation_regressions(evaluation_results, targets, save_to=None):
     """
     Display regression metrics for a model's predictions.
+    
+    Example:
+    ========
+    ```
+    results = {
+      "pred_alt": [1, 2],
+      "true_alt": [1, 2],
+      "pred_az":  [1, 2],
+      "true_az":  [1, 2],
+    }
+    targets = ["alt", "az"]
+    evaluation_results = pd.DataFrame(results)
+    plot_model_validation_regressions(evaluation_results, targets)
+    ```
     """
     n_targets = len(targets)
     # Create Figure and axis
