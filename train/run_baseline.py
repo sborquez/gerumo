@@ -19,6 +19,7 @@ if __name__ == "__main__":
     ap.add_argument("-c", "--hillas_csv", type=str, default=None)
     ap.add_argument("-r", "--energy_regressor", type=str, default=None)
     ap.add_argument("-f", "--replace_folder", type=str, default=None)
+    ap.add_argument("-l", "--loose", action="store_true")
     args = ap.parse_args()
 
     regressor = None

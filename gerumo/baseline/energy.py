@@ -45,7 +45,7 @@ class EnergyModel:
                 "min_samples_split": [2, 6]
             }
 
-        grouped = dataset[["type", "log10_mc_energy"] + self._features].groupby("type")
+        grouped = dataset[["type", "mc_energy"] + self._features].groupby("type")
         for t, group in grouped:
             tel_type = t.split("_")[1]
             if tel_type not in self._models:
@@ -61,7 +61,7 @@ class EnergyModel:
             self._models[tel_type].fit(x, y)
 
     def predict_dataset(self, dataset):
-        grouped = dataset[["event_unique_id", "observation_indice", "type", "intensity", "log10_mc_energy"] + self._features].groupby("event_unique_id")
+        grouped = dataset[["event_unique_id", "observation_indice", "type", "intensity", "mc_energy"] + self._features].groupby("event_unique_id")
         
         results = {}
         for event_id, group in grouped:
@@ -76,7 +76,7 @@ class EnergyModel:
                 count += 1
 
             pred_energy = np.sum(weights * energies) / np.sum(weights)
-            mc_energy = group["log10_mc_energy"].unique()[0]
+            mc_energy = group["mc_energy"].unique()[0]
 
             results[event_id] = {
                 "pred": pred_energy,
@@ -94,7 +94,7 @@ class EnergyModel:
         for idx, (moments, position, t) in enumerate(data.values()):
             x, y = position
             impact = np.sqrt((reconstruction.core_x.value - x) ** 2 + (reconstruction.core_y.value - y) ** 2)
-            
+
             X = np.array([[
                 np.log10(moments.intensity),
                 np.log10(impact),
@@ -105,7 +105,7 @@ class EnergyModel:
                 run_array_direction[1]
             ]])
             weights[idx] = moments.intensity
-            
+ 
             tel_type = t.split("_")[1]
             energies[idx] = self._models[tel_type].predict(X)
 

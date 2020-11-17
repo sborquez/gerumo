@@ -111,7 +111,7 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
                                picture_threshold: float = None,
                                min_neighbours: float = None,
                                plot: bool = False,
-                               cut: bool = False
+                               cut: bool = True
                                ):
     """
     :param charge: Charge image
@@ -122,6 +122,7 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
     :param picture_threshold: (Optional) Cleaning parameter: picture threshold
     :param min_neighbours: (Optional) Cleaning parameter: minimum neighbours
     :param plot: If True, for each observation a plot will be shown (Default: False)
+    :param cut: If true, tight else loose
     :return: hillas containers, leakage container, number of islands, island IDs, timing container, timing gradient
     """
     charge_biggest, mask = clean_charge(charge, cam_name,
@@ -243,7 +244,7 @@ class Reconstructor:
         return values
 
     def reconstruct_event(self, event_id: str, event_cutflow: CutFlow, obs_cutflow: CutFlow,
-                          energy_regressor = None) -> Union[None, dict, Tuple[dict, dict]]:
+                          energy_regressor = None, loose=False) -> Union[None, dict, Tuple[dict, dict]]:
 
         run_array_direction = None
         n_valid_tels = 0
@@ -257,7 +258,7 @@ class Reconstructor:
             _, camera_name = split_tel_type(tel_type)
 
             charge, peak = load_camera(source, folder, tel_type, obs_id, version=self.version)
-            params = get_observation_parameters(charge, peak, camera_name, obs_cutflow)
+            params = get_observation_parameters(charge, peak, camera_name, obs_cutflow, cut=not loose)
             if params is None:
                 continue
             moments, _, _, time_gradient = params
@@ -325,6 +326,7 @@ class Reconstructor:
                         nominal_distance_bounds: Tuple[float, float] = None,
                         save_to: str = None,
                         save_hillas: str = None,
+                        loose: bool = False
                         ) -> dict:
         event_ids = self.event_uids
         if max_events is not None and max_events < len(event_ids):
@@ -337,7 +339,7 @@ class Reconstructor:
         reconstructions = {}
         for event_id in tqdm(event_ids):
             reco = self.reconstruct_event(event_id, event_cutflow, obs_cutflow,
-                                          energy_regressor=energy_regressor)
+                                          energy_regressor=energy_regressor, loose=loose)
             if reco is None:
                 continue
             reconstructions[event_id] = reco
@@ -404,9 +406,10 @@ class Reconstructor:
     @staticmethod
     def plot_comparison(results: Dict[str, DataFrame], save_to: str):
         import os
-        from gerumo import plot_error_and_angular_resolution, plot_angular_resolution_comparison
+        from gerumo import plot_error_and_angular_resolution, plot_angular_resolution_comparison, plot_energy_resolution_comparison
 
         models = dict()
+        energy_models = dict()
         for label, result in results.items():
             targets = np.transpose(np.vstack([result['alt'], result['az']]))
             predictions = np.transpose(np.vstack([result['pred_alt'], result['pred_az']]))
@@ -416,8 +419,15 @@ class Reconstructor:
                 "predictions": predictions,
                 "true_energy": mc_energy
             }
+            energy = result['energy'].values
+            energy_models[label] = {
+                "predictions": np.log10(result['energy'].values),
+                "true_energy": mc_energy
+            }
+
 
         plot_angular_resolution_comparison(models, ylim=[0, 2], save_to=os.path.join(save_to, "angular_resolution_comparable.png"))
+        plot_energy_resolution_comparison(energy_models, ylim=[0, 2], save_to=os.path.join(save_to, "energy_resolution_comparable.png"))
 
 
     @staticmethod

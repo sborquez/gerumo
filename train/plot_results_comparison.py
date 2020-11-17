@@ -25,7 +25,8 @@ if __name__ == "__main__":
         "sst": "SST1M_DigiCam",
         "mst": "MST_FlashCam",
         "lst": "LST_LSTCam",
-        "assembler": "EXP ASSEMBLER"
+        "assembler": "EXP ASSEMBLER",
+        "all": "EXP ASSEMBLER"
     }
     for file in glob(os.path.join(args.results, "**/results.csv"), recursive=True):
         r = pandas.read_csv(file)
