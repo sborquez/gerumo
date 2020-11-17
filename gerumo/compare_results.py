@@ -1,7 +1,7 @@
 from gerumo import *
 import pandas as pd
 
-
+#todo mode to viz
 def compare_results(model_names, csv_files, mode="angular", ylim=(0, 2), xlim=None, save_to=None):
     renamer = {
         'az' : 'true_az',

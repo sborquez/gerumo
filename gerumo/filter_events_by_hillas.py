@@ -1,6 +1,5 @@
 import pandas as pd
-
-
+#TODO: move to data.utils
 def hillas_filter(src_events_csv, src_telescopes_csv, hillas_csv, dst_events_csv, dst_telescopes_csv):
     # Load
     events = pd.read_csv(src_events_csv, delimiter=";")
