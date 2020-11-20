@@ -139,9 +139,7 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
     if cutflow.cut(CFO_NEGATIVE_CHARGE, charge_biggest):
         return
 
-    leakage_c = None
-    if np.sum(charge_biggest[mask]) != 0.0:
-        leakage_c = leakage(geometry, charge_biggest, mask)
+    leakage_c = leakage(geometry, charge_biggest, mask)
 
     if plot:
         _, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
