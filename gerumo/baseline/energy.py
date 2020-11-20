@@ -21,7 +21,21 @@ from gerumo.baseline.cutflow import generate_observation_cutflow
 class EnergyModel:
     def __init__(self):
         self._models = dict()
-        self._features = ["log10_intensity", "log10_impact", "width", "length", "h_max", "telescope_az", "telescope_alt"]
+        self._features = [
+            "log10_intensity",
+            "width",
+            "length",
+            "x", "y", # "log10_impact"
+            "psi",
+            "phi",
+            "wl", # width/length
+            "skewness",
+            "kurtosis",
+            "r",
+            "time_gradient" # timing_c.slope.value if geometry.camera_name != 'ASTRICam' else hillas_c.skewnes
+            "leakage_intensity_width_2", # leakage_c.intensity_width_2
+            "n_islands"
+        ]
 
     @staticmethod
     def prepare_dataset(events_csv: str, telescopes_csv: str, results_csv: str, hillas_csv: str, split: float = None):
@@ -45,19 +59,33 @@ class EnergyModel:
                 "min_samples_split": [2, 6]
             }
 
-        grouped = dataset[["type", "mc_energy"] + self._features].groupby("type")
+        random_forest_classifier_args = {
+            "max_depth": 100,
+            "min_samples_leaf": 2,
+            "n_jobs": 4,
+            "n_estimators": 100,
+            "criterion": "gini",
+            "min_samples_split": 2,
+            "min_weight_fraction_leaf": 0.0,
+            "max_features": "auto",
+            "max_leaf_nodes": None,
+            "min_impurity_decrease": 0.0,
+            "min_impurity_split": None,
+            "bootstrap": True,
+            "oob_score": False,
+            "random_state": 42,
+            "verbose": 0.0,
+            "warm_start": False,
+            "class_weight": None
+        }
+
+        grouped = dataset[["type", "log10_mc_energy"] + self._features].groupby("type")
         for t, group in grouped:
             tel_type = t.split("_")[1]
             if tel_type not in self._models:
-                self._models[tel_type] = GridSearchCV(
-                    estimator=RandomForestRegressor(max_depth=None),
-                    param_grid=param_grid, 
-                    cv=cv, 
-                    scoring=scoring,
-                    verbose=2
-                )
+                self._models[tel_type] = RandomForestRegressor(**random_forest_classifier_args)
             x = group[self._features].values
-            y = group["mc_energy"].values
+            y = group["log10_mc_energy"].values
             self._models[tel_type].fit(x, y)
 
     def predict_dataset(self, dataset):
@@ -76,7 +104,7 @@ class EnergyModel:
                 count += 1
 
             pred_energy = np.sum(weights * energies) / np.sum(weights)
-            mc_energy = group["mc_energy"].unique()[0]
+            mc_energy = group["log10_mc_energy"].unique()[0]
 
             results[event_id] = {
                 "pred": pred_energy,
@@ -85,7 +113,7 @@ class EnergyModel:
 
         return results
 
-    def predict_event(self, positions, types, hillas_containers, reconstruction, run_array_direction):
+    def predict_event(self, positions, types, hillas_containers, reconstruction, time_gradient, leakage_c, n_islands):
         n_obs = len(hillas_containers)
         energies = np.zeros(n_obs)
         weights = np.zeros(n_obs)
@@ -93,16 +121,21 @@ class EnergyModel:
         data = {tel_id: (hillas_containers[tel_id], positions[tel_id], types[tel_id]) for tel_id in positions}
         for idx, (moments, position, t) in enumerate(data.values()):
             x, y = position
-            impact = np.sqrt((reconstruction.core_x.value - x) ** 2 + (reconstruction.core_y.value - y) ** 2)
 
             X = np.array([[
                 np.log10(moments.intensity),
-                np.log10(impact),
                 moments.width.value,
                 moments.length.value,
-                reconstruction.h_max.value,
-                run_array_direction[0],
-                run_array_direction[1]
+                x, y,
+                moments.psi,
+                moments.phi,
+                moments.width.value / moments.length.value,
+                moments.skewness,
+                moments.kurtosis,
+                moments.r,
+                time_gradient,
+                leakage_c.intensity_width_2,
+                n_islands
             ]])
             weights[idx] = moments.intensity
  

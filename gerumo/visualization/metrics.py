@@ -538,7 +538,7 @@ def plot_energy_resolution_comparison(evaluation_results_dict, include_requireme
 
     plt.title("Energy Resolution Comparison")
     for label, results in evaluation_results_dict.items():
-        predicted_mc_energy = np.power(results["predictions"].flatten(), 10)
+        predicted_mc_energy = np.power(10, results["predictions"].flatten())
         true_mc_energy = results["true_energy"].flatten()
         show_energy_resolution(predicted_mc_energy, true_mc_energy, 
                            percentile, confidence_level, bias_correction,

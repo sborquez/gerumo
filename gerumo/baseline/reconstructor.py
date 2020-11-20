@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 from astropy.coordinates import SkyCoord
 
 from ctapipe.image import hillas_parameters, timing_parameters, \
-    tailcuts_clean, number_of_islands, largest_island
+    tailcuts_clean, number_of_islands, largest_island, leakage
 from ctapipe.instrument import CameraGeometry
 from ctapipe.reco import HillasReconstructor
 from ctapipe.utils import CutFlow
@@ -71,7 +71,7 @@ def mask_from_biggest_island(charge: np.array, geometry: CameraGeometry, mask):
     else:
         camera_biggest = geometry
         charge_biggest = charge
-    return charge_biggest, camera_biggest
+    return charge_biggest, camera_biggest, n_islands
 
 
 def clean_charge(charge: np.array, cam_name: str,
@@ -130,7 +130,7 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
 
     camera = get_camera(cam_name)
     geometry = camera.geometry
-    charge_biggest, camera_biggest = mask_from_biggest_island(charge, geometry, mask)
+    charge_biggest, camera_biggest, n_islands = mask_from_biggest_island(charge, geometry, mask)
     if cut:
         if cutflow.cut(CFO_MIN_PIXEL, charge_biggest):
             return
@@ -139,16 +139,9 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
     if cutflow.cut(CFO_NEGATIVE_CHARGE, charge_biggest):
         return
 
-    leakages = {}
-    """
+    leakage_c = None
     if np.sum(charge_biggest[mask]) != 0.0:
-        leakage_biggest = leakage(geometry, charge_biggest, mask)
-        leakages["leak1_reco"] = leakage_biggest["leakage1_intensity"]
-        leakages["leak2_reco"] = leakage_biggest["leakage2_intensity"]
-    else:
-        leakages["leak1_reco"] = 0.0
-        leakages["leak2_reco"] = 0.0
-    """
+        leakage_c = leakage(geometry, charge_biggest, mask)
 
     if plot:
         _, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
@@ -168,7 +161,7 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
 
     timing_c = timing_parameters(geometry, charge, peak, moments, mask)
     time_gradient = timing_c.slope.value if geometry.camera_name != 'ASTRICam' else moments.skewness
-    return moments, leakages, timing_c, time_gradient
+    return moments, leakage_c, timing_c, time_gradient, n_islands
 
 
 class Reconstructor:
@@ -252,7 +245,9 @@ class Reconstructor:
         hillas_containers = dict()
         hillas_by_obs = dict()
         time_gradients = dict()
+        leakages = dict()
         types = dict()
+        n_islands = dict()
         positions = dict()
         for obs_id, tel_id, tel_type, folder, source, x, y in self.cameras_by_event[event_id]:
             _, camera_name = split_tel_type(tel_type)
@@ -261,11 +256,14 @@ class Reconstructor:
             params = get_observation_parameters(charge, peak, camera_name, obs_cutflow, cut=not loose)
             if params is None:
                 continue
-            moments, _, _, time_gradient = params
+            moments, leakage_c, _, time_gradient, obs_n_islands = params
             hillas_containers[tel_id] = moments
+            assert (tel_type, obs_id) not in hillas_by_obs.keys()
             hillas_by_obs[(tel_type, obs_id)] = moments
             positions[tel_id] = (x, y)
-            time_gradients[obs_id] = time_gradient
+            time_gradients[(tel_type, obs_id)] = time_gradient
+            leakages[(tel_type, obs_id)] = leakage_c
+            n_islands[(tel_type, obs_id)] = obs_n_islands
             types[tel_id] = tel_type
 
             hdf5_file = self.get_event_hdf5_file(event_id, tel_id)
@@ -290,7 +288,7 @@ class Reconstructor:
         if energy_regressor is None:
             energy = None
         else:
-            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, run_array_direction)
+            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, time_gradient, leakage_c, n_islands)
 
         return dict(
             pred_az=2 * np.pi * u.rad + reco.az,
@@ -304,7 +302,10 @@ class Reconstructor:
             core_y=mc[event_id]["core_y"],
             mc_energy=mc[event_id]["mc_energy"],
             energy=energy,
+            time_gradients=time_gradients,
+            leakages=leakages,
             event_id=event_id,
+            n_islands=n_islands,
             hillas=hillas_by_obs,
             run_array_direction=run_array_direction
         )
@@ -466,14 +467,21 @@ class Reconstructor:
             "width",
             "x",
             "y",
+            "wl",
+            "time_gradient",
+            "leakage_intensity_width_2",
+            "n_islands",
             "telescope_az",
-            "telescope_alt",
+            "telescope_alt"
         ]
         
         params = list()
         for event_id, r in reco.items():
             run_array_direction = r["run_array_direction"]
             for (tel_type, obs_id), moments in r["hillas"].items():
+                time_gradient = r["time_gradients"][(tel_type, obs_id)]
+                leakage_c = r["leakages"][(tel_type, obs_id)]
+                n_islands = r["n_islands"][(tel_type, obs_id)]
                 obs_params = (
                     event_id,
                     obs_id,
@@ -488,6 +496,10 @@ class Reconstructor:
                     moments.width.value,
                     moments.x.value,
                     moments.y.value,
+                    moments.width.value / moments.length.value,
+                    time_gradient,
+                    leakage_c.intensity_width_2,
+                    n_islands,
                     run_array_direction[0],
                     run_array_direction[1]
                 )
