@@ -255,6 +255,7 @@ class Reconstructor:
             if params is None:
                 continue
             moments, leakage_c, _, time_gradient, obs_n_islands = params
+            assert tel_id not in hillas_containers
             hillas_containers[tel_id] = moments
             assert (tel_type, obs_id) not in hillas_by_obs.keys()
             hillas_by_obs[(tel_type, obs_id)] = moments
@@ -286,7 +287,7 @@ class Reconstructor:
         if energy_regressor is None:
             energy = None
         else:
-            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, time_gradient, leakage_c, n_islands)
+            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, time_gradients, leakage_c, n_islands)
 
         return dict(
             pred_az=2 * np.pi * u.rad + reco.az,
