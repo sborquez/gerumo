@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 from gerumo.data.io import load_dataset
+from gerumo.data.preprocessing import aggregate_dataset
 
 def load_hillas_dataset(events_csv: str, telescopes_csv: str, results_csv: str, hillas_csv: str) -> pd.DataFrame:
     """
@@ -29,6 +30,7 @@ def load_hillas_dataset(events_csv: str, telescopes_csv: str, results_csv: str, 
     results = results.drop(labels=["core_x", "core_y", "alt", "az", "mc_energy"], axis="columns")
 
     dataset = load_dataset(events_csv, telescopes_csv)
+    dataset = aggregate_dataset(dataset, False, True, False)
 
     hillas.columns = [f"hillas_{it}" if it in ["x", "y"] else it for it in hillas.columns]
 
