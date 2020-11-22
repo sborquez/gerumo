@@ -32,7 +32,7 @@ class EnergyModel:
             "skewness",
             "kurtosis",
             "r",
-            "time_gradient" # timing_c.slope.value if geometry.camera_name != 'ASTRICam' else hillas_c.skewnes
+            "time_gradient", # timing_c.slope.value if geometry.camera_name != 'ASTRICam' else hillas_c.skewnes
             "leakage_intensity_width_2", # leakage_c.intensity_width_2
             "n_islands"
         ]
