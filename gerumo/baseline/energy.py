@@ -125,7 +125,7 @@ class EnergyModel:
                 np.log10(moments.intensity),
                 moments.width.value,
                 moments.length.value,
-                x.value, y.value,
+                x, y,
                 moments.psi.value,
                 moments.phi.value,
                 moments.width.value / moments.length.value,
