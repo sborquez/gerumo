@@ -60,23 +60,22 @@ class EnergyModel:
             }
 
         random_forest_classifier_args = {
-            "max_depth": 100,
+            "max_depth": 50,
             "min_samples_leaf": 2,
             "n_jobs": 4,
-            "n_estimators": 100,
-            "criterion": "gini",
-            "min_samples_split": 2,
-            "min_weight_fraction_leaf": 0.0,
+            "n_estimators": 150,
+            "bootstrap": True,
+            "criterion": "mse",
             "max_features": "auto",
             "max_leaf_nodes": None,
             "min_impurity_decrease": 0.0,
             "min_impurity_split": None,
-            "bootstrap": True,
+            "min_samples_split": 2,
+            "min_weight_fraction_leaf": 0.0,
             "oob_score": False,
             "random_state": 42,
-            "verbose": 0.0,
-            "warm_start": False,
-            "class_weight": None
+            "verbose": 0,
+            "warm_start": False
         }
 
         grouped = dataset[["type", "log10_mc_energy"] + self._features].groupby("type")
