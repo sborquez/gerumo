@@ -59,7 +59,7 @@ class EnergyModel:
                 "min_samples_split": [2, 6]
             }
 
-        random_forest_classifier_args = {
+        random_forest_regressor_args = {
             "max_depth": 50,
             "min_samples_leaf": 2,
             "n_jobs": 4,
@@ -82,7 +82,7 @@ class EnergyModel:
         for t, group in grouped:
             tel_type = t.split("_")[1]
             if tel_type not in self._models:
-                self._models[tel_type] = RandomForestRegressor(**random_forest_classifier_args)
+                self._models[tel_type] = RandomForestRegressor(**random_forest_regressor_args)
             x = group[self._features].values
             y = group["log10_mc_energy"].values
             self._models[tel_type].fit(x, y)
@@ -125,13 +125,13 @@ class EnergyModel:
                 np.log10(moments.intensity),
                 moments.width.value,
                 moments.length.value,
-                x, y,
-                moments.psi,
-                moments.phi,
+                x.value, y.value,
+                moments.psi.value,
+                moments.phi.value,
                 moments.width.value / moments.length.value,
                 moments.skewness,
                 moments.kurtosis,
-                moments.r,
+                moments.r.value,
                 time_gradient,
                 leakage_c.intensity_width_2,
                 n_islands
