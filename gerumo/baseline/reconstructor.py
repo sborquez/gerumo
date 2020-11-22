@@ -247,6 +247,7 @@ class Reconstructor:
         types = dict()
         n_islands = dict()
         positions = dict()
+        meta = dict()
         for obs_id, tel_id, tel_type, folder, source, x, y in self.cameras_by_event[event_id]:
             _, camera_name = split_tel_type(tel_type)
 
@@ -255,9 +256,12 @@ class Reconstructor:
             if params is None:
                 continue
             moments, leakage_c, _, time_gradient, obs_n_islands = params
+
             assert tel_id not in hillas_containers.keys()
             hillas_containers[tel_id] = moments
+
             assert (tel_type, obs_id) not in hillas_by_obs.keys()
+            meta[tel_id] = (tel_type, obs_id)
             hillas_by_obs[(tel_type, obs_id)] = moments
             positions[tel_id] = (x, y)
             time_gradients[(tel_type, obs_id)] = time_gradient
@@ -287,7 +291,7 @@ class Reconstructor:
         if energy_regressor is None:
             energy = None
         else:
-            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, time_gradients, leakage_c, n_islands)
+            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, time_gradients, leakages, n_islands, meta)
 
         return dict(
             pred_az=2 * np.pi * u.rad + reco.az,

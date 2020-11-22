@@ -112,13 +112,13 @@ class EnergyModel:
 
         return results
 
-    def predict_event(self, positions, types, hillas_containers, reconstruction, time_gradient, leakage_c, n_islands):
+    def predict_event(self, positions, types, hillas_containers, reconstruction, time_gradients, leakages, n_islands, meta):
         n_obs = len(hillas_containers)
         energies = np.zeros(n_obs)
         weights = np.zeros(n_obs)
 
-        data = {tel_id: (hillas_containers[tel_id], positions[tel_id], types[tel_id]) for tel_id in positions}
-        for idx, (moments, position, t) in enumerate(data.values()):
+        data = {tel_id: (hillas_containers[tel_id], positions[tel_id], types[tel_id], meta[tel_id]) for tel_id in positions}
+        for idx, (moments, position, t, (tel_type, obs_id)) in enumerate(data.values()):
             x, y = position
 
             X = np.array([[
@@ -132,9 +132,9 @@ class EnergyModel:
                 moments.skewness,
                 moments.kurtosis,
                 moments.r.value,
-                time_gradient,
-                leakage_c.intensity_width_2,
-                n_islands
+                time_gradients[(tel_type, obs_id)],
+                leakages[(tel_type, obs_id)].intensity_width_2,
+                n_islands[(tel_type, obs_id)]
             ]])
             weights[idx] = moments.intensity
  
