@@ -257,7 +257,7 @@ class Reconstructor:
                 continue
             moments, leakage_c, _, time_gradient, obs_n_islands = params
 
-            assert tel_id not in hillas_containers.keys()
+            # assert tel_id not in hillas_containers.keys()
             hillas_containers[tel_id] = moments
 
             assert (tel_type, obs_id) not in hillas_by_obs.keys()
