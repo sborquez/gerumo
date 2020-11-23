@@ -141,7 +141,7 @@ class EnergyModel:
             tel_type = t.split("_")[1]
             energies[idx] = self._models[tel_type].predict(X)
 
-        pred_energy = np.sum(weights * energies) / np.sum(weights)
+        pred_energy = np.sum(weights * np.power(10, energies)) / np.sum(weights)
         return pred_energy
 
     def save(self, path: str):
