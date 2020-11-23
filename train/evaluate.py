@@ -205,14 +205,10 @@ def evaluate_unit(model_or_path, config_file, output_folder,
         camera_parameters = preprocessing_parameters["CameraPipe"]
         camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
         preprocess_input_pipes['CameraPipe'] = camera_pipe
-    elif ("MultiCameraPipe" in preprocessing_parameters) and (telescope in preprocessing_parameters["MultiCameraPipe"]):
-        camera_parameters = preprocessing_parameters["MultiCameraPipe"][telescope]
-        camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
-        preprocess_input_pipes['CameraPipe'] = camera_pipe
         
     if "TelescopeFeaturesPipe" in preprocessing_parameters:
         telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
-        telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope, version=version, **telescopefeatures_parameters)
+        telescope_features_pipe = TelescopeFeaturesPipe(version=version, **telescopefeatures_parameters)
         preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
     ## output preprocessing
     preprocess_output_pipes = {}
@@ -483,17 +479,13 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
     # Preprocessing pipes
     ## input preprocessing
     preprocess_input_pipes = {}
-    if "CameraPipe" in preprocessing_parameters:
-        camera_parameters = preprocessing_parameters["CameraPipe"]
-        camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
-        preprocess_input_pipes['CameraPipe'] = camera_pipe
-    elif ("MultiCameraPipe" in preprocessing_parameters):
+    if ("MultiCameraPipe" in preprocessing_parameters):
         multicamera_parameters = preprocessing_parameters["MultiCameraPipe"]
         multicamera_pipe = MultiCameraPipe(version=version, **multicamera_parameters)
         preprocess_input_pipes['MultiCameraPipe'] = multicamera_pipe
     if "TelescopeFeaturesPipe" in preprocessing_parameters:
         telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
-        telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope, version=version, **telescopefeatures_parameters)
+        telescope_features_pipe = TelescopeFeaturesPipe(version=version, **telescopefeatures_parameters)
         preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
     ## output preprocessing
     preprocess_output_pipes = {}
