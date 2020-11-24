@@ -23,6 +23,7 @@ dependencies:
   - jupyter
   - pytables
   - tqdm
+  - conda-forge::pot 
   - pip:
     - ctaplot==0.5.3
     - pydot==1.4.1

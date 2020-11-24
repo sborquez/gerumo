@@ -21,6 +21,7 @@ tensorflow = "2.1.0"
 tensorflow-probability  = "0.8.0"
 tensboard = "2.1.0"
 ctaplot = "*"
+POT = "*"
 
 [dev-packages]
 "flake8" = "*"
