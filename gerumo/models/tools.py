@@ -187,6 +187,7 @@ def load_assembler_from_configuration(assembler_config_file, assemblers):
     model_name = config["model_name"]
     model_name = model_name.replace(' ', '_')
     assembler_constructor = assemblers[config["assembler_constructor"]]
+    assembler_mode = config.get("assembler_mode", None)
     telescopes = {t:m for t,m in config["telescopes"].items() if m is not None}
 
     ## Target Parameters 
@@ -215,6 +216,7 @@ def load_assembler_from_configuration(assembler_config_file, assemblers):
         target_resolutions = tuple([np.inf      for target in targets])
     # Assembler
     assembler = assembler_constructor(
+            assembler_mode=assembler_mode,
             targets=targets, 
             target_shapes=target_mode_config["target_shapes"],
             target_domains=target_mode_config["target_domains"],
