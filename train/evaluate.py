@@ -205,7 +205,11 @@ def evaluate_unit(model_or_path, config_file, output_folder,
         camera_parameters = preprocessing_parameters["CameraPipe"]
         camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
         preprocess_input_pipes['CameraPipe'] = camera_pipe
-        
+    elif "MultiCameraPipe" in preprocessing_parameters:
+        camera_parameters = preprocessing_parameters["MultiCameraPipe"][telescope]
+        camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
+        preprocess_input_pipes['CameraPipe'] = camera_pipe
+
     if "TelescopeFeaturesPipe" in preprocessing_parameters:
         telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
         telescope_features_pipe = TelescopeFeaturesPipe(version=version, **telescopefeatures_parameters)
