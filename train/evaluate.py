@@ -284,6 +284,8 @@ def evaluate_unit(model_or_path, config_file, output_folder,
                 np.save(prediction_filepath, np.vstack((mu, cov)))
             elif isinstance(prediction, st.gaussian_kde):
                 np.save(prediction_filepath, prediction.dataset)
+            elif isinstance(prediction, st._multivariate.multivariate_normal_frozen):
+                np.save(prediction_filepath, prediction.mean)
             else:
                 raise NotImplemented("Unknown prediction type:", type(prediction))
 
@@ -551,6 +553,8 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
                 np.save(prediction_filepath, np.vstack((mu, cov)))
             elif isinstance(prediction, st.gaussian_kde):
                 np.save(prediction_filepath, prediction.dataset)
+            elif isinstance(prediction, st._multivariate.multivariate_normal_frozen):
+                np.save(prediction_filepath, prediction.mean)
             else:
                 raise NotImplemented("Unknown prediction type:", type(prediction))
 

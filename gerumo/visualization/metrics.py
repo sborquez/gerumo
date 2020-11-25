@@ -151,6 +151,7 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
     
     if isinstance(target_domains, dict):
         target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
+    target_resolutions = target_resolutions or np.array([np.inf] * len(targets))
 
     # Style
     if isinstance(title, str):
