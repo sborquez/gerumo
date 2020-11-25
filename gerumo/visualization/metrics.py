@@ -38,7 +38,8 @@ __all__ = [
     'plot_angular_resolution_comparison', 
     'plot_error_and_angular_resolution',  
         'show_angular_resolution', 
-        'show_absolute_error_angular'
+        'show_absolute_error_angular',
+    'compare_results'
 ]
 
 """
@@ -860,3 +861,21 @@ def plot_angular_resolution_comparison(evaluation_results_dict, include_requirem
         plt.close(fig)
     else:
         plt.show()
+
+
+def compare_results(model_names, csv_files, mode="angular", ylim=(0, 2), xlim=None, save_to=None):
+    renamer = {
+        'az' : 'true_az',
+        'alt' : 'true_alt',
+        'mc_energy' : 'true_mc_energy',
+        'event_unique_id' : 'event_id',
+    }
+    results = {}
+    for model, csv_file in zip(model_names, csv_files):
+        results[model] =  pd.read_csv(csv_file).rename(renamer, axis=1)
+    if mode == "angular":
+        plot_angular_resolution_comparison(results, ylim=ylim, xlim=xlim, save_to=save_to)
+    elif mode == "energy":
+        plot_energy_resolution_comparison(results, ylim=ylim, xlim=xlim, save_to=save_to)
+    else:
+        raise NotImplementedError(mode)
