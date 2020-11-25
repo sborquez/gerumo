@@ -8,6 +8,7 @@ from .data.preprocessing import MultiCameraPipe, CameraPipe, TelescopeFeaturesPi
 from tensorflow.keras.models import load_model
 
 __all__ = [
+    'get_target_mode_config',
     'load_dataset_from_experiment', 'load_dataset_from_configuration',
     'load_dataset_from_assembler_configuration',
     'load_model_from_configuration', 'load_model_from_experiment',
@@ -24,7 +25,7 @@ def __get_resolution(targets, targets_domain, targets_shape):
     return targets_resolution
 
 
-def __get_target_mode_config(config, target_mode=None):
+def get_target_mode_config(config, target_mode=None):
     targets = config["targets"]
     target_shapes = config["target_shapes"]
     target_domains = config["target_domains"]
@@ -62,7 +63,7 @@ def load_dataset_from_experiment(experiment_folder, include_samples_dataset=Fals
     return load_dataset_from_configuration(config_file, include_samples_dataset=include_samples_dataset, subset=subset)
 
 
-def load_dataset_from_configuration(config_file, include_samples_dataset=False, subset='test'):
+def load_dataset_from_configuration(config_file, include_samples_dataset=False, subset='test', telescope=None):
     # Load configuration
     with open(config_file) as cfg_file:
         config = json.load(cfg_file)
@@ -77,7 +78,7 @@ def load_dataset_from_configuration(config_file, include_samples_dataset=False, 
     replace_folder = replace_folder_
 
     ## Input Parameters 
-    telescope = config["telescope"]
+    telescope = telescope or config["telescope"]
     input_image_mode = config["input_image_mode"]
     input_image_mask = config["input_image_mask"]
     min_observations = config["min_observations"]
@@ -88,7 +89,7 @@ def load_dataset_from_configuration(config_file, include_samples_dataset=False, 
     target_mode = config["target_mode"]
     target_domains = config["target_domains"]
     ## Prepare Generator target_mode_config 
-    target_mode_config = __get_target_mode_config(config, target_mode=target_mode)
+    target_mode_config = get_target_mode_config(config, target_mode=target_mode)
 
     ## Load Data
     dataset = load_dataset(events_csv, telescope_csv, replace_folder)
@@ -188,14 +189,14 @@ def load_dataset_from_assembler_configuration(assembler_config_file, include_sam
     target_mode = config["target_mode"]
     target_domains = config["target_domains"]
     ## Prepare Generator target_mode_config
-    target_mode_config = __get_target_mode_config(config, target_mode)
+    target_mode_config = get_target_mode_config(config, target_mode)
 
     ## Load Data
     dataset = load_dataset(events_csv, telescope_csv, replace_folder_)
     dataset = aggregate_dataset(dataset, az=True, log10_mc_energy=True)
     if include_samples_dataset:
         # events with observations of every type of telescopes
-        sample_telescopes = [t for t,p in telescopes.items() if p is not None]
+        sample_telescopes = [t for t in telescopes.keys()]
         sample_events = [e for e, df in dataset.groupby("event_unique_id") if __same_telescopes(df["type"].unique(), sample_telescopes)]
         # TODO: add custom seed
         r = np.random.RandomState(42)
@@ -258,7 +259,7 @@ def load_dataset_from_assembler_configuration(assembler_config_file, include_sam
                 include_true_energy=True,
                 version=version
         )
-        return (generator, dataset), (sample_generator, sample_dataset)
+        return (generator, dataset), (sample_generator, sample_dataset, sample_telescopes)
     else:
         return generator, dataset
 
@@ -304,7 +305,7 @@ def load_model_from_experiment(experiment_folder, custom_objects, assemblers, ep
                                          model_name=model_name, get_assembler=get_assembler)
 
 
-def load_model_from_configuration(model_or_path, config_file, custom_objects, assemblers, model_name=None, get_assembler=True):
+def load_model_from_configuration(model_or_path, config_file, custom_objects, assemblers, model_name=None, telescope=None, get_assembler=True):
     """
     Evaluate model, with configuration file given.
     
@@ -325,9 +326,12 @@ def load_model_from_configuration(model_or_path, config_file, custom_objects, as
         config = json.load(cfg_file)
 
     ## Model
-    model_name = model_name if model_name is not None else config["model_name"]
-    telescope = config["telescope"]
-    model = load_model(model_or_path, custom_objects=custom_objects) if isinstance(model_or_path, str) else model_or_path 
+    model_name = model_name or config["model_name"]
+    telescope = telescope or config["telescope"]
+    if isinstance(model_or_path, str):
+        model = load_model(model_or_path, custom_objects=custom_objects)
+    else:
+        model = model_or_path 
 
     if get_assembler:
         targets = config["targets"]
@@ -335,7 +339,7 @@ def load_model_from_configuration(model_or_path, config_file, custom_objects, as
         target_shapes = config["target_shapes"]
         target_domains = config["target_domains"]
         ## Prepare Generator target_mode_config 
-        target_mode_config = __get_target_mode_config(config, target_mode)
+        target_mode_config = get_target_mode_config(config, target_mode)
         assembler_constructor = assemblers[config["assembler_constructor"]]
         assembler_mode = config.get("assembler_mode", None)
         assembler = assembler_constructor(
@@ -366,7 +370,7 @@ def load_assembler_from_configuration(assembler_config_file, assemblers):
     targets = config["targets"]
     target_mode = config["target_mode"]
     ## Prepare Generator target_mode_config 
-    target_mode_config = __get_target_mode_config(config, target_mode)
+    target_mode_config = get_target_mode_config(config, target_mode)
     # Assembler
     assembler = assembler_constructor(
             targets=targets, 

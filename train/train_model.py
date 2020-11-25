@@ -387,28 +387,7 @@ if __name__ == "__main__":
     input_features = config["input_features"]
     targets = config["targets"]
     target_mode = config["target_mode"]
-    target_shapes = config["target_shapes"]
-    target_domains = config["target_domains"]
-    if config["model_constructor"] == 'umonna_unit':
-        target_resolutions = get_resolution(targets, target_domains, target_shapes)
-    
-        # Prepare Generator target_mode_config 
-        target_mode_config = {
-            "target_shapes":      tuple([target_shapes[target]      for target in targets]),
-            "target_domains":     tuple([target_domains[target]     for target in targets]),
-            "target_resolutions": tuple([target_resolutions[target] for target in targets])
-        }
-        if target_mode == "probability_map":
-            target_sigmas = config["target_sigmas"]
-            target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
-    else:
-        target_mode_config = {
-            "target_domains":     tuple([target_domains[target]     for target in targets]),
-            "target_shapes":      tuple([np.inf                     for target in targets]),
-            "target_resolutions": tuple([np.inf                     for target in targets])
-        }
-        target_resolutions = tuple([np.inf      for target in targets])
-
+    target_mode_config = get_target_mode_config(config, target_mode)
     # Training Parameters
     batch_size = config["batch_size"]
     epochs = config["epochs"]

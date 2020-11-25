@@ -1,5 +1,4 @@
-# visual studio code
-.vscode/
+.vscode/settings.json
 
 # python
 venv/
