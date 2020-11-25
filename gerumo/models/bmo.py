@@ -20,6 +20,7 @@ from tensorflow.keras.layers import (
     Activation, BatchNormalization, Dropout
 )
 from tensorflow.keras.regularizers import l1, l2
+from ot.lp import free_support_barycenter
 from . import CUSTOM_OBJECTS
 from .assembler import ModelAssembler
 from .layers import HexConvLayer, softmax
@@ -140,16 +141,22 @@ class BMO(ModelAssembler):
 
         super().__init__(sst1m_model_or_path=sst1m_model_or_path, mst_model_or_path=mst_model_or_path, lst_model_or_path=lst_model_or_path,
                          targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=CUSTOM_OBJECTS)
-        if assembler_mode not in ['resample', 'normalized_product']:
+        if assembler_mode not in (
+            None, 'resample', 'wasserstein_barycenter', 
+            'weighted_mean', 'normalized_product'):
             raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
         if point_estimation_mode not in ["expected_value"]:
             raise ValueError(f"Invalid point_estimation_mode: {point_estimation_mode}")
 
-        self.assemble_mode = assembler_mode
+        self.assemble_mode = assembler_mode or "resample"
         self.point_estimation_mode = point_estimation_mode
-        self.target_resolutions = target_resolutions
+        self.target_resolutions = target_resolutions #(deprecated)
         self.sample_size = 500
-        #self.expected_value_sample_size = 500
+        self.discrete_bins = {
+            "alt": 100,
+            "az": 100,
+            "log10_mc_energy": 200
+        }
 
     @staticmethod
     def bayesian_estimation_old(model, x_i_telescope, sample_size, verbose, **kwargs):
@@ -263,10 +270,26 @@ class BMO(ModelAssembler):
         return y_point_estimations
 
     def expected_value(self, y_predictions):
-        if isinstance(y_predictions[0], st.gaussian_kde):
-            #y_mus = np.array([y_i.resample(self.expected_value_sample_size).mean(axis=1) for y_i in y_predictions])
+        if isinstance(y_predictions[0], st.gaussian_kde): # resample & wasserstein_barycenter
             y_mus = np.array([y_i.dataset.mean(axis=1) for y_i in y_predictions])
-            return y_mus
+        elif isinstance(y_predictions[0], st._multivariate.multivariate_normal_frozen): # weighted_mean
+            y_mus = np.array([y_i.mean for y_i in y_predictions])
+        elif isinstance(y_predictions[0], np.ndarray): # normalized_product
+            n_samples = len(y_predictions)
+            dimensions = len(self.targets)
+            y_mus = np.empty((n_samples, dimensions))
+            axis = set(np.arange(dimensions))
+            for d in range(dimensions):
+                reduce_axis = tuple(axis - {d}) if dimensions > 1 else None
+                targets_d = np.linspace(
+                    self.target_domains[d][0], 
+                    self.target_domains[d][1],
+                    self.discrete_bins[self.targets[d]]
+                )
+                y_mus[:, d] = np.array(
+                    [np.dot(y_i.sum(axis=reduce_axis), targets_d) for y_i in y_predictions]
+                )
+        return y_mus
 
     def assemble(self, y_i_by_telescope):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
@@ -274,6 +297,10 @@ class BMO(ModelAssembler):
             yi_assembled = self.resample(y_i_all)
         elif self.assemble_mode == "normalized_product":
             yi_assembled = self.normalized_product(y_i_all)
+        elif self.assemble_mode == "wasserstein_barycenter":
+            yi_assembled = self.wasserstein_barycenter(y_i_all)
+        elif self.assemble_mode == "weighted_mean":
+            yi_assembled = self.weighted_mean(y_i_all)
         return yi_assembled
 
     def resample(self, y_i):
@@ -281,6 +308,61 @@ class BMO(ModelAssembler):
         resamples = np.hstack([y_kde_j.dataset for y_kde_j in y_i])
         return st.gaussian_kde(resamples)
 
+    def wasserstein_barycenter(self, y_i):
+        d = len(self.targets)
+        k = self.sample_size                        # number of Diracs of the barycenter
+        #X_init = np.random.normal(0., 1., (k, d))  # initial Dirac locations
+        X_init = y_i[0].dataset.T
+        b = np.ones((k,)) / k
+        measures_locations = [y_kde_j.dataset.T for y_kde_j in y_i]
+        #measures_weights   = [np.random.uniform(0, 1, (y_kde_j.n,)) for y_kde_j in y_i[:]]
+        measures_weights   = [y_kde_j.pdf(y_kde_j.dataset) for y_kde_j in y_i]
+        measures_weights   = [b_i/b_i.sum() for b_i in measures_weights]
+        # Get Barycenter
+        X = free_support_barycenter(measures_locations, measures_weights, X_init, b)        
+        return st.gaussian_kde(X.T)
+
     def normalized_product(self, y_i):
-        raise NotImplementedError
+        dimensions = len(self.targets)
+        n_samples = len(y_i)
+        # space discretization
+        if dimensions == 1:
+            raise NotImplementedError
+        elif dimensions == 2:
+            resolution_x = self.discrete_bins[self.targets[0]]
+            x_ = np.linspace(
+                self.target_domains[0][0], self.target_domains[0][1], resolution_x
+            )
+            resolution_y = self.discrete_bins[self.targets[1]] 
+            y_ = np.linspace(
+                self.target_domains[1][0], self.target_domains[1][1], resolution_y
+            )
+            target_i, target_j = np.meshgrid(x_, y_)
+            target_grid = np.dstack((target_i, target_j)).reshape(resolution_x*resolution_y, len(self.targets))
+            target_reshape = (resolution_x, resolution_y)
+        if dimensions == 3:
+            raise NotImplementedError
+        # evaluate pdf
+        targets_pmf = np.zeros((n_samples, *target_reshape))
+        for i in range(n_samples):
+            target_pmf = y_i[i].pdf(target_grid.T)
+            target_pmf /= target_pmf.sum()
+            targets_pmf[i] = target_pmf.reshape(target_reshape).T
+        #product
+        eps = 1e-16
+        Y_i = np.exp(np.sum(np.log(targets_pmf+eps), axis=0))
+        Y_i_sum = Y_i.sum()
+        Y_i = Y_i/Y_i_sum if Y_i_sum > 0 else Y_i
+        Y_i[Y_i < 1e-20] = 0
+        return Y_i
+
+    def weighted_mean(self, y_i):
+        means = np.array([y_kde_j.dataset.mean(axis=1) for y_kde_j in y_i])
+        stds = np.array([y_kde_j.dataset.std(axis=1) for y_kde_j in y_i])
+        weighted_mean = np.sum(means * stds, axis=0)/ stds.sum(axis=0)
+        dtype = weighted_mean.dtype
+        return st.multivariate_normal(
+            mean=weighted_mean, 
+            cov=np.identity(len(self.targets))*np.finfo(dtype).tiny
+        ) # delta dirac distribution
  

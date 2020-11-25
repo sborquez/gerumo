@@ -13,6 +13,8 @@ from . import TELESCOPES, TELESCOPES_ALIAS
 __all__ = [
     'get_resolution', 'get_shape', 
     'extract_pixel_positions',
+    'load_dataset_from_experiment', 'load_dataset_from_configuration',
+    'load_dataset_from_assembler_configuration'
 ]
 
 
@@ -125,7 +127,7 @@ def to_simple_and_shift(pixels_position_array):
     max_col_l = len(np.unique(new_x_l)) - 1
     max_col_r = len(np.unique(new_x_r)) - 1
     max_row = nrows - 1
-    # apply lineal transfomation
+    # apply linear transfomation
     new_x_l = ((max_col_l/(new_x_l.max() - new_x_l.min())) * (new_x_l - new_x_l.min()))
     new_x_l = np.round(new_x_l).astype(int)
     new_x_r = ((max_col_r/(new_x_r.max() - new_x_r.min())) * (new_x_r - new_x_r.min()))
@@ -193,3 +195,267 @@ def extract_pixel_positions(hdf5_filepath, pixpos_folder, version="ML2"):
         np.savetxt(join(pixpos_folder,'simple_shift', f'{telescope}.npy'), shift)
     
     return all_pixpos
+
+from glob import glob
+from os import path
+import json
+from .dataset import load_dataset, aggregate_dataset, filter_dataset
+from .generator import AssemblerUnitGenerator, AssemblerGenerator
+from .preprocessing import MultiCameraPipe, CameraPipe, TelescopeFeaturesPipe
+
+def load_dataset_from_experiment(experiment_folder, include_samples_dataset=False, subset='test'):
+    # Find configuration file
+    config_file = glob(path.join(experiment_folder, "*.json"))
+    if len(config_file) != 1:
+        raise ValueError("Config file not found in experiment folder", experiment_folder)
+    else:
+        config_file = config_file[0]
+    return load_dataset_from_configuration(config_file, include_samples_dataset=include_samples_dataset, subset=subset)
+    
+def __get_resolution(targets, targets_domain, targets_shape):
+    """Return the targets resolution for each target given the targets shape"""
+    targets_resolution = {}
+    for target in targets:
+        vmin, vmax = targets_domain[target]
+        shape = targets_shape[target]
+        targets_resolution[target]  = (vmax -vmin) / shape
+    return targets_resolution
+
+def __same_telescopes(src_telescopes, sample_telescopes):
+    return set(sample_telescopes).issubset(set(src_telescopes))
+
+def load_dataset_from_configuration(config_file, include_samples_dataset=False, subset='test'):
+    # Load configuration
+    with open(config_file) as cfg_file:
+        config = json.load(cfg_file)
+    # Prepare datasets
+    version = config["version"]
+
+    events_csv    = config[f"{subset}_events_csv"] 
+    telescope_csv = config[f"{subset}_telescope_csv"]
+    replace_folder_ = config[f"replace_folder_{subset}"] 
+    if (events_csv is None) or (telescope_csv is None):
+        raise ValueError("Empty datasets, check config file.")
+    replace_folder = replace_folder_
+
+    ## Input Parameters 
+    telescope = config["telescope"]
+    input_image_mode = config["input_image_mode"]
+    input_image_mask = config["input_image_mask"]
+    min_observations = config["min_observations"]
+    input_features = config["input_features"]
+    
+    ## Target Parameters 
+    targets = config["targets"]
+    target_mode = config["target_mode"]
+    target_shapes = config["target_shapes"]
+    target_domains = config["target_domains"]
+    ## Prepare Generator target_mode_config 
+    if  config["target_shapes"] is not None:
+        target_resolutions = get_resolution(targets, target_domains, target_shapes)
+        target_mode_config = {
+            "target_shapes":      tuple([target_shapes[target]      for target in targets]),
+            "target_domains":     tuple([target_domains[target]     for target in targets]),
+            "target_resolutions": tuple([target_resolutions[target] for target in targets])
+        }
+        if target_mode == "probability_map":
+            target_sigmas = config["target_sigmas"]
+            target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
+    else:
+        target_mode_config = {
+            "target_domains":     tuple([target_domains[target]     for target in targets]),
+            "target_shapes":      tuple([np.inf      for target in targets]),
+            "target_resolutions": tuple([np.inf      for target in targets])
+        }
+        target_resolutions = tuple([np.inf      for target in targets])
+
+    ## Load Data
+    dataset = load_dataset(events_csv, telescope_csv, replace_folder)
+    dataset = aggregate_dataset(dataset, az=True, log10_mc_energy=True)
+
+    if include_samples_dataset:
+        # events with observations of every type of telescopes
+        sample_telescopes = [telescope]
+        sample_events = [e for e, df in dataset.groupby("event_unique_id") if __same_telescopes(df["type"].unique(), sample_telescopes)]
+        # TODO: add custom seed
+        r = np.random.RandomState(42)
+        sample_events = r.choice(sample_events, size=5, replace=False)
+        sample_dataset = dataset[dataset["event_unique_id"].isin(sample_events)]
+        sample_dataset = filter_dataset(sample_dataset, telescope, [0], target_domains)
+    else:
+        sample_dataset = None
+        sample_generator = None
+    dataset = filter_dataset(dataset, telescope, [0], target_domains)
+    
+    ## Preprocessing
+    preprocessing_parameters = config.get("preprocessing", {})
+
+    # Preprocessing pipes
+    ## input preprocessing
+    preprocess_input_pipes = {}
+    if "CameraPipe" in preprocessing_parameters:
+        camera_parameters = preprocessing_parameters["CameraPipe"]
+        camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
+        preprocess_input_pipes['CameraPipe'] = camera_pipe
+    elif ("MultiCameraPipe" in preprocessing_parameters) and (telescope in preprocessing_parameters["MultiCameraPipe"]):
+        camera_parameters = preprocessing_parameters["MultiCameraPipe"][telescope]
+        camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
+        preprocess_input_pipes['CameraPipe'] = camera_pipe
+        
+    if "TelescopeFeaturesPipe" in preprocessing_parameters:
+        telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
+        telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope, version=version, **telescopefeatures_parameters)
+        preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
+    ## output preprocessing
+    preprocess_output_pipes = {}
+
+    ## Dataset Generators
+    generator =  AssemblerUnitGenerator(
+                            dataset, 16, 
+                            input_image_mode=input_image_mode,
+                            input_image_mask=input_image_mask, 
+                            input_features=input_features,
+                            targets=targets,
+                            target_mode=target_mode, 
+                            target_mode_config=target_mode_config,
+                            preprocess_input_pipes=preprocess_input_pipes,
+                            preprocess_output_pipes=preprocess_output_pipes,
+                            include_event_id=True,
+                            include_true_energy=True,
+                            version=version
+                        )
+    if include_samples_dataset:
+        sample_generator =  AssemblerUnitGenerator(
+                sample_dataset, min(16, len(sample_dataset)), 
+                input_image_mode=input_image_mode,
+                input_image_mask=input_image_mask, 
+                input_features=input_features,
+                targets=targets,
+                target_mode=target_mode, 
+                target_mode_config=target_mode_config,
+                preprocess_input_pipes=preprocess_input_pipes,
+                preprocess_output_pipes=preprocess_output_pipes,
+                include_event_id=True,
+                include_true_energy=True,
+                version=version
+        )
+        return (generator, dataset), (sample_generator, sample_dataset)
+    else:
+        return generator, dataset
+     
+
+def load_dataset_from_assembler_configuration(assembler_config_file, include_samples_dataset=False, subset='test'):
+    # Load configuration
+    with open(assembler_config_file) as cfg_file:
+        config = json.load(cfg_file)
+    telescopes = {t:m for t,m in config["telescopes"].items() if m is not None}
+
+    # Prepare datasets
+    version = config["version"]
+    events_csv    = config[f"{subset}_events_csv"] 
+    telescope_csv = config[f"{subset}_telescope_csv"]
+    replace_folder_ = config[f"replace_folder_{subset}"]
+
+    ## Input Parameters 
+    input_image_mode = config["input_image_mode"]
+    input_image_mask = config["input_image_mask"]
+    min_observations = config["min_observations"]
+    input_features = config["input_features"]
+    
+    ## Target Parameters 
+    targets = config["targets"]
+    target_mode = config["target_mode"] 
+    target_shapes = config["target_shapes"]
+    target_domains = config["target_domains"]
+    ## Prepare Generator target_mode_config 
+    # TODO: Move this to a function
+    if  config["target_shapes"] is not None:
+        target_resolutions = get_resolution(targets, target_domains, target_shapes)
+        target_mode_config = {
+            "target_shapes":      tuple([target_shapes[target]      for target in targets]),
+            "target_domains":     tuple([target_domains[target]     for target in targets]),
+            "target_resolutions": tuple([target_resolutions[target] for target in targets])
+        }
+        if target_mode == "probability_map":
+            target_sigmas = config.get("target_sigmas", None)
+            target_mode_config["target_sigmas"] = tuple([target_sigmas[target] for target in targets])
+    else:
+        target_mode_config = {
+            "target_domains":     tuple([target_domains[target]     for target in targets]),
+            "target_shapes":      tuple([np.inf      for target in targets]),
+            "target_resolutions": tuple([np.inf      for target in targets])
+        }
+        target_resolutions = tuple([np.inf      for target in targets])
+
+    ## Load Data
+    dataset = load_dataset(events_csv, telescope_csv, replace_folder_)
+    dataset = aggregate_dataset(dataset, az=True, log10_mc_energy=True)
+    if include_samples_dataset:
+        # events with observations of every type of telescopes
+        sample_telescopes = [t for t,p in telescopes.items() if p is not None]
+        sample_events = [e for e, df in dataset.groupby("event_unique_id") if __same_telescopes(df["type"].unique(), sample_telescopes)]
+        # TODO: add custom seed
+        r = np.random.RandomState(42)
+        sample_events = r.choice(sample_events, size=5, replace=False)
+        sample_dataset = dataset[dataset["event_unique_id"].isin(sample_events)]
+        sample_dataset = filter_dataset(sample_dataset, telescopes.keys(), min_observations, target_domains)
+        if len(sample_dataset) == 0: raise ValueError("Sample dataset is empty.")
+    else:
+        sample_telescopes = None
+        sample_dataset = None
+        sample_generator = None
+
+    dataset = filter_dataset(dataset, telescopes.keys(), min_observations, target_domains)
+    
+    # Evaluate assembler
+    ## Preprocessing
+    preprocessing_parameters = config.get("preprocessing", {})
+
+    # Preprocessing pipes
+    ## input preprocessing
+    preprocess_input_pipes = {}
+    if ("MultiCameraPipe" in preprocessing_parameters):
+        multicamera_parameters = preprocessing_parameters["MultiCameraPipe"]
+        multicamera_pipe = MultiCameraPipe(version=version, **multicamera_parameters)
+        preprocess_input_pipes['MultiCameraPipe'] = multicamera_pipe
+    if "TelescopeFeaturesPipe" in preprocessing_parameters:
+        telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
+        telescope_features_pipe = TelescopeFeaturesPipe(version=version, **telescopefeatures_parameters)
+        preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
+    ## output preprocessing
+    preprocess_output_pipes = {}
+
+    ## Dataset Generators
+    generator =  AssemblerGenerator(
+                            dataset, telescopes.keys(), 16, 
+                            input_image_mode=input_image_mode,
+                            input_image_mask=input_image_mask, 
+                            input_features=input_features,
+                            targets=targets,
+                            target_mode=target_mode, 
+                            target_mode_config=target_mode_config,
+                            preprocess_input_pipes=preprocess_input_pipes,
+                            preprocess_output_pipes=preprocess_output_pipes,
+                            include_event_id=True,
+                            include_true_energy=True,
+                            version=version
+                        )
+    if include_samples_dataset:
+        sample_generator =  AssemblerGenerator(
+                sample_dataset, telescopes.keys(), min(16, len(sample_dataset)), 
+                input_image_mode=input_image_mode,
+                input_image_mask=input_image_mask, 
+                input_features=input_features,
+                targets=targets,
+                target_mode=target_mode, 
+                target_mode_config=target_mode_config,
+                preprocess_input_pipes=preprocess_input_pipes,
+                preprocess_output_pipes=preprocess_output_pipes,
+                include_event_id=True,
+                include_true_energy=True,
+                version=version
+        )
+        return (generator, dataset), (sample_generator, sample_dataset)
+    else:
+        return generator, dataset
+    

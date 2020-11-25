@@ -205,14 +205,14 @@ def evaluate_unit(model_or_path, config_file, output_folder,
         camera_parameters = preprocessing_parameters["CameraPipe"]
         camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
         preprocess_input_pipes['CameraPipe'] = camera_pipe
-    elif ("MultiCameraPipe" in preprocessing_parameters) and (telescope in preprocessing_parameters["MultiCameraPipe"]):
+    elif "MultiCameraPipe" in preprocessing_parameters:
         camera_parameters = preprocessing_parameters["MultiCameraPipe"][telescope]
         camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
         preprocess_input_pipes['CameraPipe'] = camera_pipe
-        
+
     if "TelescopeFeaturesPipe" in preprocessing_parameters:
         telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
-        telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope, version=version, **telescopefeatures_parameters)
+        telescope_features_pipe = TelescopeFeaturesPipe(version=version, **telescopefeatures_parameters)
         preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
     ## output preprocessing
     preprocess_output_pipes = {}
@@ -284,6 +284,8 @@ def evaluate_unit(model_or_path, config_file, output_folder,
                 np.save(prediction_filepath, np.vstack((mu, cov)))
             elif isinstance(prediction, st.gaussian_kde):
                 np.save(prediction_filepath, prediction.dataset)
+            elif isinstance(prediction, st._multivariate.multivariate_normal_frozen):
+                np.save(prediction_filepath, prediction.mean)
             else:
                 raise NotImplemented("Unknown prediction type:", type(prediction))
 
@@ -378,6 +380,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
     model_name = config["model_name"]
     model_name = model_name.replace(' ', '_')
     assembler_constructor = ASSEMBLERS[config["assembler_constructor"]]
+    assembler_mode = config.get("assembler_mode", None)
     telescopes = {t:m for t,m in config["telescopes"].items() if m is not None}
     output_folder = config["output_folder"] if output_folder is None else output_folder
     output_folder = path.join(output_folder, f"{model_name}_evaluation")
@@ -449,6 +452,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
     
     # Assembler
     assembler = assembler_constructor(
+            assembler_mode=assembler_mode,
             targets=targets, 
             target_shapes=target_mode_config["target_shapes"],
             target_domains=target_mode_config["target_domains"],
@@ -483,17 +487,13 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
     # Preprocessing pipes
     ## input preprocessing
     preprocess_input_pipes = {}
-    if "CameraPipe" in preprocessing_parameters:
-        camera_parameters = preprocessing_parameters["CameraPipe"]
-        camera_pipe = CameraPipe(telescope_type=telescope, version=version, **camera_parameters)
-        preprocess_input_pipes['CameraPipe'] = camera_pipe
-    elif ("MultiCameraPipe" in preprocessing_parameters):
+    if ("MultiCameraPipe" in preprocessing_parameters):
         multicamera_parameters = preprocessing_parameters["MultiCameraPipe"]
         multicamera_pipe = MultiCameraPipe(version=version, **multicamera_parameters)
         preprocess_input_pipes['MultiCameraPipe'] = multicamera_pipe
     if "TelescopeFeaturesPipe" in preprocessing_parameters:
         telescopefeatures_parameters = preprocessing_parameters["TelescopeFeaturesPipe"]
-        telescope_features_pipe = TelescopeFeaturesPipe(telescope_type=telescope, version=version, **telescopefeatures_parameters)
+        telescope_features_pipe = TelescopeFeaturesPipe(version=version, **telescopefeatures_parameters)
         preprocess_input_pipes['TelescopeFeaturesPipe'] = telescope_features_pipe
     ## output preprocessing
     preprocess_output_pipes = {}
@@ -553,6 +553,8 @@ def evaluate_assembler(assembler_config_file, output_folder=None, save_all_unit_
                 np.save(prediction_filepath, np.vstack((mu, cov)))
             elif isinstance(prediction, st.gaussian_kde):
                 np.save(prediction_filepath, prediction.dataset)
+            elif isinstance(prediction, st._multivariate.multivariate_normal_frozen):
+                np.save(prediction_filepath, prediction.mean)
             else:
                 raise NotImplemented("Unknown prediction type:", type(prediction))
 

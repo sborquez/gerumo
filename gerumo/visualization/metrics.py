@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import seaborn as sns
 from scipy.stats import norm, multivariate_normal, rv_continuous, gaussian_kde
+from scipy.stats._multivariate import multivariate_normal_frozen
 import numpy as np
 import pandas as pd
 import ctaplot
@@ -150,6 +151,7 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
     
     if isinstance(target_domains, dict):
         target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
+    target_resolutions = target_resolutions or np.array([np.inf] * len(targets))
 
     # Style
     if isinstance(title, str):
@@ -169,7 +171,7 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
         elif len(targets) == 3:
             raise NotImplementedError
     # probability density function estimator
-    elif np.any(np.array(target_resolutions) == np.inf) :
+    elif not isinstance(prediction, np.ndarray) and np.any(np.array(target_resolutions) == np.inf):
         # Show prediction according to targets dim
         if len(targets) == 1:
             raise NotImplementedError
@@ -314,6 +316,16 @@ def show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_v
         plot_shape = pos.shape
         pos = pos.reshape(-1, plot_shape[-1])
         pdf = prediction.pdf(pos.T).reshape(plot_shape[:-1])
+    elif isinstance(prediction, multivariate_normal_frozen):
+        #xx, yy = np.mgrid[target_domains[0][0]:target_domains[0][1]:.005,  target_domains[1][0]:target_domains[1][1]:.005]
+        yy, xx = np.meshgrid(
+            np.linspace(target_domains[1][0], target_domains[1][1],200),
+            np.linspace(target_domains[0][0], target_domains[0][1], 200)
+        )
+        pos = np.dstack((xx, yy))
+        plot_shape = pos.shape
+        pos = pos.reshape(-1, plot_shape[-1])
+        pdf = prediction.pdf(pos).reshape(plot_shape[:-1])
 
     ## Probability map 
     im = axis.contourf(yy.T, xx.T, pdf.T, cmap='jet') #, norm=LogNorm(vmin=pdf.min(), vmax=pdf.max()))
@@ -342,7 +354,7 @@ PMF predictions
 """
 
 def show_pmf_1d(prediction, prediction_point, targets, target_domains, 
-                       target_resolutions, targets_values=None, axis=None):
+                       target_resolutions=None, targets_values=None, axis=None):
     """
     Show predicted pmf in a 1d target domain.
     """
@@ -383,7 +395,7 @@ def show_pmf_1d(prediction, prediction_point, targets, target_domains,
     return axis
 
 def show_pmf_2d(prediction, prediction_point, targets, target_domains, 
-                       target_resolutions, targets_values=None, axis=None):
+                       target_resolutions=None, targets_values=None, axis=None):
     """
     Show predicted pmf in a 2d target domain.
     """
@@ -424,7 +436,7 @@ def show_pmf_2d(prediction, prediction_point, targets, target_domains,
     return axis
 
 def show_pmf_3d(prediction, prediction_point, targets, target_domains, 
-                       target_resolutions, targets_values=None, axis=None):
+                       target_resolutions=None, targets_values=None, axis=None):
     """
     Show predicted pmf in a 3d target domain.
     """

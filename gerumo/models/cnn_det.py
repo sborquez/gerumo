@@ -135,10 +135,10 @@ class CNN_DET(ModelAssembler):
                          lst_model_or_path=lst_model_or_path,
                          targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=CUSTOM_OBJECTS)
         
-        if assembler_mode not in ['mean']:
+        if assembler_mode not in (None, 'mean'):
             raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
 
-        self.assemble_mode = assembler_mode
+        self.assemble_mode = assembler_mode or "mean"
         self.point_estimation_mode = point_estimation_mode
         self.target_resolutions = target_resolutions
     

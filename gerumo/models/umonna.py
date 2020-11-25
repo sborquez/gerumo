@@ -274,9 +274,9 @@ class Umonna(ModelAssembler):
                  assembler_mode="normalized_product", point_estimation_mode="expected_value", custom_objects=CUSTOM_OBJECTS):
         super().__init__(sst1m_model_or_path=sst1m_model_or_path, mst_model_or_path=mst_model_or_path, lst_model_or_path=lst_model_or_path,
                          targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=custom_objects)
-        if assembler_mode not in ["normalized_product"]:
+        if assembler_mode not in (None, "normalized_product"):
             raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
-        self.assemble_mode = assembler_mode
+        self.assemble_mode = assembler_mode or "normalized_product"
         
         if point_estimation_mode not in ["expected_value"]:
             raise ValueError(f"Invalid point_estimation_mode: {point_estimation_mode}")
@@ -328,30 +328,17 @@ class Umonna(ModelAssembler):
         return y_point_estimations
 
     def expected_value(self, y_predictions):
-        y_point_estimations = []
-        if len(self.targets) == 1:
-            indexes = np.arange(self.target_shapes[0])
-            for y_i in y_predictions:
-                pos_0 = np.dot(y_i, indexes)
-                y_point_estimations.append((pos_0, ))
-        elif len(self.targets) == 2:
-            indexes_0 = np.arange(self.target_shapes[0])
-            indexes_1 = np.arange(self.target_shapes[1])
-            for y_i in y_predictions:
-                pos_0 = np.dot(y_i.sum(axis=1), indexes_0)
-                pos_1 = np.dot(y_i.sum(axis=0), indexes_1)
-                y_point_estimations.append((pos_0, pos_1))
-        elif len(self.targets) == 3:
-            indexes_0 = np.arange(self.target_shapes[0])
-            indexes_1 = np.arange(self.target_shapes[1])
-            indexes_2 = np.arange(self.target_shapes[2])
-            for y_i in y_predictions:
-                pos_0 = np.dot(y_i.sum(axis=(1,2)), indexes_0)
-                pos_1 = np.dot(y_i.sum(axis=(0,2)), indexes_1)
-                pos_2 = np.dot(y_i.sum(axis=(0,1)), indexes_2)
-                y_point_estimations.append((pos_0, pos_1, pos_2))
-        return np.array(y_point_estimations)
-
+        n_samples = len(y_predictions)
+        dimensions = len(self.targets)
+        y_point_estimations = np.empty((n_samples, dimensions))
+        axis = set(np.arange(dimensions))
+        for d in range(dimensions):
+            reduce_axis = tuple(axis - {d}) if dimensions > 1 else None
+            indexes_d = np.arange(self.target_shapes[d])
+            y_point_estimations[:, d] = np.array(
+                [np.dot(y_i.sum(axis=reduce_axis), indexes_d) for y_i in y_predictions]
+            )
+        return y_point_estimations
 
     def assemble(self, y_i_by_telescope):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
