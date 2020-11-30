@@ -1,0 +1,55 @@
+{
+    "model_name": "CNN_BMO_UNIT_MST_AZ_ALT_ADAM",
+    "model_constructor": "cnn_bmo_unit",
+    "model_extra_params": {
+        "latent_variables": 600,
+        "dropout_rate": 0.01
+    },
+    "save_plot" : false,
+    "plot_only" : false,
+    "summary" : false,
+    "version" : "ML1",
+    "preprocessing": {
+        "CameraPipe" : {
+            "charge_scaler_value" : 62.652400970459,
+            "peak_scaler_path" : "ML1_MST_FlashCam_peak_scaler",
+            "tailcuts_clean_params": {"boundary_thresh": 6, "picture_thresh": 14}
+        },
+        "TelescopeFeaturesPipe": {
+            "array_scaler_path": "ML1_array-scaler"
+        }
+    },
+    "output_folder" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/train_output_models/",
+    "replace_folder_train" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/raw_data_generation_list/",
+    "replace_folder_validation" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/raw_data_generation_list/",
+    "replace_folder_test" : "...",
+    "train_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/train_events.csv",
+    "train_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/train_telescopes.csv", 
+    "validation_events_csv"    : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/validation_events.csv",
+    "validation_telescope_csv" : "/home/bapanes/Research-Now/local/ml-valpo-local/umonna/dataset/ML1/ML1_small_20/validation_telescopes.csv",
+    "test_events_csv"    : "...",
+    "test_telescope_csv" : "...",
+    "telescope" : "MST_FlashCam",
+    "min_observations" : 3,
+    "input_image_mode" : "simple-shift",
+    "input_image_mask" : true,
+    "input_features" : ["x", "y"],
+    "targets" : ["az","alt"],
+    "target_mode" : "lineal",
+    "target_shapes" : null,
+    "target_domains" : {
+        "alt": [1.05, 1.382], 
+        "az": [-0.52, 0.52], 
+        "log10_mc_energy": [-2.351, 2.47]
+    },
+    "target_sigmas" : null,
+    "batch_size" : 32,
+    "epochs" : 50,
+    "save_checkpoints" : true,
+    "loss" : "mse",
+    "optimizer": {
+        "learning_rate": 1e-3,
+        "name": "adam",
+	"extra_parameters": null
+    }
+}

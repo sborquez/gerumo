@@ -27,7 +27,7 @@ setup(
     packages=['gerumo'],
     include_package_data=True,
     python_requires=">=3.7.*",
-    install_requires=['numpy'],
+    install_requires=['numpy', 'POT'],
     license=about['__license__'],
     zip_safe=False,
     entry_points={},

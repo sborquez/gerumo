@@ -59,6 +59,16 @@ INPUT_SHAPE = {
         "MST_FlashCam": (2, 84, 29, 2),
         "SST1M_DigiCam": (2, 72, 25, 2) 
     },
+    "time": {
+        "LST_LSTCam" : (55, 47, 1),
+        "MST_FlashCam": (84, 29, 1),
+        "SST1M_DigiCam": (72, 25, 1) 
+    },
+    "time-shift": {
+        "LST_LSTCam" : (2, 55, 47, 1),
+        "MST_FlashCam": (2, 84, 29, 1),
+        "SST1M_DigiCam": (2, 72, 25, 1) 
+    },
     "simple-mask": {
         "LST_LSTCam" : (55, 47, 3),
         "MST_FlashCam": (84, 29, 3),
@@ -69,6 +79,16 @@ INPUT_SHAPE = {
         "MST_FlashCam": (2, 84, 29, 3),
         "SST1M_DigiCam": (2, 72, 25, 3) 
     },
+    "time-mask": {
+        "LST_LSTCam" : (55, 47, 2),
+        "MST_FlashCam": (84, 29, 2),
+        "SST1M_DigiCam": (72, 25, 2)
+    },
+    "time-shift-mask": {
+        "LST_LSTCam" : (2, 55, 47, 2),
+        "MST_FlashCam": (2, 84, 29, 2),
+        "SST1M_DigiCam": (2, 72, 25, 2) 
+    }
 }
 
 pixpos_folder = path.join(path.dirname(__file__), "pixels_positions")
@@ -76,7 +96,7 @@ PIXELS_POSITION = {}
 try:
     for version in ("ML1", "ML2"):
         PIXELS_POSITION[version] = {}
-        for mode in ("raw", "simple", "simple_shift"): #time_split, time_split_shift):
+        for mode in ("raw", "simple", "simple_shift", "time", "time_shift"):
             PIXELS_POSITION[version][mode] = {}
             for telescope in TELESCOPES:
                 path_  = path.join(pixpos_folder, version, mode, f"{telescope}.npy")

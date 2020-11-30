@@ -13,8 +13,9 @@ from tensorflow.python.client import timeline
 
 from time import time
 import uuid
-from os.path import abspath, basename, splitext
-from os import remove
+from os.path import abspath, basename, splitext, isdir, join
+from glob import glob
+from os import remove, makedirs
 import argparse
 
 import logging
@@ -87,21 +88,53 @@ def test_saving(model="umonna"):
 def bottle_neck(model_path):
     raise NotImplementedError
 
-def save_plot_model(model_path):
-    raise NotImplementedError
+def save_plot_model(experiment_or_model_path, output_folder, include_shape=False):
 
-ap = argparse.ArgumentParser(description="Profiling and debuging tools to find bottlenecks in the architecture and other tests.")
-ap.add_argument("--gpu", dest="gpu", action="store_true", help="Check GPU availability.")
-ap.add_argument("--save", dest="save", action="store_true", help="Check if model can be saved")
+    # load model
+    if isdir(experiment_or_model_path):
+        model_path = glob(join(experiment_or_model_path, 'checkpoints' , "*.h5"))[0]
+    elif splitext(experiment_or_model_path)[1] == ".h5":
+        model_path = experiment_or_model_path
+    else:
+        raise ValueError("Invalid experiment_or_model_path", experiment_or_model_path)
+    makedirs(output_folder, exist_ok=True)
 
-args = vars(ap.parse_args())
-gpu = args["gpu"]
-save = args["save"]
+    model = load_model(model_path, custom_objects=CUSTOM_OBJECTS) if isinstance(model_path, str) else model_path
 
-if save:
-    u=test_saving()
+    # save plot
+    model_image = join(output_folder, "model.png")
+    print("Saving model in", )
+    if include_shape:
+        plot_model(model, to_file=model_image, show_shapes=True)
+    else:
+        plot_model(model, to_file=model_image, show_shapes=False)
 
-if gpu:
-    print("Running GPU tests.")
-    test_gpu()
-print("Done")
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser(description="Profiling and debuging tools to find bottlenecks in the architecture and other tests.")
+    # option a
+    ap.add_argument("--gpu", dest="gpu", action="store_true", help="Check GPU availability.")
+    # option b
+    ap.add_argument("--save", dest="save", action="store_true", help="Check if model can be saved")
+    # option c
+    ap.add_argument("--plot", type=str, default=None, help="Path to model checkpoint or experiment path.")
+    ap.add_argument("--include_shape", action="store_true", help="Include shape in model plot.")
+    ap.add_argument("-o", "--output", type=str, default=".", help="Output folder path")
+    args = vars(ap.parse_args())
+    
+    gpu = args["gpu"]
+    if gpu:
+        print("Running GPU tests.")
+        test_gpu()
+    
+    save = args["save"]
+    if save:
+        test_saving()
+    
+    model = args["plot"]
+    if model is not None:
+        print("Saving model plot.")
+        output_folder = args["output"]
+        include_shape = args["include_shape"]
+        save_plot_model(model, output_folder, include_shape=include_shape)
+
+    print("Done")

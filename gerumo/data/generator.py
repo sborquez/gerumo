@@ -8,6 +8,7 @@ models, with their defined input format.
 
 from tensorflow import keras
 import numpy as np
+from sklearn import utils
 from . import load_cameras, cameras_to_images, targets_to_matrix
 
 
@@ -25,11 +26,11 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
                  targets,
                  target_mode,
                  target_mode_config,
-                 preprocess_input_pipes=[],
-                 preprocess_output_pipes=[],
+                 preprocess_input_pipes={},
+                 preprocess_output_pipes={},
                  include_event_id=False,
                  include_true_energy=False,
-                 shuffle=False,
+                 shuffle=True,
                  version="ML1"):
 
         # Dataset with one telescope type
@@ -55,9 +56,18 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         # Generator parameters
         self.batch_size = batch_size
         self.size = len(self.dataset)
-        self.shuffle = shuffle
         self.include_event_id = include_event_id
         self.include_true_energy = include_true_energy
+        
+        # Shuffle dataset
+        self.shuffle = shuffle
+        if shuffle:
+            self.datasets_by_file = { f: [] for f in self.dataset["hdf5_filepath"].unique()}
+            for i, (_, row) in enumerate(self.dataset.iterrows()):
+                file = row["hdf5_filepath"]
+                self.datasets_by_file[file].append(i)
+        else:
+            self.datasets_by_file = None
 
         # Dataset version
         self.version = version
@@ -86,10 +96,18 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
-        self.indexes = np.arange(self.size)
-        # TODO: Add shuffle but without mix hdf5 files
-        # if self.shuffle == True:
-        #     np.random.shuffle(self.indexes)
+        if self.shuffle:
+            self.indexes = np.empty(self.size, dtype=np.uint)
+            files = utils.shuffle(list(self.datasets_by_file.keys()))
+            start = 0
+            for f in files:
+                rows = utils.shuffle(self.datasets_by_file[f])
+                end = len(rows) + start
+                self.indexes[start:end] = rows
+                start = end
+        else:
+            self.indexes = np.arange(self.size)
+
 
     def __data_generation(self, list_indexes):
         'Generates data containing batch_size samples'
@@ -105,18 +123,25 @@ class AssemblerUnitGenerator(keras.utils.Sequence):
         # dataset contains only one telescope type
         telescope_types = [self.telescope_type]*len(batch_dataset)
         cameras = load_cameras(batch_dataset, version=self.version)
+        # PreProcessing Cameras
+        if "CameraPipe" in self.preprocess_input_pipes:
+            cameras = self.preprocess_input_pipes["CameraPipe"](cameras)
+        # Generate square images
         images = cameras_to_images(cameras, telescope_types, self.input_image_mode, self.input_image_mask, version=self.version)
+        # Build batch
         batch_images = np.array(images)                                   
         batch_telescope_features = batch_dataset[self.input_features].values
-        # TODO: Add preprocessing steps
+        # PreProcessing Telescope Features
+        if "TelescopeFeaturesPipe" in self.preprocess_input_pipes:
+            batch_telescope_features = self.preprocess_input_pipes["TelescopeFeaturesPipe"](batch_telescope_features)
         X = [batch_images, batch_telescope_features]
 
+        # Build Target
         if self.target_mode is not None:
             y = targets_to_matrix(targets_values=batch_dataset[self.targets].values, 
                               target_names=self.targets,
                               target_mode=self.target_mode, 
                               target_mode_config=self.target_mode_config)
-            # TODO: Add preprocessing steps
         else:
             y = None
 
@@ -198,6 +223,9 @@ class AssemblerGenerator(keras.utils.Sequence):
         self.input_image_mask = input_image_mask
         # Which extra telescope feature use
         self.input_features = input_features
+        if self.input_features is None or len(self.input_features) == 0:
+            self.input_features = None
+
         # Add normalization and stardarization 
         self.preprocess_input_pipes = preprocess_input_pipes
 
@@ -279,21 +307,31 @@ class AssemblerGenerator(keras.utils.Sequence):
         }
         """
         for event in batch_events:
+            # 
             event_dataset = self.dataset.get_group(event).sort_values(by="type")
-            # dataset contains only one telescope type
             telescope_types = list(event_dataset.type)
+
+            # Load cameras
             cameras = load_cameras(event_dataset, version=self.version)
+            # PreProcessing Cameras
+            if "MultiCameraPipe" in self.preprocess_input_pipes:
+                cameras = self.preprocess_input_pipes["MultiCameraPipe"](cameras, telescope_types)
+            # Generate square images
             event_images = cameras_to_images(cameras, telescope_types, 
                                    self.input_image_mode, self.input_image_mask, version=self.version)
 
+            # Telescop features
             event_telescopes_features = event_dataset[self.input_features].values
+            # Preprocessing Telescope Features
+            if "TelescopeFeaturesPipe" in self.preprocess_input_pipes:
+                event_telescopes_features = self.preprocess_input_pipes["TelescopeFeaturesPipe"](event_telescopes_features)
 
+            # Build Batch
             event_by_telescope = {}
             for telescope_type in self.telescope_types:
                 telescope_indices = [i for i, t in enumerate(telescope_types) if t == telescope_type]
                 event_images_by_telescope = np.array([event_images[t_i] for t_i in telescope_indices])
                 event_telescopes_features_by_telescope = np.array([event_telescopes_features[t_i] for t_i in telescope_indices])
-                # TODO: Add preprocessing steps
                 event_by_telescope[telescope_type] = [ 
                     event_images_by_telescope, event_telescopes_features_by_telescope
                 ]

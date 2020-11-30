@@ -1,5 +1,0 @@
-name: gerumo
-channels:
-  - defaults
-prefix: /home/sborquez/.conda/envs/gerumo
-

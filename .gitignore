@@ -1,9 +1,8 @@
-# visual studio code
-.vscode/
-.idea/
+.vscode/settings.json
 
 # python
 venv/
+ENV
 virtualenv/
 __pycache__/
 .pytest_cache/
