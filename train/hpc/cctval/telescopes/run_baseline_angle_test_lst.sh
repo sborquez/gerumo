@@ -15,7 +15,7 @@ source /opt/software/anaconda3/2019.03/setup.sh
 # ----------------Comandos--------------------------
 
 source activate /user/c/campana/envs/gerumo
-echo "Running run_baseline.sh"
+echo "Running run_baseline_angle_test_lst.sh"
 echo ""
 
 cd /user/c/campana/gerumo/train
@@ -24,7 +24,7 @@ DATASET=010/
 
 d=${ML1PATH}${DATASET}
 RESULTS=${d}baseline/
-TEST_RESULTS=${RESULTS}test/
+TEST_RESULTS=${RESULTS}test/lst/
 
 echo "Copying dataset from ${d} to ${TMPDIR}"
 cp ${d}*.h5 ${TMPDIR}
@@ -32,5 +32,5 @@ cp ${d}events.csv ${TMPDIR}
 cp ${d}telescopes.csv ${TMPDIR}
 
 echo "Running angle baseline ${d}"
-mkdir ${TEST_RESULTS}
+mkdir -p ${TEST_RESULTS}
 python run_baseline.py -e ${TMPDIR}/events.csv -t ${TMPDIR}/telescopes.csv -T LST_LSTCam -c ${TEST_RESULTS}hillas.csv -o ${TEST_RESULTS}results.csv -f ${TMPDIR} # -r ${ML1PATH}001/energy_regressor.pickle

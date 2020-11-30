@@ -2,7 +2,7 @@
 # ----------------SLURM Parameters----------------
 #!/bin/bash
 #SBATCH -p batch
-#SBATCH -J gerumo_baseline_train
+#SBATCH -J gerumo_all_baseline_test
 #SBATCH --mail-user=patricio.campana@sansano.usm.cl
 #SBATCH --mail-type=ALL
 #SBATCH -o output_baseline_%j.log
@@ -15,14 +15,22 @@ source /opt/software/anaconda3/2019.03/setup.sh
 # ----------------Comandos--------------------------
 
 source activate /user/c/campana/envs/gerumo
-echo "Running run_baseline.sh"
+echo "Running run_baseline_angle_test_all.sh"
 echo ""
 
 cd /user/c/campana/gerumo/train
 ML1PATH=/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/
-DATASET=002/
+DATASET=010/
 
 d=${ML1PATH}${DATASET}
-echo "Run baseline ${d}"
-python run_baseline.py -e ${d}events.csv -t ${d}telescopes.csv -c ${d}hillas.csv -o ${d}results.csv -r ${ML1PATH}001/energy_regressor.pickle
+RESULTS=/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/HILLAS/
+TEST_RESULTS=${RESULTS}all/
 
+echo "Copying dataset from ${d} to ${TMPDIR}"
+cp ${d}*.h5 ${TMPDIR}
+cp ${d}events.csv ${TMPDIR}
+cp ${d}telescopes.csv ${TMPDIR}
+
+echo "Running angle baseline ${d}"
+mkdir -p ${TEST_RESULTS}
+python run_baseline.py -e ${TMPDIR}/events.csv -t ${TMPDIR}/telescopes.csv -c ${TEST_RESULTS}hillas.csv -o ${TEST_RESULTS}results.csv -f ${TMPDIR} # -r ${ML1PATH}001/energy_regressor.pickle

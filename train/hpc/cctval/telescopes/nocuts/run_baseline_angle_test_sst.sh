@@ -2,7 +2,7 @@
 # ----------------SLURM Parameters----------------
 #!/bin/bash
 #SBATCH -p batch
-#SBATCH -J gerumo_baseline_train
+#SBATCH -J gerumo_baseline_test_sst
 #SBATCH --mail-user=patricio.campana@sansano.usm.cl
 #SBATCH --mail-type=ALL
 #SBATCH -o output_baseline_%j.log
@@ -20,9 +20,17 @@ echo ""
 
 cd /user/c/campana/gerumo/train
 ML1PATH=/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/
-DATASET=002/
+DATASET=010/
 
 d=${ML1PATH}${DATASET}
-echo "Run baseline ${d}"
-python run_baseline.py -e ${d}events.csv -t ${d}telescopes.csv -c ${d}hillas.csv -o ${d}results.csv -r ${ML1PATH}001/energy_regressor.pickle
+RESULTS=${d}baseline/
+TEST_RESULTS=${RESULTS}test/nocuts/sst/
 
+echo "Copying dataset from ${d} to ${TMPDIR}"
+cp ${d}*.h5 ${TMPDIR}
+cp ${d}events.csv ${TMPDIR}
+cp ${d}telescopes.csv ${TMPDIR}
+
+echo "Running angle baseline ${d}"
+mkdir -p ${TEST_RESULTS}
+python run_baseline.py -e ${TMPDIR}/events.csv -t ${TMPDIR}/telescopes.csv -T SST1M_DigiCam -c ${TEST_RESULTS}hillas.csv -o ${TEST_RESULTS}results.csv -f ${TMPDIR} # -r ${ML1PATH}001/energy_regressor.pickle

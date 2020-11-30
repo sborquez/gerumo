@@ -19,10 +19,19 @@ echo "Running run_baseline.sh"
 echo ""
 
 cd /user/c/campana/gerumo/train
+
 ML1PATH=/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/
-DATASET=002/
-
+DATASET=$1/
 d=${ML1PATH}${DATASET}
-echo "Run baseline ${d}"
-python run_baseline.py -e ${d}events.csv -t ${d}telescopes.csv -c ${d}hillas.csv -o ${d}results.csv -r ${ML1PATH}001/energy_regressor.pickle
 
+echo "Copying dataset from ${d} to ${TMPDIR}"
+cp ${d}*.h5 ${TMPDIR}
+cp ${d}train_events.csv ${TMPDIR}
+cp ${d}train_telescopes.csv ${TMPDIR}
+
+RESULTS=/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/HILLAS/
+TRAIN_RESULTS=${RESULTS}energy/train/loose/$1/
+mkdir -p ${TRAIN_RESULTS}
+
+echo "Running angle baseline ${d}"
+python run_baseline.py -l -e ${TMPDIR}/train_events.csv -t ${TMPDIR}/train_telescopes.csv -c ${TRAIN_RESULTS}hillas.csv -o ${TRAIN_RESULTS}results.csv -f ${TMPDIR} # -r ${ML1PATH}001/energy_regressor.pickle
