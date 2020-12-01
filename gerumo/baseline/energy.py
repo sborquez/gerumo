@@ -1,21 +1,9 @@
 import _pickle as pickle
 
-import tqdm
 import numpy as np
-
-from pandas import DataFrame
-
-from sklearn.ensemble import AdaBoostRegressor
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV
 
-from ctapipe.utils import CutFlow
-from ctapipe.containers import HillasParametersContainer
-
-from gerumo import load_camera
-from gerumo.baseline.io import load_hillas_dataset, aggregate_hillas_dataset
-from gerumo.baseline.mapper import split_tel_type
-from gerumo.baseline.cutflow import generate_observation_cutflow
+from gerumo.data.dataset import load_hillas_dataset, aggregate_hillas_dataset
 
 
 class EnergyModel:
@@ -25,15 +13,15 @@ class EnergyModel:
             "log10_intensity",
             "width",
             "length",
-            "x", "y", # "log10_impact"
+            "x", "y",
             "psi",
             "phi",
-            "wl", # width/length
+            "wl",
             "skewness",
             "kurtosis",
             "r",
-            "time_gradient", # timing_c.slope.value if geometry.camera_name != 'ASTRICam' else hillas_c.skewnes
-            "leakage_intensity_width_2", # leakage_c.intensity_width_2
+            "time_gradient",
+            "leakage_intensity_width_2",
             "n_islands"
         ]
 
@@ -45,14 +33,14 @@ class EnergyModel:
 
         if split is None:
             return aggregate_hillas_dataset(dataset)
-        
+
         n_test = int(np.ceil(split * len(event_ids)))
         test = dataset[dataset["event_unique_id"].isin(event_ids[:n_test])]
         train = dataset[dataset["event_unique_id"].isin(event_ids[n_test:])]
 
         return aggregate_hillas_dataset(train), aggregate_hillas_dataset(test)
 
-    def fit(self, dataset, param_grid = None, cv = 5, scoring = "neg_mean_squared_error"):
+    def fit(self, dataset, param_grid=None, cv=5, scoring="neg_mean_squared_error"):
         if param_grid is None:
             param_grid = {
                 "n_estimators": np.linspace(200, 500, 5, dtype=int),
@@ -88,8 +76,10 @@ class EnergyModel:
             self._models[tel_type].fit(x, y)
 
     def predict_dataset(self, dataset):
-        grouped = dataset[["event_unique_id", "observation_indice", "type", "intensity", "mc_energy"] + self._features].groupby("event_unique_id")
-        
+        grouped = dataset[
+            ["event_unique_id", "observation_indice", "type", "intensity", "mc_energy"] + self._features].groupby(
+            "event_unique_id")
+
         results = {}
         for event_id, group in grouped:
             energies = np.zeros(len(group))
@@ -112,12 +102,14 @@ class EnergyModel:
 
         return results
 
-    def predict_event(self, positions, types, hillas_containers, reconstruction, time_gradients, leakages, n_islands, meta):
+    def predict_event(self, positions, types, hillas_containers, reconstruction, time_gradients, leakages, n_islands,
+                      meta):
         n_obs = len(hillas_containers)
         energies = np.zeros(n_obs)
         weights = np.zeros(n_obs)
 
-        data = {tel_id: (hillas_containers[tel_id], positions[tel_id], types[tel_id], meta[tel_id]) for tel_id in positions}
+        data = {tel_id: (hillas_containers[tel_id], positions[tel_id], types[tel_id], meta[tel_id]) for tel_id in
+                positions}
         for idx, (moments, position, t, (tel_type, obs_id)) in enumerate(data.values()):
             x, y = position
 
@@ -137,7 +129,7 @@ class EnergyModel:
                 n_islands[(tel_type, obs_id)]
             ]])
             weights[idx] = moments.intensity
- 
+
             tel_type = t.split("_")[1]
             energies[idx] = self._models[tel_type].predict(X)
 

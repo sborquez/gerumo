@@ -46,6 +46,7 @@ def generate_subarray_description(dataset: DataFrame, event_id: str) -> Subarray
         tel_id = tel["telescope_id"]
         tel_name = tel['type']
         optics_name, camera_name = split_tel_type(tel_name)
+        assert tel_id not in tel_descriptions
         tel_descriptions[tel_id] = get_telescope_description(optics_name, camera_name)
         tel_positions[tel_id] = [tel['x'], tel['y'], tel['z']]
     return SubarrayDescription(event_id, tel_positions=tel_positions, tel_descriptions=tel_descriptions)

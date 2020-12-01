@@ -1,32 +1,28 @@
-from typing import Union, Tuple, List, Dict
+from typing import Union, Tuple, List
 
-from tqdm import tqdm
-from pandas import DataFrame
-
-import numpy as np
 import astropy.units as u
 import matplotlib.pyplot as plt
-
+import numpy as np
 from astropy.coordinates import SkyCoord
-
 from ctapipe.image import hillas_parameters, timing_parameters, \
     tailcuts_clean, number_of_islands, largest_island, leakage
 from ctapipe.instrument import CameraGeometry
 from ctapipe.reco import HillasReconstructor
 from ctapipe.utils import CutFlow
 from ctapipe.visualization import CameraDisplay
+from pandas import DataFrame
+from tqdm import tqdm
 
-from gerumo import load_dataset, filter_dataset, load_cameras, load_camera, TELESCOPES_ALIAS
-from gerumo.baseline.energy import EnergyModel
+from gerumo import load_dataset, filter_dataset, load_camera, TELESCOPES_ALIAS
 from gerumo.baseline.cutflow import generate_observation_cutflow, CFO_MIN_PIXEL, CFO_MIN_CHARGE, CFO_POOR_MOMENTS, \
     CFO_CLOSE_EDGE, \
     CFO_BAD_ELLIP, CFE_MIN_TELS_RECO, generate_event_cutflow, CFO_NEGATIVE_CHARGE
+from gerumo.baseline.energy import EnergyModel
 from gerumo.baseline.mapper import get_camera_geometry, split_tel_type, generate_subarray_description, get_camera, \
     get_telescope_description
-from gerumo.data.io import load_array_direction
+from gerumo.data.dataset import load_array_direction
 
 __all__ = ["Reconstructor", "get_camera_radius", "Reconstructor", "cleaning_level", "clean_charge"]
-
 
 cleaning_level = {
     'ASTRICam': (5, 7, 2),
@@ -148,7 +144,7 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
         plt.show()
 
     moments = hillas_parameters(camera_biggest, charge_biggest)
-    if cut:        
+    if cut:
         if cutflow.cut(CFO_CLOSE_EDGE, moments, camera.camera_name):
             return
         if cutflow.cut(CFO_BAD_ELLIP, moments):
@@ -163,7 +159,8 @@ def get_observation_parameters(charge: np.array, peak: np.array, cam_name: str, 
 
 
 class Reconstructor:
-    def __init__(self, events_path: str, telescopes_path: str, replace_folder: str = None, version="ML1", telescopes: list = None):
+    def __init__(self, events_path: str, telescopes_path: str, replace_folder: str = None, version="ML1",
+                 telescopes: list = None):
         if version == "ML2":
             raise NotImplementedError("This reconstructor is not implemented to work with ML2 yet")
         self.version = version
@@ -181,6 +178,9 @@ class Reconstructor:
 
         self.cameras_by_event = dict((event_id, []) for event_id in self.event_uids)
         self.n_tels_by_event = {}
+
+        tel_ids = dict()
+        repeated_tel_ids = list()
         for event_id, tel_type, tel_id, obs_id, folder, source, x, y in zip(
                 self.dataset["event_unique_id"],
                 self.dataset["type"],
@@ -191,12 +191,18 @@ class Reconstructor:
                 self.dataset["x"],
                 self.dataset["y"]
         ):
+            if event_id not in tel_ids:
+                tel_ids[event_id] = list()
             if event_id not in self.n_tels_by_event:
                 self.n_tels_by_event[event_id] = {}
             if tel_type not in self.n_tels_by_event[event_id]:
                 self.n_tels_by_event[event_id][tel_type] = 1
             else:
                 self.n_tels_by_event[event_id][tel_type] += 1
+
+            if tel_id in tel_ids[event_id]:
+                repeated_tel_ids.append(tel_id)
+            tel_ids[event_id].append(tel_id)
             self.cameras_by_event[event_id].append((obs_id, tel_id, tel_type, folder, source, x, y))
 
     @property
@@ -235,7 +241,7 @@ class Reconstructor:
         return values
 
     def reconstruct_event(self, event_id: str, event_cutflow: CutFlow, obs_cutflow: CutFlow,
-                          energy_regressor = None, loose=False) -> Union[None, dict, Tuple[dict, dict]]:
+                          energy_regressor=None, loose=False) -> Union[None, dict, Tuple[dict, dict]]:
 
         run_array_direction = None
         n_valid_tels = 0
@@ -272,11 +278,9 @@ class Reconstructor:
             hdf5_file = self.get_event_hdf5_file(event_id, tel_id)
             telescope_alias = TELESCOPES_ALIAS[self.version][tel_type]
             run_array_direction = self.array_directions[hdf5_file][telescope_alias][tel_id]
+
             n_valid_tels += 1
         subarray = generate_subarray_description(self.dataset, event_id)
-
-        if run_array_direction is None:
-            return
         if event_cutflow.cut(CFE_MIN_TELS_RECO, len(hillas_containers)):
             return
 
@@ -291,7 +295,8 @@ class Reconstructor:
         if energy_regressor is None:
             energy = None
         else:
-            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, time_gradients, leakages, n_islands, meta)
+            energy = energy_regressor.predict_event(positions, types, hillas_containers, reco, time_gradients, leakages,
+                                                    n_islands, meta)
 
         return dict(
             pred_az=2 * np.pi * u.rad + reco.az,
@@ -323,7 +328,7 @@ class Reconstructor:
 
     def reconstruct_all(self, max_events=None,
                         min_valid_observations=2,
-                        energy_regressor = None,
+                        energy_regressor=None,
                         npix_bounds: Tuple[float, float] = None,
                         charge_bounds: Tuple[float, float] = None,
                         ellipticity_bounds: Tuple[float, float] = None,
@@ -347,7 +352,18 @@ class Reconstructor:
             if reco is None:
                 continue
             reconstructions[event_id] = reco
-        print(f"N. Events Reconstructed: {len(reconstructions)}")
+
+        print()
+        print("==Observations Cutflow Summary==")
+        for cut in obs_cutflow.cuts.items():
+            print(cut[0], cut[1][1])
+        print()
+        print("==Event Cutflow Summary==")
+        for cut in event_cutflow.cuts.items():
+            print(cut[0], cut[1][1])
+        print()
+        perc_reconstructed = 100 * len(reconstructions) / len(event_ids)
+        print(f"N. Events Reconstructed: {len(reconstructions)}/{len(event_ids)} ({perc_reconstructed}%)")
 
         if save_to is not None:
             self.save_predictions(reconstructions, save_to)
@@ -357,11 +373,13 @@ class Reconstructor:
 
         return reconstructions
 
-    def plot_metrics(self, max_events: int = None, min_valid_observations=2, energy_regressor: EnergyModel = None, plot_charges: bool = False,
+    def plot_metrics(self, max_events: int = None, min_valid_observations=2, energy_regressor: EnergyModel = None,
+                     plot_charges: bool = False,
                      save_to: str = None, save_hillas: str = None, save_plots: str = None):
         import ctaplot
 
-        reco = self.reconstruct_all(max_events, min_valid_observations=min_valid_observations, energy_regressor=energy_regressor)
+        reco = self.reconstruct_all(max_events, min_valid_observations=min_valid_observations,
+                                    energy_regressor=energy_regressor)
 
         preds = list(reco.values())
 
@@ -374,7 +392,7 @@ class Reconstructor:
             if energy_regressor is not None:
                 energy = np.array([pred['energy'] for pred in preds])
             mc_energy = np.array([pred['mc_energy'] for pred in preds])
- 
+
             _, (ax1, ax2) = plt.subplots(1, 2)
             ctaplot.plot_angular_resolution_per_energy(reco_alt, reco_az, alt, az, mc_energy, ax=ax1)
             if energy_regressor is not None:
@@ -391,7 +409,7 @@ class Reconstructor:
     @staticmethod
     def plot(results: DataFrame, save_to: str):
         import os
-        from gerumo import plot_error_and_angular_resolution, plot_angular_resolution_comparison
+        from gerumo import plot_error_and_angular_resolution
 
         results['true_alt'] = results['alt']
         results['true_az'] = results['az']
@@ -403,36 +421,11 @@ class Reconstructor:
         fig, axes = plt.subplots(1, 2)
         ax1, ax2 = axes
         Reconstructor.plot_prediction_vs_real(results['pred_alt'], results['alt'], ax1, "Altitude")
-        Reconstructor.plot_prediction_vs_real(results['pred_az'].apply(lambda rad: np.arctan2(np.sin(rad), np.cos(rad))), results['az'].apply(lambda rad: np.arctan2(np.sin(rad), np.cos(rad))), ax2, "Azimuth")
+        Reconstructor.plot_prediction_vs_real(
+            results['pred_az'].apply(lambda rad: np.arctan2(np.sin(rad), np.cos(rad))),
+            results['az'].apply(lambda rad: np.arctan2(np.sin(rad), np.cos(rad))), ax2, "Azimuth")
 
         fig.savefig(os.path.join(save_to, "scatter.png"))
-
-    @staticmethod
-    def plot_comparison(results: Dict[str, DataFrame], save_to: str):
-        import os
-        from gerumo import plot_error_and_angular_resolution, plot_angular_resolution_comparison, plot_energy_resolution_comparison
-
-        models = dict()
-        energy_models = dict()
-        for label, result in results.items():
-            targets = np.transpose(np.vstack([result['alt'], result['az']]))
-            predictions = np.transpose(np.vstack([result['pred_alt'], result['pred_az']]))
-            mc_energy = result['mc_energy'].values
-            models[label] = {
-                "targets": targets,
-                "predictions": predictions,
-                "true_energy": mc_energy
-            }
-            energy = result['energy'].values
-            energy_models[label] = {
-                "predictions": np.log10(result['energy'].values),
-                "true_energy": mc_energy
-            }
-
-
-        plot_angular_resolution_comparison(models, ylim=[0, 2], save_to=os.path.join(save_to, "angular_resolution_comparable.png"))
-        plot_energy_resolution_comparison(energy_models, ylim=[0, 2], save_to=os.path.join(save_to, "energy_resolution_comparable.png"))
-
 
     @staticmethod
     def save_predictions(reco: dict, path: str):
@@ -477,7 +470,7 @@ class Reconstructor:
             "telescope_az",
             "telescope_alt"
         ]
-        
+
         params = list()
         for event_id, r in reco.items():
             run_array_direction = r["run_array_direction"]
@@ -509,6 +502,7 @@ class Reconstructor:
                 params.append(obs_params)
         df = DataFrame(params, columns=columns).set_index(columns[:3])
         df.to_csv(path, sep=',')
+
 
 """
 TODO: LST, MST and SST experiments with and without cuts

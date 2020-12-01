@@ -1,7 +1,7 @@
 import sys
-#FIX: this. re structuring the project
-sys.path.insert(1, '..')
 
+# FIX: this. re structuring the project
+sys.path.insert(1, '..')
 
 import os
 import json
@@ -9,7 +9,6 @@ import argparse
 
 from sklearn.model_selection import train_test_split
 from gerumo.baseline.energy import EnergyModel
-
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Train the baseline energy regressor.")
