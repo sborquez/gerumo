@@ -1,4 +1,4 @@
-# GERUMO (Gamma-Ray Event Reconstruction with Uncertain Models)
+# GERUMO (Gamma-Ray Event Reconstruction with Uncertainty Models)
 
 
 ## Setup Environment with Conda and Linux

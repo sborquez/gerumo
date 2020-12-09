@@ -2,6 +2,7 @@
     "model_name": "BMO BP Assembler Loose",
     "assembler_constructor": "bmo",
     "model_constructor": "bmo_unit",
+    "assembler_mode": "normalized_product",
     "telescopes" : {
         "LST_LSTCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/BMO_UNIT_LST_820f15",
         "MST_FlashCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/BMO_UNIT_MST_e166d9",

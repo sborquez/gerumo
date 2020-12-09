@@ -1,18 +1,15 @@
 {
-    "model_name": "BMO BP Assembler Tight",
+    "model_name": "BMO BP Assembler Tight MST D09",
     "assembler_constructor": "bmo",
     "model_constructor": "bmo_unit",
-    "assembler_mode": "normalized_product",
     "telescopes" : {
-        "LST_LSTCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/BMO_UNIT_LST_820f15",
-        "MST_FlashCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/BMO_UNIT_MST_e166d9",
-        "SST1M_DigiCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/BMO_UNIT_SST_ac94a4"
+        "MST_FlashCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/bmo_dropout_tests/BMO_UNIT_MST_0.9_20201125_001432_eaf"
     },
-    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/BMO_ASSEMBLER_EVALUATIONS",
+    "output_folder" : "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/bmo_dropout_tests/BMO_ASSEMBLER_EVALUATIONS",
     
     "version" : "ML1",
-    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/tight/all_events.csv",
-    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/tight/all_telescopes.csv",
+    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/tight/mst_events.csv",
+    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/tight/mst_telescopes.csv",
     "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/baseline",
     
     "input_image_mode" : "simple-shift",
