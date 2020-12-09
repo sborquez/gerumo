@@ -300,7 +300,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None,
     config, assembler = load_assembler_from_configuration(
         assembler_config_file, assemblers=ASSEMBLERS
     )
-
+    # Load configuration dataset
     test_, sample_ = load_dataset_from_assembler_configuration(
         assembler_config_file, include_samples_dataset=True
     )

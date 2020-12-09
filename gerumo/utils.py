@@ -65,8 +65,11 @@ def load_dataset_from_experiment(experiment_folder, include_samples_dataset=Fals
 
 def load_dataset_from_configuration(config_file, include_samples_dataset=False, subset='test', telescope=None):
     # Load configuration
-    with open(config_file) as cfg_file:
-        config = json.load(cfg_file)
+    if isinstance(config_file, dict):
+        config = config_file
+    elif isinstance(config_file, str):
+        with open(config_file) as cfg_file:
+            config = json.load(cfg_file)
     # Prepare datasets
     version = config["version"]
 

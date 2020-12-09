@@ -340,7 +340,7 @@ class Umonna(ModelAssembler):
             )
         return y_point_estimations
 
-    def assemble(self, y_i_by_telescope):
+    def assemble(self, y_i_by_telescope, **kwargs):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
         if self.assemble_mode == "normalized_product":
             yi_assembled = self.normalized_product(y_i_all)

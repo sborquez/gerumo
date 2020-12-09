@@ -291,7 +291,7 @@ class BMO(ModelAssembler):
                 )
         return y_mus
 
-    def assemble(self, y_i_by_telescope):
+    def assemble(self, y_i_by_telescope, **kwargs):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
         if self.assemble_mode == "resample":
             yi_assembled = self.resample(y_i_all)
