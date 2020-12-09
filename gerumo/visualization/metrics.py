@@ -22,7 +22,7 @@ from sklearn.metrics import r2_score
 
 __all__ = [
     'plot_model_training_history',
-    'plot_prediction', 
+    'plot_prediction', 'plot_row_of_predictions', 'plot_multi_stereo_prediction',
         'show_points_1d','show_points_2d',
         'show_pdf_2d',
         'show_pmf_1d', 'show_pmf_2d', 'show_pmf_3d', 
@@ -198,6 +198,118 @@ def plot_prediction(prediction, prediction_point, targets, target_domains,
         plt.close()
     else:
         plt.show()
+
+
+def plot_row_of_predictions(model_result, model_predictions, targets, target_domains,
+                              target_resolutions=None,  title=None, max_col=None,
+                              save_to=None):
+    """
+    Display a row of predictions of a event for each model, probability and the predicted point.
+    If targets_values is not None, the target point is included in the figure.
+    """
+
+    if isinstance(target_domains, dict):
+        target_domains = [[target_domains[t][0],target_domains[t][1]] for t in targets]
+    target_resolutions = target_resolutions or np.array([np.inf] * len(targets))
+    
+    # Create new Figure
+    max_col = max_col or len(model_result)
+    fig, axs = plt.subplots(1, max_col, figsize=(max_col*3.1, 3), sharey=True, sharex=True)
+    if title:
+        plt.suptitle(title)
+
+    for i, (_, row) in enumerate(model_result.iterrows()):
+        ax = axs[i] if max_col > 1 else axs
+        
+        event_id = row["event_id"]
+        telescope_id = row["telescope_id"]
+        true_targets = [f"true_{target}" for target in targets]
+        targets_values = row[true_targets].to_numpy() 
+        prediction = model_predictions[row["predictions"]]
+        # prediction point sample
+        pred_targets = [f"pred_{target}" for target in targets]
+        prediction_point = row[pred_targets].to_numpy()
+
+        # point estimator
+        if np.array_equal(prediction, prediction_point):
+            if len(targets) == 1:
+                ax = show_points_1d(prediction, prediction_point, targets, target_domains, targets_values, ax)
+            elif len(targets) == 2:
+                ax = show_points_2d(prediction, prediction_point, targets, target_domains, targets_values, ax)
+            elif len(targets) == 3:
+                raise NotImplementedError
+        # probability density function estimator
+        elif not isinstance(prediction, np.ndarray) and np.any(np.array(target_resolutions) == np.inf):
+            # Show prediction according to targets dim
+            if len(targets) == 1:
+                raise NotImplementedError
+            elif len(targets) == 2:
+                ax = show_pdf_2d(prediction, prediction_point, targets, target_domains, targets_values, ax)
+            elif len(targets) == 3:
+                raise NotImplementedError
+        # probability mass function estimator
+        else:
+            # Show prediction according to targets dim
+            if len(targets) == 1:
+                ax = show_pmf_1d(prediction, prediction_point, targets, target_domains, 
+                            target_resolutions, targets_values, ax)
+            elif len(targets) == 2:
+                ax = show_pmf_2d(prediction, prediction_point, targets, target_domains, 
+                            target_resolutions, targets_values, ax)
+            elif len(targets) == 3:
+                raise NotImplementedError
+        ax.legend([])
+        plt.tight_layout()
+
+    # Save or Show
+    if save_to is not None:
+        plt.savefig(save_to)
+        plt.close()
+    else:
+        plt.show()
+
+
+def plot_multi_stereo_prediction(event_index, 
+    stereo_results, stereo_predictions,
+    mono_results_by_model, mono_predictions_by_model,
+    targets, target_domains, target_resolutions, save_to=None):
+    
+    event = stereo_results.iloc[event_index]
+    event_id = event["event_id"]
+    prediction = stereo_predictions[event["predictions"]]
+    pred_targets = [f"pred_{target}" for target in targets]
+    prediction_point = event[pred_targets].to_numpy()
+    true_targets = [f"true_{target}" for target in targets]
+    targets_values = event[true_targets].to_numpy()
+
+    telescopes = mono_results_by_model.keys()
+    for telescope in telescopes:
+        model_result = mono_results_by_model[telescope]
+        model_result = model_result[model_result.event_id == event_id]
+        model_predictions = mono_predictions_by_model[telescope]
+        if len(model_result) == 0: continue
+        plot_row_of_predictions(
+            model_result, model_predictions, 
+            targets,
+            target_domains,
+            title=telescope,
+            target_resolutions=target_resolutions)
+
+    plot_prediction(
+        prediction, prediction_point,
+        targets,
+        target_domains=target_domains, 
+        target_resolutions=target_resolutions,
+        title=event_id, 
+        targets_values=targets_values
+    )
+    
+    if save_to:
+        # TODO:
+        pass
+    else:
+        plt.show()
+
 
 """
 POINT predictions
@@ -639,7 +751,8 @@ CTA Metrics
 
 def show_energy_resolution(predicted_mc_energy, true_mc_energy, 
                            percentile=68.27, confidence_level=0.95, bias_correction=False,
-                           label="this method", include_requirement=[], xlim=None, ylim=None, ax=None):
+                           label="this method", include_requirement=[], 
+                           xlim=None, ylim=None, fmt=None, ax=None):
     """
     Show the energy resolution for a model's predictions.
     """
@@ -648,10 +761,12 @@ def show_energy_resolution(predicted_mc_energy, true_mc_energy,
     if ax is None:
         plt.figure(figsize=(6,6))
         ax = plt.gca()
-
-    ax = ctaplot.plot_energy_resolution(true_mc_energy, predicted_mc_energy,
-                                percentile, confidence_level, bias_correction, ax,
-                                marker='o', label=label)
+    fmt = fmt or "o"
+    ax = ctaplot.plot_energy_resolution(
+        true_mc_energy, predicted_mc_energy, percentile=percentile, 
+        confidence_level=confidence_level, bias_correction=bias_correction, 
+        fmt=fmt, label=label, ax=ax
+    )
     if xlim is not None:
         ax.set_xlim(xlim)
     if ylim is not None:
@@ -730,22 +845,26 @@ def plot_error_and_energy_resolution(evaluation_results, bins=80, include_requir
 
 def plot_energy_resolution_comparison(evaluation_results_dict, include_requirement=[], 
                                      percentile=68.27, confidence_level=0.95, bias_correction=False,
-                                     percentile_plot_range=80, xlim=None, ylim=None, save_to=None):
+                                     percentile_plot_range=80, xlim=None, ylim=None, fmts=None, save_to=None):
     """
     Display comparison of the energy resolution for different models.
     """
     # Create Figure and axis
     fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
-    plt.title("Energy Resolution Comparison")
+    #plt.title("Energy Resolution Comparison")
+    fmts = fmts or ["o" for _ in range(len(evaluation_results_dict))]
     for label, results in evaluation_results_dict.items():
         # Prediction values
         predicted_log10_mc_energy = results["pred_log10_mc_energy"]
         predicted_mc_energy = np.power(10, predicted_log10_mc_energy)
         true_mc_energy = results["true_mc_energy"]
-        show_energy_resolution(predicted_mc_energy, true_mc_energy, 
-                           percentile, confidence_level, bias_correction,
-                           label, [], xlim, ylim, ax)
+        fmt = fmts.pop(0)
+        show_energy_resolution(
+            predicted_mc_energy, true_mc_energy, 
+            percentile=percentile, confidence_level=confidence_level, 
+            bias_correction=bias_correction, label=label, 
+            include_requirement=[], xlim=xlim, ylim=ylim, fmt=fmt, ax=ax)
     try:
         for include in include_requirement:
             ax = ctaplot.plot_energy_resolution_cta_requirement(include, ax)
@@ -760,7 +879,8 @@ def plot_energy_resolution_comparison(evaluation_results_dict, include_requireme
     
 def show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
                            percentile=68.27, confidence_level=0.95, bias_correction=False,
-                           label="this method", include_requirement=[], xlim=None, ylim=None, ax=None):
+                           label="this method", include_requirement=[], 
+                           xlim=None, ylim=None, fmt=None, ax=None):
     """
     Show absolute angular error for a model's predictions.
     """
@@ -768,9 +888,13 @@ def show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true
     if ax is None:
         plt.figure(figsize=(6,6))
         ax = plt.gca()
-    ax = ctaplot.plot_angular_resolution_per_energy(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
-                                percentile, confidence_level, bias_correction, ax,
-                                marker='o', label=label)
+    # Style
+    fmt = fmt or 'o'
+    # Ctaplot - Angular resolution
+    ax = ctaplot.plot_angular_resolution_per_energy(
+        predicted_alt, predicted_az, true_alt, true_az, true_mc_energy, 
+        percentile, confidence_level, bias_correction, ax,
+        fmt=fmt, label=label)
     if xlim is not None:
         ax.set_xlim(xlim)
     if ylim is not None:
@@ -831,14 +955,15 @@ def plot_error_and_angular_resolution(evaluation_results, bins=80, include_requi
 
 def plot_angular_resolution_comparison(evaluation_results_dict, include_requirement=[], 
                                      percentile=68.27, confidence_level=0.95, bias_correction=False,
-                                     percentile_plot_range=80, xlim=None, ylim=None, save_to=None):
+                                     percentile_plot_range=80, xlim=None, ylim=None, fmts=None, save_to=None):
     """
     Display comparison of the angular resolution for different models.
     """
     # Create Figure and axis
     fig = plt.figure(figsize=(8, 8))
     ax = plt.gca()
-    plt.title("Angular Resolution Comparison")
+    #plt.title("Angular Resolution Comparison")
+    fmts = fmts or ["o" for _ in range(len(evaluation_results_dict))]
     for label, results in evaluation_results_dict.items():
         # Prediction values
         predicted_alt = results["pred_alt"]
@@ -847,9 +972,13 @@ def plot_angular_resolution_comparison(evaluation_results_dict, include_requirem
         true_alt = results["true_alt"]
         true_az = results["true_az"]
         true_mc_energy = results["true_mc_energy"]
-        show_angular_resolution(predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
-                           percentile, confidence_level, bias_correction,
-                           label, [], xlim, ylim, ax)
+        # Style
+        fmt = fmts.pop(0)
+        show_angular_resolution(
+            predicted_alt, predicted_az, true_alt, true_az, true_mc_energy,
+            percentile=percentile, confidence_level=confidence_level, 
+            bias_correction= bias_correction, label=label, 
+            include_requirement=[], xlim=xlim, ylim=ylim, ax=ax, fmt=fmt)
     try:
         for include in include_requirement:
             ax = ctaplot.plot_angular_resolution_cta_requirement(include, ax)
@@ -863,7 +992,7 @@ def plot_angular_resolution_comparison(evaluation_results_dict, include_requirem
         plt.show()
 
 
-def compare_results(model_names, csv_files, mode="angular", ylim=(0, 2), xlim=None, save_to=None):
+def compare_results(model_names, csv_files, fmts=None, mode="angular", ylim=(0, 2), xlim=None, save_to=None):
     renamer = {
         'az' : 'true_az',
         'alt' : 'true_alt',
@@ -874,8 +1003,8 @@ def compare_results(model_names, csv_files, mode="angular", ylim=(0, 2), xlim=No
     for model, csv_file in zip(model_names, csv_files):
         results[model] =  pd.read_csv(csv_file).rename(renamer, axis=1)
     if mode == "angular":
-        plot_angular_resolution_comparison(results, ylim=ylim, xlim=xlim, save_to=save_to)
+        plot_angular_resolution_comparison(results, ylim=ylim, xlim=xlim, fmts=fmts, save_to=save_to)
     elif mode == "energy":
-        plot_energy_resolution_comparison(results, ylim=ylim, xlim=xlim, save_to=save_to)
+        plot_energy_resolution_comparison(results, ylim=ylim, xlim=xlim, fmts=fmts, save_to=save_to)
     else:
         raise NotImplementedError(mode)
