@@ -129,16 +129,16 @@ def cnn_det_unit(telescope, image_mode, image_mask, input_img_shape, input_featu
 class CNN_DET(ModelAssembler):
     def __init__(self, sst1m_model_or_path=None, mst_model_or_path=None, lst_model_or_path=None,
                  targets=[], target_domains=tuple(), target_resolutions=tuple(), target_shapes=(),
-                 assembler_mode="mean", point_estimation_mode=None, custom_objects=CUSTOM_OBJECTS):
+                 assembler_mode="intensity_weighting", point_estimation_mode=None, custom_objects=CUSTOM_OBJECTS):
 
         super().__init__(sst1m_model_or_path=sst1m_model_or_path, mst_model_or_path=mst_model_or_path, \
                          lst_model_or_path=lst_model_or_path,
                          targets=targets, target_domains=target_domains, target_shapes=target_shapes, custom_objects=CUSTOM_OBJECTS)
         
-        if assembler_mode not in (None, 'mean'):
+        if assembler_mode not in (None, 'mean', 'intensity_weighting'):
             raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
 
-        self.assemble_mode = assembler_mode or "mean"
+        self.assemble_mode = assembler_mode or "intensity_weighting"
         self.point_estimation_mode = point_estimation_mode
         self.target_resolutions = target_resolutions
     
@@ -182,11 +182,20 @@ class CNN_DET(ModelAssembler):
         return y_predictions
 
     #expected value using the assembling of several telescopes    
-    def assemble(self, y_i_by_telescope):
+    def assemble(self, y_i_by_telescope, **kwargs):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
         if self.assemble_mode == "mean":
             yi_assembled = self.mean(y_i_all)
+        elif self.assemble_mode == "intensity_weighting":
+            yi_assembled = self.intensity_weighting(y_i_all, **kwargs)
         return yi_assembled
 
     def mean(self, y_i):
         return np.mean(y_i, axis=0)
+    
+    def intensity_weighting(self, y_i, weights=None):
+        if weights is None:
+            return np.mean(y_i, axis=0)
+        else:
+            w_i_all = np.concatenate(list(weights.values()))
+            return np.average(y_i, weights=w_i_all, axis=0)

@@ -51,30 +51,43 @@ class ModelAssembler():
             return "complete reconstruction"
 
     def predict(self, x, pbar=None, **kwargs):
+        # TODO: duplicate code
         y_predictions = []
         if isinstance(x, list) or isinstance(x, np.ndarray):
             iterator = x if pbar is None else pbar(x)
             for x_i in iterator:
+                intensity_i_by_telescope = {}
                 y_i_by_telescope = {}
                 for telescope in self.telescopes:
                     x_i_telescope = x_i[telescope]
                     # check if events has at least one observation with this telescope type
                     if len(x_i_telescope[0]) > 0:
+                        if x_i_telescope[0].ndim == 5:
+                            intensity = np.sum(x_i_telescope[0][:, 0, :, :, 0], axis=(1,2))
+                        elif x_i_telescope[0].ndim == 4:
+                            intensity = np.sum(x_i_telescope[0][:, :, :, 0], axis=(1,2))
                         y_i_by_telescope[telescope] = self.model_estimation(x_i_telescope, telescope, verbose=0, **kwargs)
-                y_i_assembled = self.assemble(y_i_by_telescope)
+                        intensity_i_by_telescope[telescope] = intensity
+                y_i_assembled = self.assemble(y_i_by_telescope, weights=intensity_i_by_telescope)
                 y_predictions.append(y_i_assembled)
 
         elif isinstance(x, Sequence):
             iterator = x if pbar is None else pbar(x)
             for x_batch_j, _ in iterator:
                 for x_i in x_batch_j:
+                    intensity_i_by_telescope = {}
                     y_i_by_telescope = {}
                     for telescope in self.telescopes:
                         x_i_telescope = x_i[telescope]
                         # check if events has at least one observation with this telescope type
                         if len(x_i_telescope[0]) > 0:
+                            if x_i_telescope[0].ndim == 5:
+                                intensity = np.sum(x_i_telescope[0][:, 0, :, :, 0], axis=(1,2))
+                            elif x_i_telescope[0].ndim == 4:
+                                intensity = np.sum(x_i_telescope[0][:, :, :, 0], axis=(1,2))
                             y_i_by_telescope[telescope] = self.model_estimation(x_i_telescope, telescope, verbose=0, **kwargs)
-                    y_i_assembled = self.assemble(y_i_by_telescope)
+                            intensity_i_by_telescope[telescope] = intensity
+                    y_i_assembled = self.assemble(y_i_by_telescope, weights=intensity_i_by_telescope)
                     y_predictions.append(y_i_assembled)
         return np.array(y_predictions)
 
@@ -176,7 +189,10 @@ class ModelAssembler():
             return_value.append(predictions)
         # Return
         # results [, inputs_values] [, predictions]
-        return return_value if len(return_value) > 1 else return_value[0]
+        if len(return_value) > 1:
+            return return_value 
+        else:
+            return return_value[0]
         
     def evaluate(self, test_assembler_generator, return_inputs=False, return_predictions=False):
         """
@@ -196,7 +212,7 @@ class ModelAssembler():
         original_true_energy_flag = test_assembler_generator.include_true_energy
         
         # Set evaluation parameters to generator
-        test_assembler_generator.target_mode = "lineal"
+        test_assembler_generator.target_mode = "lineal" #TODO: linear
         test_assembler_generator.include_event_id = True
         test_assembler_generator.include_true_energy = True
 
@@ -260,5 +276,5 @@ class ModelAssembler():
     def point_estimation(self, y_predictions):
         raise NotImplementedError
 
-    def assemble(self, y_i_by_telescope):
+    def assemble(self, y_i_by_telescope, **kwargs):
         raise NotImplementedError
