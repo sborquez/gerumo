@@ -2,6 +2,7 @@
     "model_name": "CD Assembler Tight",
     "assembler_constructor": "cnn_det",
     "model_constructor": "cnn_det_unit",
+    "assembler_mode": "intensity_weighting",
     "telescopes" : {
         "LST_LSTCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/CNN_DET_UNIT_LST_AZ_ALT_ADAM_MAE_LC_CD15_CD11_31af42",
         "MST_FlashCam": "/data/atlas/dbetalhc/cta-test/gerumo/output/alt_az/baseline/CNN_DET_UNIT_MST_AZ_ALT_ADAM_MAE_LC_CD15_CD11_a749bd",
