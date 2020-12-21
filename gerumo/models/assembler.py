@@ -53,7 +53,7 @@ class ModelAssembler():
     def predict(self, x, pbar=None, **kwargs):
         # TODO: duplicate code
         y_predictions = []
-        if isinstance(x, list) or isinstance(x, np.ndarray):
+        if isinstance(x, list):
             iterator = x if pbar is None else pbar(x)
             for x_i in iterator:
                 intensity_i_by_telescope = {}
@@ -111,13 +111,11 @@ class ModelAssembler():
                     model_name = f"{experiment_name}_e{epoch}"
                     model_or_path = checkpoints_by_epochs[epoch]
                 self.models[telescope] = load_model(model_or_path, custom_objects=custom_objects) #keras load model
-                return model_or_path
             elif isinstance(model_or_path, Model):
                 self.models[telescope] = model_or_path
-                return None
         else:
-            return None
-
+            return self
+            
 
     def predict_point(self, x, **kwargs):
         y_predictions = self.predict(x, **kwargs)
@@ -264,6 +262,7 @@ class ModelAssembler():
         # results [, inputs_values] [, predictions]
         return return_value if len(return_value) > 1 else return_value[0]
 
+    # TODO: change method name
     def exec_model_estimation(self, x_i_telescope, model, verbose=0, **kwargs):
         self.models["dummy"] = model
         prediction = self.model_estimation(x_i_telescope, "dummy",  verbose, **kwargs)

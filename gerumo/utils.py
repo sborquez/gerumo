@@ -2,10 +2,13 @@ import numpy as np
 from glob import glob
 from os import path
 import json
+from .data import INPUT_SHAPE
 from .data.dataset import load_dataset, aggregate_dataset, filter_dataset
 from .data.generator import AssemblerUnitGenerator, AssemblerGenerator
 from .data.preprocessing import MultiCameraPipe, CameraPipe, TelescopeFeaturesPipe
 from tensorflow.keras.models import load_model
+from .models import MODELS, ASSEMBLERS, CUSTOM_OBJECTS
+
 
 __all__ = [
     'get_target_mode_config',
@@ -63,7 +66,8 @@ def load_dataset_from_experiment(experiment_folder, include_samples_dataset=Fals
     return load_dataset_from_configuration(config_file, include_samples_dataset=include_samples_dataset, subset=subset)
 
 
-def load_dataset_from_configuration(config_file, include_samples_dataset=False, subset='test', telescope=None):
+def load_dataset_from_configuration(config_file, include_samples_dataset=False, 
+                                    subset='test', telescope=None, include_event_id=True, include_true_energy=True):
     # Load configuration
     if isinstance(config_file, dict):
         config = config_file
@@ -145,8 +149,8 @@ def load_dataset_from_configuration(config_file, include_samples_dataset=False, 
                             target_mode_config=target_mode_config,
                             preprocess_input_pipes=preprocess_input_pipes,
                             preprocess_output_pipes=preprocess_output_pipes,
-                            include_event_id=True,
-                            include_true_energy=True,
+                            include_event_id=include_event_id,
+                            include_true_energy=include_true_energy,
                             version=version
                         )
     if include_samples_dataset:
@@ -160,8 +164,8 @@ def load_dataset_from_configuration(config_file, include_samples_dataset=False, 
                 target_mode_config=target_mode_config,
                 preprocess_input_pipes=preprocess_input_pipes,
                 preprocess_output_pipes=preprocess_output_pipes,
-                include_event_id=True,
-                include_true_energy=True,
+                include_event_id=include_event_id,
+                include_true_energy=include_true_energy,
                 version=version
         )
         return (generator, dataset), (sample_generator, sample_dataset)
@@ -267,7 +271,9 @@ def load_dataset_from_assembler_configuration(assembler_config_file, include_sam
         return generator, dataset
 
 
-def load_model_from_experiment(experiment_folder, custom_objects, assemblers, epoch=None, get_assembler=True):
+def load_model_from_experiment(experiment_folder, custom_objects=CUSTOM_OBJECTS, 
+        assemblers=ASSEMBLERS, models=MODELS, 
+        epoch=None, get_assembler=True):
     """"
     Load best model using experiment configuration.
     
@@ -304,18 +310,21 @@ def load_model_from_experiment(experiment_folder, custom_objects, assemblers, ep
     else:
         config_file = config_file[0]
     return load_model_from_configuration(model_or_path, config_file, 
-                                         assemblers=assemblers, custom_objects=custom_objects,
-                                         model_name=model_name, get_assembler=get_assembler)
+                                         assemblers=assemblers, custom_objects=custom_objects, 
+                                         models=models, model_name=model_name, get_assembler=get_assembler)
 
 
-def load_model_from_configuration(model_or_path, config_file, custom_objects, assemblers, model_name=None, telescope=None, get_assembler=True):
+def load_model_from_configuration(model_or_path, config_file, 
+    custom_objects=CUSTOM_OBJECTS, assemblers=ASSEMBLERS, models=MODELS, 
+    model_name=None, telescope=None, get_assembler=True):
     """
     Evaluate model, with configuration file given.
     
     Parameters
     ==========
-    model_or_path :  `keras.Model` or `str`
-        Loaded keras model or path to hdf5 checkpoint file.
+    model_or_path :  `keras.Model`, `str` or `None`
+        Loaded keras model or path to hdf5 checkpoint file. If is `None`, build 
+        a new model with `model_constructor` parameter.
     config_file : `str`
         Path to configuration file
     model_name : `str`, optional
@@ -331,7 +340,23 @@ def load_model_from_configuration(model_or_path, config_file, custom_objects, as
     ## Model
     model_name = model_name or config["model_name"]
     telescope = telescope or config["telescope"]
-    if isinstance(model_or_path, str):
+    if model_or_path is None:
+        model_constructor = models[config["model_constructor"]]
+        input_image_mode = config["input_image_mode"]
+        input_image_mask = config["input_image_mask"]
+        input_img_shape = INPUT_SHAPE[f"{input_image_mode}-mask" if input_image_mask else input_image_mode][telescope]
+        input_features = config["input_features"]
+        targets = config["targets"]
+        target_mode = config["target_mode"]
+        target_mode_config = get_target_mode_config(config, target_mode)
+        input_features_shape = (len(input_features),)
+        target_shapes = target_mode_config["target_shapes"]
+        model_extra_params = config["model_extra_params"]
+        model = model_constructor(telescope, input_image_mode, input_image_mask, 
+            input_img_shape, input_features_shape,
+            config["targets"], config["target_mode"], target_shapes, 
+            **model_extra_params)
+    elif isinstance(model_or_path, str):
         model = load_model(model_or_path, custom_objects=custom_objects)
     else:
         model = model_or_path 
@@ -353,12 +378,13 @@ def load_model_from_configuration(model_or_path, config_file, custom_objects, as
                 target_resolutions=target_mode_config["target_resolutions"],
                 point_estimation_mode="expected_value"
         )
+        assembler.load_model(telescope, model)
         return config, model, assembler
     else:
         return config, model
 
 
-def load_assembler_from_configuration(assembler_config_file, assemblers):
+def load_assembler_from_configuration(assembler_config_file, assemblers=ASSEMBLERS):
      # Load configuration
     with open(assembler_config_file) as cfg_file:
         config = json.load(cfg_file)

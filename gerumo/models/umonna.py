@@ -333,11 +333,16 @@ class Umonna(ModelAssembler):
         y_point_estimations = np.empty((n_samples, dimensions))
         axis = set(np.arange(dimensions))
         for d in range(dimensions):
-            reduce_axis = tuple(axis - {d}) if dimensions > 1 else None
             indexes_d = np.arange(self.target_shapes[d])
-            y_point_estimations[:, d] = np.array(
-                [np.dot(y_i.sum(axis=reduce_axis), indexes_d) for y_i in y_predictions]
-            )
+            if dimensions > 1:
+                reduce_axis = tuple(axis - {d})
+                y_point_estimations[:, d] = np.array(
+                    [np.dot(y_i.sum(axis=reduce_axis), indexes_d) for y_i in y_predictions]
+                )
+            else:
+                y_point_estimations[:, d] = np.array(
+                    [np.dot(y_i, indexes_d) for y_i in y_predictions]
+                )
         return y_point_estimations
 
     def assemble(self, y_i_by_telescope, **kwargs):
