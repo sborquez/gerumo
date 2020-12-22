@@ -12,3 +12,4 @@ type of function can be used by `plot` to generate more elaborated figures.
 
 from .metrics import *
 from .explore import *
+from .callbacks import *
