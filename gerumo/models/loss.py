@@ -17,7 +17,8 @@ def crossentropy_loss(dimensions=3, epsilon=1e-16):
     def loss(y_true, y_pred):
         """Cross entropy loss function."""
         axis = [-i for i in range(1, dimensions+1)]
-        return K.sum(-K.log(y_pred + epsilon)*y_true, axis=axis)
+        return -K.sum( (K.log(y_pred + epsilon)*y_true) + \
+            (K.log((1 - y_pred) + epsilon)*(1-y_true)), axis=axis)
     return loss
 
 def hellinger_loss():
