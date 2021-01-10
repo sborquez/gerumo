@@ -38,7 +38,7 @@ Custom Objects
 """
 CUSTOM_OBJECTS = {
     # LOSSES
-    "loss": crossentropy_loss(), #dummy loss
+    "loss": mae_loss(), #dummy loss
     **LOSS,
     # LAYERS
     **LAYERS
