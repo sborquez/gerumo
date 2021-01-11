@@ -856,8 +856,11 @@ def plot_energy_resolution_comparison(evaluation_results_dict, include_requireme
     fmts = fmts or ["o" for _ in range(len(evaluation_results_dict))]
     for label, results in evaluation_results_dict.items():
         # Prediction values
-        predicted_log10_mc_energy = results["pred_log10_mc_energy"]
-        predicted_mc_energy = np.power(10, predicted_log10_mc_energy)
+        if "pred_mc_energy" in results:
+            predicted_mc_energy = results["pred_mc_energy"]
+        else:
+            predicted_log10_mc_energy = results["pred_log10_mc_energy"]
+            predicted_mc_energy = np.power(10, predicted_log10_mc_energy)
         true_mc_energy = results["true_mc_energy"]
         fmt = fmts.pop(0)
         show_energy_resolution(
@@ -865,6 +868,8 @@ def plot_energy_resolution_comparison(evaluation_results_dict, include_requireme
             percentile=percentile, confidence_level=confidence_level, 
             bias_correction=bias_correction, label=label, 
             include_requirement=[], xlim=xlim, ylim=ylim, fmt=fmt, ax=ax)
+        ax.xaxis.grid(False, which='minor')
+
     try:
         for include in include_requirement:
             ax = ctaplot.plot_energy_resolution_cta_requirement(include, ax)
@@ -979,6 +984,7 @@ def plot_angular_resolution_comparison(evaluation_results_dict, include_requirem
             percentile=percentile, confidence_level=confidence_level, 
             bias_correction= bias_correction, label=label, 
             include_requirement=[], xlim=xlim, ylim=ylim, ax=ax, fmt=fmt)
+        ax.xaxis.grid(False, which='minor')
     try:
         for include in include_requirement:
             ax = ctaplot.plot_angular_resolution_cta_requirement(include, ax)
@@ -997,6 +1003,7 @@ def compare_results(model_names, csv_files, fmts=None, mode="angular", ylim=(0, 
         'az' : 'true_az',
         'alt' : 'true_alt',
         'mc_energy' : 'true_mc_energy',
+        'energy' : 'pred_mc_energy',
         'event_unique_id' : 'event_id',
     }
     results = {}
