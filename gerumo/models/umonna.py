@@ -278,7 +278,7 @@ class Umonna(ModelAssembler):
             raise ValueError(f"Invalid assembler_mode: {assembler_mode}")
         self.assemble_mode = assembler_mode or "normalized_product"
         
-        if point_estimation_mode not in ["expected_value"]:
+        if point_estimation_mode not in ["expected_value", "log_expected_value"]:
             raise ValueError(f"Invalid point_estimation_mode: {point_estimation_mode}")
         self.point_estimation_mode = point_estimation_mode
         self.target_resolutions = target_resolutions
@@ -322,9 +322,8 @@ class Umonna(ModelAssembler):
         """
         if self.point_estimation_mode == "expected_value":
             y_point_estimations = self.expected_value(y_predictions)
-        target_domains_arr = np.array(self.target_domains)
-        target_resolutions_arr = np.array(self.target_resolutions)
-        y_point_estimations = (y_point_estimations*target_resolutions_arr) + target_domains_arr[:,0]
+        elif self.point_estimation_mode == "log_expected_value":
+            y_point_estimations = self.log_expected_value(y_predictions)
         return y_point_estimations
 
     def expected_value(self, y_predictions):
@@ -332,17 +331,41 @@ class Umonna(ModelAssembler):
         dimensions = len(self.targets)
         y_point_estimations = np.empty((n_samples, dimensions))
         axis = set(np.arange(dimensions))
-        for d in range(dimensions):
-            indexes_d = np.arange(self.target_shapes[d])
-            if dimensions > 1:
+        if dimensions == 1:
+            indexes_d = np.arange(self.target_shapes[0])
+            y_point_estimations[:, 0] = np.array(
+                [np.dot(y_i, indexes_d) for y_i in y_predictions]
+            )
+        else:
+            for d in range(dimensions):
+                indexes_d = np.arange(self.target_shapes[d])
                 reduce_axis = tuple(axis - {d})
                 y_point_estimations[:, d] = np.array(
                     [np.dot(y_i.sum(axis=reduce_axis), indexes_d) for y_i in y_predictions]
                 )
-            else:
-                y_point_estimations[:, d] = np.array(
-                    [np.dot(y_i, indexes_d) for y_i in y_predictions]
-                )
+        # transform from index's domain to target's domain
+        target_domains_arr = np.array(self.target_domains)
+        target_resolutions_arr = np.array(self.target_resolutions)
+        y_point_estimations = (y_point_estimations*target_resolutions_arr) + target_domains_arr[:,0]
+        return y_point_estimations
+
+    def log_expected_value(self, y_predictions):
+        n_samples = len(y_predictions)
+        dimensions = len(self.targets)
+        y_point_estimations = np.empty((n_samples, dimensions))
+        if dimensions == 1:
+            # Transform log domain
+            log_y_domain = np.arange(self.target_shapes[0])
+            target_domains_arr = np.array(self.target_domains)
+            target_resolutions_arr = np.array(self.target_resolutions)
+            log_y_domain = (log_y_domain*target_resolutions_arr) + target_domains_arr[:,0]
+            y_domain = np.power(10, log_y_domain)
+            # Expected value
+            y_point_estimations[:, 0] = np.log10(np.array(
+                [np.dot(y_domain, prob_i) for prob_i in y_predictions]
+            ))
+        else:
+            raise ValueError("Expected 1-D target. Got", dimensions)
         return y_point_estimations
 
     def assemble(self, y_i_by_telescope, **kwargs):
