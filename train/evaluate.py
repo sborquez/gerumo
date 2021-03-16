@@ -87,7 +87,7 @@ def evaluate_experiment_folder(experiment_folder,  save_results=True, save_predi
 def evaluate_unit(model_or_path, config_file, output_folder,
                  assembler=None, telescope=None,
                  save_results=True, save_predictions=True, save_samples=True, 
-                 model_name=None, replace_folder_test=None, seed=None, sample_telescopes=None):
+                 model_name=None, replace_folder_test=None, seed=None, sample_events=None):
     """
     Evaluate model, with configuration file given.
     
@@ -115,8 +115,8 @@ def evaluate_unit(model_or_path, config_file, output_folder,
         Replace config `replace_folder_test` without edit configuration file.
     seed : `int`, optional
         Seed for random states.
-    sample_telescopes : `list` of `str` or `None`
-        Filter sample dataset.
+    sample_events : `list` of `str` or `None`
+        Events for sample dataset.
     Returns
     -------
     `pd.DataFrame`
@@ -133,7 +133,8 @@ def evaluate_unit(model_or_path, config_file, output_folder,
     test_, sample_ = load_dataset_from_configuration(
         config_file,
         telescope=telescope,
-        include_samples_dataset=True
+        include_samples_dataset=True,
+        sample_events=sample_events
     )
     (test_generator, test_dataset) = test_
     (sample_generator, sample_dataset) = sample_
@@ -305,7 +306,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None,
         assembler_config_file, include_samples_dataset=True
     )
     (test_generator, test_dataset) = test_
-    (sample_generator, sample_dataset, sample_telescopes) = sample_
+    (sample_generator, sample_dataset, sample_events) = sample_
     # Load Target configuration
     target_mode_config = get_target_mode_config(config)
     # Model name
@@ -337,7 +338,7 @@ def evaluate_assembler(assembler_config_file, output_folder=None,
                 assembler=assembler, telescope=telescope, 
                 save_results=save_results, save_predictions=save_predictions,
                 save_samples=save_samples, model_name=model_name, seed=seed,
-                sample_telescopes=sample_telescopes
+                sample_events=sample_events
             )
             if save_predictions:
                 all_results[telescope] = unit_evaluation[0]
