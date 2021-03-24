@@ -20,3 +20,6 @@ dataset
 
 sandbox.ipynb
 sandbox-checkpoint.ipynb
+ml1/*.h5
+train/*.csv
+train/*.png
