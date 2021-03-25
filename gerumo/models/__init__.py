@@ -11,12 +11,15 @@ from .tools import *
 Custom Loss
 ============
 """
-from .loss import hellinger_loss, crossentropy_loss, mae_loss, mse_loss, mean_distance_loss, negloglike_loss
+from .loss import (
+    hellinger_loss, crossentropy_loss, mae_loss, mse_loss, 
+    negloglike_loss, focal_loss
+)
 LOSS = {
     "hellinger_loss": hellinger_loss,
     "mse_loss": mse_loss,
     "mae_loss": mae_loss,
-    "mean_distance_loss": mean_distance_loss,
+    "focal_loss": focal_loss,
     "crossentropy_loss": crossentropy_loss,
     "negloglike_loss": negloglike_loss,
 }
