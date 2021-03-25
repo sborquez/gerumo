@@ -20,11 +20,11 @@ import numpy as np
 
 from . import TARGETS, TELESCOPES, TELESCOPES_ALIAS
 
-
 __all__ = [
-    'extract_data', 
+    'extract_data',
     'generate_dataset', 'load_dataset', 'save_dataset', 'split_dataset',
-    'filter_dataset', 'aggregate_dataset', 'describe_dataset'
+    'filter_dataset', 'aggregate_dataset', 'describe_dataset', 'load_hillas_dataset',
+    'aggregate_hillas_dataset'
 ]
 
 # Table names and atributes
@@ -35,44 +35,44 @@ _events_table = {
 
 _event_attributes = {
     "ML1": {
-        "event_id":     "event_number",
-        "core_x":       "core_x",
-        "core_y":       "core_y",
-        "alt":          "alt",
-        "az":           "az",
+        "event_id": "event_number",
+        "core_x": "core_x",
+        "core_y": "core_y",
+        "alt": "alt",
+        "az": "az",
         "h_first_int": "h_first_int",
-        "mc_energy":    "mc_energy",
+        "mc_energy": "mc_energy",
     },
     "ML2": {
-        "event_id":     "event_id",
-        "core_x":       "core_x",
-        "core_y":       "core_y",
-        "alt":          "alt",
-        "az":           "az",
-        "h_first_int":  "h_first_int",
-        "mc_energy":    "mc_energy",
+        "event_id": "event_id",
+        "core_x": "core_x",
+        "core_y": "core_y",
+        "alt": "alt",
+        "az": "az",
+        "h_first_int": "h_first_int",
+        "mc_energy": "mc_energy",
     }
 }
 
 _array_info_table = {
-    "ML1":  "Array_Info",
+    "ML1": "Array_Info",
     "ML2": "Array_Information"
 }
 
 _array_attributes = {
     "ML1": {
-        "type":         "tel_type",
+        "type": "tel_type",
         "telescope_id": "tel_id",
-        "x":            "tel_x",
-        "y":            "tel_y",
-        "z":            "tel_z",  
+        "x": "tel_x",
+        "y": "tel_y",
+        "z": "tel_z",
     },
     "ML2": {
-        "type":         "type",
+        "type": "type",
         "telescope_id": "id",
-        "x":            "x",
-        "y":            "y",
-        "z":            "z",  
+        "x": "x",
+        "y": "y",
+        "z": "z",
     }
 }
 
@@ -83,40 +83,40 @@ _telescope_table = {
 
 _telescopes_info_attributes = {
     "ML1": {
-        "num_pixels":   "num_pixels",
-        "type":         "tel_type",
-        "pixel_pos":    "pixel_pos",
+        "num_pixels": "num_pixels",
+        "type": "tel_type",
+        "pixel_pos": "pixel_pos",
     },
     "ML2": {
-        "num_pixels":   "num_pixels",
-        "type":         "type",
-        "pixel_pos":    "pixel_positions",
+        "num_pixels": "num_pixels",
+        "type": "type",
+        "pixel_pos": "pixel_positions",
     }
 }
 
 # CSV events data
 _event_fieldnames = [
     'event_unique_id',  # hdf5 event identifier
-    'event_id',         # Unique event identifier
-    'source',           # hfd5 filename
-    'folder',           # Container hdf5 folder
-    'core_x',           # Ground x coordinate
-    'core_y',           # Ground y coordinate
-    'h_first_int',      # Height firts impact
-    'alt',              # Altitute
-    'az',               # Azimut
-    'mc_energy'         # Monte Carlo Energy
+    'event_id',  # Unique event identifier
+    'source',  # hfd5 filename
+    'folder',  # Container hdf5 folder
+    'core_x',  # Ground x coordinate
+    'core_y',  # Ground y coordinate
+    'h_first_int',  # Height firts impact
+    'alt',  # Altitute
+    'az',  # Azimut
+    'mc_energy'  # Monte Carlo Energy
 ]
 
 # CSV Telescope events data
 _telescope_fieldnames = [
-    'telescope_id',        # Unique telescope identifier
-    'event_unique_id',     # hdf5 event identifier
-    'type',                # Telescope type
-    'x',                   # x array coordinate
-    'y',                   # y array coordinate
-    'z',                   # z array coordinate
-    'observation_indice'   # Observation indice in table
+    'telescope_id',  # Unique telescope identifier
+    'event_unique_id',  # hdf5 event identifier
+    'type',  # Telescope type
+    'x',  # x array coordinate
+    'y',  # y array coordinate
+    'z',  # z array coordinate
+    'observation_indice'  # Observation indice in table
 ]
 
 
@@ -145,11 +145,11 @@ def extract_data(hdf5_filepath, version='ML2'):
         telescope_type = telescope[_array_attributes[version]["type"]]
         telescope_type = telescope_type.decode("utf-8") if isinstance(telescope_type, bytes) else telescope_type
         telescope_id = telescope[_array_attributes[version]["telescope_id"]]
-        #HERE
+        # HERE
         if telescope_type not in array_data:
             array_data[telescope_type] = {}
             real_telescopes_id[telescope_type] = []
-        
+
         array_data[telescope_type][telescope_id] = {
             "id": telescope_id,
             "x": telescope[_array_attributes[version]["x"]],
@@ -164,19 +164,19 @@ def extract_data(hdf5_filepath, version='ML2'):
             # Event data
             event_unique_id = uuid.uuid4().hex[:20]
             event_data = dict(
-                        event_unique_id = event_unique_id,
-                        event_id = event[_event_attributes[version]["event_id"]] ,
-                        source = source,
-                        folder = folder,
-                        core_x = event[_event_attributes[version]["core_x"]],
-                        core_y = event[_event_attributes[version]["core_y"]],
-                        h_first_int = event[_event_attributes[version]["h_first_int"]],
-                        alt = event[_event_attributes[version]["alt"]],
-                        az = event[_event_attributes[version]["az"]],
-                        mc_energy = event[_event_attributes[version]["mc_energy"]]
+                event_unique_id=event_unique_id,
+                event_id=event[_event_attributes[version]["event_id"]],
+                source=source,
+                folder=folder,
+                core_x=event[_event_attributes[version]["core_x"]],
+                core_y=event[_event_attributes[version]["core_y"]],
+                h_first_int=event[_event_attributes[version]["h_first_int"]],
+                alt=event[_event_attributes[version]["alt"]],
+                az=event[_event_attributes[version]["az"]],
+                mc_energy=event[_event_attributes[version]["mc_energy"]]
             )
             events_data.append(event_data)
-            
+
             # Observations data
             ## For each telescope type
             for telescope_type in TELESCOPES:
@@ -189,8 +189,8 @@ def extract_data(hdf5_filepath, version='ML2'):
                     multiplicity = event[telescope_multiplicity]
                 else:
                     multiplicity = np.sum(telescopes != 0)
-                    
-                if multiplicity == 0: # No telescope of this type were activated
+
+                if multiplicity == 0:  # No telescope of this type were activated
                     continue
 
                 # Select activated telescopes
@@ -203,13 +203,13 @@ def extract_data(hdf5_filepath, version='ML2'):
                     # Telescope Data
                     real_telescope_id = real_telescopes_id[telescope_type_alias][activate_telescope]
                     telescope_data = dict(
-                        telescope_id = real_telescope_id,
-                        event_unique_id = event_unique_id,
-                        type = telescope_type,
-                        x = array_data[telescope_type_alias][real_telescope_id]["x"],
-                        y = array_data[telescope_type_alias][real_telescope_id]["y"],
-                        z = array_data[telescope_type_alias][real_telescope_id]["z"],
-                        observation_indice = observation_indice
+                        telescope_id=real_telescope_id,
+                        event_unique_id=event_unique_id,
+                        type=telescope_type,
+                        x=array_data[telescope_type_alias][real_telescope_id]["x"],
+                        y=array_data[telescope_type_alias][real_telescope_id]["y"],
+                        z=array_data[telescope_type_alias][real_telescope_id]["z"],
+                        observation_indice=observation_indice
                     )
                     telescopes_data.append(telescope_data)
     except KeyboardInterrupt:
@@ -253,34 +253,34 @@ def generate_dataset(files_path=None, folder_path=None, output_folder=".", appen
     `tuple` of `str`
         events.csv and telescope.csv path.
     """
-    #assert not ((files_path is None)  and (folder_path is None)), "Use one parameters: files_path and folder_path."
-    #assert ((files_path is not None)  and (folder_path is not None)), "Use one parameters: files_path and folder_path."
+    # assert not ((files_path is None)  and (folder_path is None)), "Use one parameters: files_path and folder_path."
+    # assert ((files_path is not None)  and (folder_path is not None)), "Use one parameters: files_path and folder_path."
 
     # hdf5 files
     if files_path is not None:
         files = files_path
-        files = [ path.abspath(file) for file in files]
+        files = [path.abspath(file) for file in files]
     elif folder_path is not None:
         files = glob(path.join(folder_path, "*.h5"))
-        files = [ path.abspath(file) for file in files]
-    
+        files = [path.abspath(file) for file in files]
+
     # Check if list is not empty
     if len(files) == 0:
         raise FileNotFoundError
     logging.debug(f"{len(files)} files found.")
 
     # csv files
-    mode = "a" if append else  "w"
+    mode = "a" if append else "w"
     events_filepath = path.join(output_folder, "events.csv")
     telescope_filepath = path.join(output_folder, "telescopes.csv")
     events_info_csv = open(events_filepath, mode=mode)
     telescope_info_csv = open(telescope_filepath, mode=mode)
-    
+
     # csv writers
-    telescope_writer = csv.DictWriter(telescope_info_csv, delimiter=";", 
-                                    fieldnames=_telescope_fieldnames, lineterminator="\n")
-    events_writer = csv.DictWriter(events_info_csv, delimiter=';', 
-                                fieldnames=_event_fieldnames, lineterminator="\n")
+    telescope_writer = csv.DictWriter(telescope_info_csv, delimiter=";",
+                                      fieldnames=_telescope_fieldnames, lineterminator="\n")
+    events_writer = csv.DictWriter(events_info_csv, delimiter=';',
+                                   fieldnames=_event_fieldnames, lineterminator="\n")
 
     if not append:
         events_writer.writeheader()
@@ -303,7 +303,7 @@ def generate_dataset(files_path=None, folder_path=None, output_folder=".", appen
         logging.info("Extraction ended successfully!")
     logging.info(f"Total events: {total_events}")
     logging.info(f"Total observations: {total_observations}")
-    
+
     # close files
     telescope_info_csv.close()
     events_info_csv.close()
@@ -323,7 +323,7 @@ def split_dataset(dataset, validation_ratio=0.1):
 
     # split by events
     total_events = dataset.event_unique_id.nunique()
-    val_events_n = int(total_events*validation_ratio)
+    val_events_n = int(total_events * validation_ratio)
     train_events_n = total_events - val_events_n
 
     # enforce source balance
@@ -403,18 +403,19 @@ def save_dataset(dataset, output_folder, prefix=None):
     event_path = path.join(output_folder, event_path)
 
     telescope_path = "telescopes.csv" if prefix is None else f"{prefix}_telescopes.csv"
-    telescope_path =  path.join(output_folder, telescope_path)
+    telescope_path = path.join(output_folder, telescope_path)
 
     event_data.to_csv(event_path, sep=";", index=False)
     telescope_data.to_csv(telescope_path, sep=";", index=False)
 
     return event_path, telescope_path
-    
+
 
 """
 Utils Functions
 ===============
 """
+
 
 def describe_dataset(dataset, save_to=None):
     files = dataset.source.nunique()
@@ -501,3 +502,71 @@ def filter_dataset(dataset, telescopes=[], number_of_observations=[], domain={})
     for target, (vmin, vmax) in domain.items():
         selection &= ((vmin <= filtered_dataset[target]) & (filtered_dataset[target] <= vmax))
     return filtered_dataset[selection]
+
+
+def load_array_direction(hdf5_filepath: str, version="ML1"):
+    if version != "ML1":
+        raise NotImplementedError(f"Dataset version {version} is not yet supported")
+
+    hdf5_file = tables.open_file(hdf5_filepath, "r")
+    array_directions = dict()
+    for telescope in hdf5_file.root[_array_info_table[version]]:
+        telescope_id = telescope[_array_attributes[version]["telescope_id"]]
+        telescope_type = telescope[_array_attributes[version]["type"]]
+        telescope_type = telescope_type.decode("utf-8") if isinstance(telescope_type, bytes) else telescope_type
+        if telescope_type not in array_directions:
+            array_directions[telescope_type] = {}
+        array_directions[telescope_type][telescope_id] = telescope["run_array_direction"]
+    hdf5_file.close()
+    return array_directions
+
+
+def load_hillas_dataset(events_csv: str, telescopes_csv: str, results_csv: str, hillas_csv: str) -> pd.DataFrame:
+    """
+    Perform simple aggegation to targe columns.
+
+    Parameters
+    ==========
+    events_csv : `str`
+        Events dataset
+    telescopes_csv : `str`
+        Telescopes dataset
+    results_csv: `str`
+        The hillas reconstruction .csv generated by `baseline.reconstructor.Reconstructor`
+    hillas_csv: `str`
+        The hillas parameters .csv saved by `baseline.reconstructor.Reconstructor`
+    Returns
+    =======
+    `pd.DataFrame`
+        Dataset with event information, hillas reconstructions results and parameters.
+    """
+
+    hillas = pd.read_csv(hillas_csv)
+    results = pd.read_csv(results_csv)
+
+    results = results.drop(labels=["core_x", "core_y", "alt", "az", "mc_energy"], axis="columns")
+
+    dataset = load_dataset(events_csv, telescopes_csv)
+    dataset = aggregate_dataset(dataset, False, True, False)
+
+    hillas.columns = [f"hillas_{it}" if it in ["x", "y"] else it for it in hillas.columns]
+
+    results_hillas = pd.merge(results, hillas, on=["event_unique_id"], validate="1:m")
+    full = pd.merge(dataset, results_hillas, on=["event_unique_id", "type", "observation_indice"], validate="1:1")
+
+    return full
+
+
+def aggregate_hillas_dataset(dataset: pd.DataFrame):
+    dataset.loc[:, "log10_intensity"] = np.log10(dataset["intensity"])
+
+    core_x = dataset["pred_core_x"]
+    x = dataset["x"]
+
+    core_y = dataset["pred_core_y"]
+    y = dataset["y"]
+
+    impact = np.sqrt((core_x - x) ** 2 + (core_y + y) ** 2)
+    dataset.loc[:, "log10_impact"] = np.log10(impact)
+
+    return dataset
