@@ -67,7 +67,32 @@ def load_dataset_from_experiment(experiment_folder, include_samples_dataset=Fals
 
 
 def load_dataset_from_configuration(config_file, include_samples_dataset=False, 
-                                    subset='test', telescope=None, include_event_id=True, include_true_energy=True):
+                                    subset='test', telescope=None, include_event_id=True, include_true_energy=True,
+                                    sample_events=None):
+    """"
+    Load dataset and generators from experiment configuration.
+    
+    Parameters
+    ==========
+    experiment_folder :  `str`or `dict`
+        Path to experiment json file or loaded json.
+    include_samples_dataset : `bool`
+    subset : `bool`
+    telescope : `str` or `None`
+        Filter dataset for a telescope type, if is `None` it is set by the
+        experiments configuration.
+    include_event_id : `bool`
+        Add event information to 
+    include_true_energy : `bool`
+        Add true mn_energy column.
+    sample_events : `list` or `None`
+        List of event ids to for sample dataset. If is `None` it selects random events.
+    Returns
+    -------
+    (`AssemblerUnitGenerator`, `pd.DataFrame`)
+        Data generator and dataset, if `include_samples_dataset` is `True` 
+        include another tuple with a sample from the same dataset.
+    """
     # Load configuration
     if isinstance(config_file, dict):
         config = config_file
@@ -104,11 +129,12 @@ def load_dataset_from_configuration(config_file, include_samples_dataset=False,
 
     if include_samples_dataset:
         # events with observations of every type of telescopes
-        sample_telescopes = [telescope]
-        sample_events = [e for e, df in dataset.groupby("event_unique_id") if __same_telescopes(df["type"].unique(), sample_telescopes)]
-        # TODO: add custom seed
-        r = np.random.RandomState(42)
-        sample_events = r.choice(sample_events, size=5, replace=False)
+        if sample_events is None:
+            sample_telescopes = [telescope]
+            sample_events = [e for e, df in dataset.groupby("event_unique_id") if __same_telescopes(df["type"].unique(), sample_telescopes)]
+            # TODO: add custom seed
+            r = np.random.RandomState(42)
+            sample_events = r.choice(sample_events, size=5, replace=False)
         sample_dataset = dataset[dataset["event_unique_id"].isin(sample_events)]
         sample_dataset = filter_dataset(sample_dataset, telescope, [0], target_domains)
     else:
@@ -212,7 +238,7 @@ def load_dataset_from_assembler_configuration(assembler_config_file, include_sam
         sample_dataset = filter_dataset(sample_dataset, telescopes.keys(), min_observations, target_domains)
         if len(sample_dataset) == 0: raise ValueError("Sample dataset is empty.")
     else:
-        sample_telescopes = None
+        sample_events = None
         sample_dataset = None
         sample_generator = None
 
@@ -266,7 +292,7 @@ def load_dataset_from_assembler_configuration(assembler_config_file, include_sam
                 include_true_energy=True,
                 version=version
         )
-        return (generator, dataset), (sample_generator, sample_dataset, sample_telescopes)
+        return (generator, dataset), (sample_generator, sample_dataset, sample_events)
     else:
         return generator, dataset
 

@@ -12,13 +12,26 @@ import tensorflow.keras.backend as K
 import numpy as np
 from functools import reduce
 
-def crossentropy_loss(dimensions=3, epsilon=1e-16):
+def crossentropy_loss(dimensions=3):
     """Return the Cross Entropy loss function for multidimension probability map."""
+    axis = [-i for i in range(1, dimensions+1)]
+    epsilon = tf.keras.backend.epsilon()
     def loss(y_true, y_pred):
         """Cross entropy loss function."""
-        axis = [-i for i in range(1, dimensions+1)]
-        return -K.sum( (K.log(y_pred + epsilon)*y_true) + \
-            (K.log((1 - y_pred) + epsilon)*(1-y_true)), axis=axis)
+        y_pred = tf.clip_by_value(y_pred, epsilon, 1 - epsilon)
+        return -tf.reduce_sum(y_true * tf.math.log(y_pred), axis)
+    return loss
+
+def focal_loss(dimensions=1, alphas=None, gamma=2.0):
+    """Return the focal loss function for multidimension probability map."""
+    axis = [-i for i in range(1, dimensions+1)]
+    epsilon = tf.keras.backend.epsilon()
+    if alphas is None:
+        alphas = 1 
+    def loss(y_true, y_pred):
+        """Focal loss function."""
+        y_pred = tf.clip_by_value(y_pred, epsilon, 1 - epsilon)
+        return -tf.reduce_sum(y_true * tf.math.log(y_pred) * tf.math.pow(1 - y_pred, gamma) * alphas, axis)
     return loss
 
 def hellinger_loss():
@@ -45,23 +58,6 @@ def mse_loss():
 def mae_loss():
     """Return the Mean Absolute loss function for multidimension probability map."""
     return keras.losses.mae
-
-def mean_distance_loss(shape):
-    """Return the Mean Distances Weighted loss function for multidimension distance map."""
-    c_inv = 1/reduce(lambda a,b: a*b, shape)
-    def loss(y_true, y_pred):
-        """Mean Distances Weighted loss function
-
-        This use a predicted probability map and a distance map from the target and weight 
-        its distances by the predcted probability.
-        
-        MDW(Dp, q) : 1/c Sum((Dp_i*q_i)**2)
-        """
-        # Reshape tensors (batch_flatten)
-        y_true_ = K.batch_flatten(y_true)
-        y_pred_ = K.batch_flatten(y_pred)
-        return c_inv * K.sum(K.pow(y_true_ * y_pred_, 2), axis=-1)
-    return loss
 
 def negloglike_loss(dimensions):
     def loss(y_true, y_params_pred):
