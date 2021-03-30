@@ -134,7 +134,7 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
                 input_image_mask=input_image_mask, 
                 input_features=input_features,
                 targets=targets,
-                target_mode='lineal', 
+                target_mode='linear', 
                 target_mode_config=target_mode_config,
                 preprocess_input_pipes=preprocess_input_pipes,
                 preprocess_output_pipes=preprocess_output_pipes,
@@ -176,10 +176,11 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
                         **model_extra_params)
             ## Loss function
             loss = loss if loss.split('_')[-1] == 'loss' else f'{loss}_loss'
-            if loss == "crossentropy":
+            if loss == "crossentropy_loss":
                 loss_ = LOSS[loss](dimensions=len(targets))
-            elif loss == "distance":
-                loss_ = mean_distance_loss(target_shapes)
+            elif loss == "focal_loss":
+                alphas = get_alphas(telescope)
+                loss_ = LOSS[loss](dimensions=len(targets), alphas=alphas, gamma=2.0)
             else:
                 loss_ = LOSS[loss]()
             ## Optimizer
@@ -191,7 +192,6 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
                 optimizer=optimizer_,
                 loss=loss_
             )
-
     else: 
         model = model_constructor(telescope, input_image_mode, input_image_mask, 
                     input_img_shape, input_features_shape,
@@ -201,8 +201,9 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
         loss = loss if loss.split('_')[-1] == 'loss' else f'{loss}_loss'
         if loss == "crossentropy_loss":
             loss_ = LOSS[loss](dimensions=len(targets))
-        elif loss == "distance_loss":
-            loss_ = mean_distance_loss(target_shapes)
+        elif loss == "focal_loss":
+            alphas = get_alphas(telescope)
+            loss_ = LOSS[loss](dimensions=len(targets), alphas=alphas, gamma=2.0)
         else:
             loss_ = LOSS[loss]()
         ## Optimizer

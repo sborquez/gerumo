@@ -22,11 +22,12 @@ def crossentropy_loss(dimensions=3):
         return -tf.reduce_sum(y_true * tf.math.log(y_pred), axis)
     return loss
 
-def focal_loss(dimensions=3, alphas=None, gamma=2.0):
+def focal_loss(dimensions=1, alphas=None, gamma=2.0):
     """Return the focal loss function for multidimension probability map."""
     axis = [-i for i in range(1, dimensions+1)]
     epsilon = tf.keras.backend.epsilon()
-    alphas = alphas or 1
+    if alphas is None:
+        alphas = 1 
     def loss(y_true, y_pred):
         """Focal loss function."""
         y_pred = tf.clip_by_value(y_pred, epsilon, 1 - epsilon)

@@ -69,6 +69,30 @@ def load_dataset_from_experiment(experiment_folder, include_samples_dataset=Fals
 def load_dataset_from_configuration(config_file, include_samples_dataset=False, 
                                     subset='test', telescope=None, include_event_id=True, include_true_energy=True,
                                     sample_events=None):
+    """"
+    Load dataset and generators from experiment configuration.
+    
+    Parameters
+    ==========
+    experiment_folder :  `str`or `dict`
+        Path to experiment json file or loaded json.
+    include_samples_dataset : `bool`
+    subset : `bool`
+    telescope : `str` or `None`
+        Filter dataset for a telescope type, if is `None` it is set by the
+        experiments configuration.
+    include_event_id : `bool`
+        Add event information to 
+    include_true_energy : `bool`
+        Add true mn_energy column.
+    sample_events : `list` or `None`
+        List of event ids to for sample dataset. If is `None` it selects random events.
+    Returns
+    -------
+    (`AssemblerUnitGenerator`, `pd.DataFrame`)
+        Data generator and dataset, if `include_samples_dataset` is `True` 
+        include another tuple with a sample from the same dataset.
+    """
     # Load configuration
     if isinstance(config_file, dict):
         config = config_file

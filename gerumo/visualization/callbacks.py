@@ -65,7 +65,7 @@ class ValidationSamplesCallback(keras.callbacks.Callback):
     def __init__(self, sample_generator, predictions_folder, assembler, save_best_only=True, mode='min'):
         assert sample_generator.include_event_id is True, "sample_generator doesn`t include event_id"
         assert sample_generator.include_true_energy is True, "sample_generator doesn`t include true_energy"
-        assert sample_generator.target_mode == "lineal", "sample_generator target_mode is not 'lineal'"
+        assert sample_generator.target_mode in ("lineal", "linear"), "sample_generator target_mode is not 'lineal'"
         # Generator
         self.sample_generator = sample_generator
         # Assembler
