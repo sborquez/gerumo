@@ -21,8 +21,8 @@
     "validation_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_train_valid_19_csv/validation_telescopes.csv",
     "replace_folder_validation" : "/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/baseline",
 
-    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_bp_experiments/data_test_10_csv/test_events.csv",
-    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/ml1_bp_experiments/data_test_10_csv/test_telescopes.csv",
+    "test_events_csv"    : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/tight/all_events.csv",
+    "test_telescope_csv" : "/data/atlas/dbetalhc/cta-test/gerumo/data/baseline/data_test_10_csv/tight/all_telescopes.csv",
     "replace_folder_test" : "/data/atlas/dbetalhc/cta-test/ML1_SAMPLES/baseline",
     
     "input_image_mode" : "simple-shift",
@@ -35,7 +35,7 @@
     "target_shapes" : {
         "alt": 81, 
         "az": 81, 
-        "log10_mc_energy": 81
+        "log10_mc_energy": 243
     },
     "target_domains" : {
         "alt": [1.15, 1.3], 
@@ -59,7 +59,7 @@
     "epochs" : 150,
     "loss" : "crossentropy",
     "optimizer": {
-        "learning_rate": 1e-3,
+        "learning_rate": 1e-4,
         "name": "sgd",
         "extra_parameters": {
             "momentum": 0.01,

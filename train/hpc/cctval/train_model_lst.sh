@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p gpuk
-#SBATCH -J bl_bmo_lst
+#SBATCH -J bl_um_lst
 #SBATCH --mail-user=sebastian.borquez@sansano.usm.cl
 #SBATCH --mail-type=ALL
 #SBATCH -o logs/output_baseline_umo_lst_%j.log
@@ -21,6 +21,7 @@ cd /data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train
 #config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/alt_az/baseline/cd_lst.json"
 #config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/alt_az/baseline/bmo_lst.json"
 ## ENERGY
+#config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/energy/baseline/umonna_lst_adam.json"
 config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/energy/baseline/umonna_lst.json"
 #config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/energy/baseline/cd_lst.json"
 #config="/data/atlas/dbetalhc/cta-test/gerumo/src/gerumo/train/config/cctval/energy/baseline/bmo_lst.json"

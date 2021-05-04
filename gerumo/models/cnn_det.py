@@ -198,4 +198,5 @@ class CNN_DET(ModelAssembler):
             return np.mean(y_i, axis=0)
         else:
             w_i_all = np.concatenate(list(weights.values()))
+            if w_i_all.sum() == 0: return np.mean(y_i, axis=0)
             return np.average(y_i, weights=w_i_all, axis=0)

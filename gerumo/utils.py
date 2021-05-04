@@ -392,6 +392,7 @@ def load_model_from_configuration(model_or_path, config_file,
         target_mode = "lineal" #config["target_mode"]
         target_shapes = config["target_shapes"]
         target_domains = config["target_domains"]
+        point_estimation_mode = config.get("point_estimation_mode", "expected_value")
         ## Prepare Generator target_mode_config 
         target_mode_config = get_target_mode_config(config, target_mode)
         assembler_constructor = assemblers[config["assembler_constructor"]]
@@ -402,7 +403,7 @@ def load_model_from_configuration(model_or_path, config_file,
                 target_shapes=target_mode_config["target_shapes"],
                 target_domains=target_mode_config["target_domains"],
                 target_resolutions=target_mode_config["target_resolutions"],
-                point_estimation_mode="expected_value"
+                point_estimation_mode=point_estimation_mode
         )
         assembler.load_model(telescope, model)
         return config, model, assembler
@@ -424,6 +425,7 @@ def load_assembler_from_configuration(assembler_config_file, assemblers=ASSEMBLE
     ## Target Parameters 
     targets = config["targets"]
     target_mode = config["target_mode"]
+    point_estimation_mode = config.get("point_estimation_mode", "expected_value")
     ## Prepare Generator target_mode_config 
     target_mode_config = get_target_mode_config(config, target_mode)
     # Assembler
@@ -433,7 +435,7 @@ def load_assembler_from_configuration(assembler_config_file, assemblers=ASSEMBLE
             target_shapes=target_mode_config["target_shapes"],
             target_domains=target_mode_config["target_domains"],
             target_resolutions=target_mode_config["target_resolutions"],
-            point_estimation_mode="expected_value"
+            point_estimation_mode=point_estimation_mode
     )
     # Telescope Models 
     for telescope, experiment_or_model_path in telescopes.items():

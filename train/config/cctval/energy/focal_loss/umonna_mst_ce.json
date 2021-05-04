@@ -1,5 +1,5 @@
 {
-    "model_name": "UMONNA_UNIT_MST_Shallow",
+    "model_name": "UMONNA_UNIT_MST_CE",
     "model_constructor": "umonna_unit",
     "assembler_constructor": "umonna",
     "model_extra_params": {
@@ -35,7 +35,7 @@
     "target_shapes" : {
         "alt": 81, 
         "az": 81, 
-        "log10_mc_energy": 243
+        "log10_mc_energy": 81
     },
     "target_domains" : {
         "alt": [1.15, 1.3], 

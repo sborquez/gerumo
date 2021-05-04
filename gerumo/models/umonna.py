@@ -371,12 +371,42 @@ class Umonna(ModelAssembler):
     def assemble(self, y_i_by_telescope, **kwargs):
         y_i_all = np.concatenate(list(y_i_by_telescope.values()))
         if self.assemble_mode == "normalized_product":
-            yi_assembled = self.normalized_product(y_i_all)
+            #yi_assembled = self.normalized_product(y_i_all)
+            #elif self.assemble_mode == "normalized_product_with_prior":
+            yi_assembled = self.normalized_product_with_prior(y_i_all)
         return yi_assembled
         
     def normalized_product(self, y_i):
         epsilon = 1e-20
         Y_i = np.exp(np.sum(np.log(y_i+epsilon), axis=0))
+        Y_i_sum = Y_i.sum()
+        if Y_i_sum > 0:
+            Y_i /= Y_i.sum()            
+        return Y_i
+
+    def normalized_product_with_prior(self, y_i):
+        epsilon = 1e-20
+        assert y_i.shape[1:] == (81,), "Only support log energy with shape 81"
+        y_i_prior = np.log(
+            np.array([0.01234376, 0.01234376, 0.01234377, 0.01234379, 0.01234381,
+                        0.01234385, 0.01234391, 0.01234398, 0.01234407, 0.01234416,
+                        0.01234421, 0.01234436, 0.01234441, 0.01234456, 0.01234469,
+                        0.01234482, 0.01234523, 0.01234558, 0.01234595, 0.01234629,
+                        0.01234678, 0.01234694, 0.01234709, 0.01234718, 0.01234705,
+                        0.0123472 , 0.01234719, 0.0123474 , 0.01234756, 0.01234756,
+                        0.01234803, 0.01234822, 0.01234816, 0.01234803, 0.01234791,
+                        0.01234814, 0.0123479 , 0.01234776, 0.01234773, 0.0123475 ,
+                        0.01234726, 0.01234749, 0.01234749, 0.01234699, 0.01234649,
+                        0.01234694, 0.0123466 , 0.01234663, 0.01234642, 0.01234612,
+                        0.01234616, 0.01234595, 0.01234601, 0.01234588, 0.01234574,
+                        0.01234572, 0.01234544, 0.01234555, 0.01234522, 0.01234556,
+                        0.01234531, 0.01234504, 0.01234488, 0.01234482, 0.01234501,
+                        0.01234471, 0.01234458, 0.01234469, 0.01234447, 0.01234457,
+                        0.01234451, 0.01234465, 0.01234426, 0.01234417, 0.0123441 ,
+                        0.01234405, 0.012344  , 0.01234413, 0.01234413, 0.01234396,
+                        0.01234399]))
+        y_i_ = np.sum(np.log(y_i+epsilon), axis=0) + y_i_prior
+        Y_i = np.exp(y_i_)
         Y_i_sum = Y_i.sum()
         if Y_i_sum > 0:
             Y_i /= Y_i.sum()            
