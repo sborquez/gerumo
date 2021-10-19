@@ -13,6 +13,8 @@ if __name__ == "__main__":
                     help="Folder containing hdf5 files.")
     ap.add_argument("-I", "--files", nargs="*", type=str, default=[],
                     help="List of hdf5 files, if is not empty, ignore folder argument.")
+    ap.add_argument("-f", "--file", type=str, default=None,
+                    help="File with list of hdf5 files, if is not None, ignore folder argument.")
     ap.add_argument("-o", "--output", type=str, default=".", 
                     help="Ouput folder.")
     ap.add_argument("-s", "--split", type=float, default=0.1,
@@ -23,12 +25,16 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
 
     folder = args["folder"]
+    file_ = args["file"]
     files = args["files"]
     output = args["output"]
     split = args["split"]
     append = args["append_write"]
     version = args["version"]
-
+    
+    if file_ is not None:
+        with open(file_) as f:
+            files = [l[:-1] for l in f.readlines()]
     if len(files) > 0:
         events_path, telescopes_path = generate_dataset(files_path=files, output_folder=output, append=append, version=version)
     elif folder is not None:
