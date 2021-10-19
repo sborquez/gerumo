@@ -18,7 +18,7 @@ dependencies:
   - seaborn
   - scipy
   - jupyter
-  - scikit-learn=0.23.2
+  - scikit-learn=0.23.1
   - scikit-image
   - jupyter
   - pytables
