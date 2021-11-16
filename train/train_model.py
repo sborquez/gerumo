@@ -19,6 +19,9 @@ from tensorflow.keras.utils import plot_model
 import matplotlib as mpl
 mpl.use('Agg')
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
 
 def train_model(model_name, model_constructor, assembler_constructor, model_extra_params, 
             telescope, 
@@ -54,8 +57,10 @@ def train_model(model_name, model_constructor, assembler_constructor, model_extr
 
     # Prepare datasets
     train_dataset      = load_dataset(train_events_csv, train_telescope_csv, replace_folder_train)
+    print(len(train_dataset))
     validation_dataset = load_dataset(validation_events_csv, validation_telescope_csv, replace_folder_validation)
-
+    print(len(validation_dataset))
+    
     train_dataset = aggregate_dataset(train_dataset, az=True, log10_mc_energy=True)
     train_dataset = filter_dataset(train_dataset, telescope, min_observations, target_domains)
     

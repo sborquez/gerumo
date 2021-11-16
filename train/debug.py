@@ -39,6 +39,7 @@ def test_gpu():
         print("Tensorflow is not built with CUDA")
 
 def test_saving(model="umonna"):
+    raise NotImplementedError
     if model == "umonna":
         # SETUP CONFIG
         telescope = "MST_FlashCam"
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     # option a
     ap.add_argument("--gpu", dest="gpu", action="store_true", help="Check GPU availability.")
     # option b
-    ap.add_argument("--save", dest="save", action="store_true", help="Check if model can be saved")
+    #ap.add_argument("--save", dest="save", action="store_true", help="Check if model can be saved")
     # option c
     ap.add_argument("--plot", type=str, default=None, help="Path to model checkpoint or experiment path.")
     ap.add_argument("--include_shape", action="store_true", help="Include shape in model plot.")
@@ -126,9 +127,9 @@ if __name__ == "__main__":
         print("Running GPU tests.")
         test_gpu()
     
-    save = args["save"]
-    if save:
-        test_saving()
+    #save = args["save"]
+    #if save:
+    #    test_saving()
     
     model = args["plot"]
     if model is not None:

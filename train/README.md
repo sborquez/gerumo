@@ -157,16 +157,6 @@ Evaluate uses `test dataset` definen in configuration files, if model configurat
                              --output "." 
                              --samples --results --predictions
 ```
-## Extras
-
-### tools.py
-
-* Regression to video.
-
-```
-(gerumo)$ python tools.py -i experiment_folder -o output_folder 
-```
-
 
 ### debug.py
 
@@ -180,6 +170,3 @@ Evaluate uses `test dataset` definen in configuration files, if model configurat
 (gerumo)$ python debug.py --plot model_checkpoint_or_experiment_folder -o output_folder
 ```
 
-### prepare_preprocessing.py
-
-TBA
