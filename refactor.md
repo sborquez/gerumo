@@ -13,6 +13,7 @@ The objetive of this refactor are:
 - [ ] Cleaning and renaming
 - [ ] Improve models definitions.
 - [ ] YAMLs replace JSON
+- [ ] Support Prodb5
 - [ ] Use Dataset and DataLoader approach
 - [ ] Replace model monitoring
 
